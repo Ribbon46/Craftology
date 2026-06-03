@@ -1,3 +1,4 @@
+import 'server-only';
 import Stripe from 'stripe';
 
 // Server-only Stripe client. Gated like the Supabase config: the app builds and

@@ -54,6 +54,7 @@ All UI text is in Romanian:
 See `supabase/schema.sql` for profiles, listings, conversations, messages tables with RLS.
 - **Identity invariant:** `profiles.id` **IS** the `auth.users.id` (1:1, no separate `user_id`). All RLS compares `auth.uid()` directly to `seller_id` / `buyer_id` / `sender_id`.
 - A `handle_new_user()` trigger auto-creates a `profiles` row on signup (username = email local part + short id suffix; user can rename later).
+- **Hardened writes (Phase 14 audit):** `conversations` INSERT requires `auth.uid() = buyer_id AND buyer <> seller AND the seller owns the listing` (server actions derive ids from the session/listing — never trust client ids). `messages` UPDATE is participant-scoped with a column grant limited to `read`. `profiles` UPDATE is column-scoped to `username/full_name/avatar_url` (rating is server-controlled). Keep these invariants when touching the schema.
 - `listings` & `profiles` are world-readable (public browsing). Conversations/messages are participant-only.
 - Storage bucket `listings_images` (public) + policies are created by `schema.sql`; object paths are `listings/<auth.uid()>/<uuid>.<ext>`.
 

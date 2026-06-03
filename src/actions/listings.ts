@@ -32,32 +32,48 @@ export async function createListing(formData: FormData) {
 
   // Get images from formData
   const images = formData.getAll('images') as File[];
-  
+
   if (images.length === 0) {
     return { error: 'Vă rugăm să încărcați cel puțin o imagine' };
   }
+  // The client Dropzone caps at 5, but this action is a POST endpoint that can
+  // be called directly — enforce the cap server-side too (storage-abuse guard).
+  if (images.length > 5) {
+    return { error: 'Poți încărca maximum 5 imagini.' };
+  }
+
+  // Whitelist real raster image types. The stored extension is derived from
+  // this map (NOT the client filename), and svg+xml/html are rejected, so a
+  // crafted upload can't be served as active content from the public bucket.
+  const ALLOWED_IMAGE_TYPES: Record<string, string> = {
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+    'image/gif': 'gif',
+  };
 
   // Upload images to storage
   const imageUrls: string[] = [];
-  
+
   for (const image of images) {
     if (image.size > 5 * 1024 * 1024) { // 5MB limit
       return { error: `Fișierul ${image.name} este prea mare (max 5MB)` };
     }
 
-    if (!image.type.startsWith('image/')) {
-      return { error: `Fișierul ${image.name} nu este o imagine` };
+    const ext = ALLOWED_IMAGE_TYPES[image.type];
+    if (!ext) {
+      return { error: `Format invalid pentru ${image.name}. Acceptăm JPG, PNG, WEBP sau GIF.` };
     }
 
     const imageId = crypto.randomUUID();
-    const imageExt = image.name.split('.').pop();
-    const imagePath = `listings/${user.id}/${imageId}.${imageExt}`;
-    
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const imagePath = `listings/${user.id}/${imageId}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
       .from('listings_images')
       .upload(imagePath, image, {
         cacheControl: '3600',
         upsert: false,
+        contentType: image.type,
       });
 
     if (uploadError) {
@@ -156,8 +172,14 @@ export async function deleteListing(listingId: string) {
 export async function updateListingStatus(listingId: string, status: 'active' | 'sold') {
   const supabase = await createServerClient();
 
+  // TypeScript unions are erased at runtime and this is a POST endpoint —
+  // validate the value (the DB CHECK is the last line of defense, not the only).
+  if (status !== 'active' && status !== 'sold') {
+    return { error: 'Status invalid' };
+  }
+
   const { data: { user }, error: authError } = await supabase.auth.getUser();
-  
+
   if (authError || !user) {
     return { error: 'Autentificare necesară' };
   }

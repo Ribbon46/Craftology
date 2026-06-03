@@ -3,7 +3,7 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
-export async function createConversation(buyerId: string, sellerId: string, listingId: string) {
+export async function createConversation(listingId: string) {
   const supabase = await createServerClient();
 
   const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -11,17 +11,34 @@ export async function createConversation(buyerId: string, sellerId: string, list
     return { error: 'Autentificare necesară' };
   }
 
-  // A buyer can't open a conversation with themselves.
-  if (buyerId === sellerId) {
-    return { error: 'Nu poți începe o conversație cu tine însuți' };
+  // Never trust client-supplied participant ids. The buyer is ALWAYS the
+  // authenticated caller; the seller is whoever actually owns the listing.
+  // (This closes the spoofing gap where a caller could name a victim as the
+  // other party, or pair a listing with a seller who doesn't own it.)
+  const { data: listing, error: listingError } = await supabase
+    .from('listings')
+    .select('id, seller_id')
+    .eq('id', listingId)
+    .single();
+
+  if (listingError || !listing) {
+    return { error: 'Produsul nu a fost găsit' };
   }
 
-  // Reuse an existing thread for this (buyer, seller, listing) pair, in either role order.
+  const buyerId = user.id;
+  const sellerId = listing.seller_id;
+
+  if (buyerId === sellerId) {
+    return { error: 'Nu poți începe o conversație cu propriul anunț' };
+  }
+
+  // Reuse the existing thread for this (buyer, seller, listing) triple.
   const { data: existing } = await supabase
     .from('conversations')
     .select('id')
     .eq('listing_id', listingId)
-    .or(`and(buyer_id.eq.${buyerId},seller_id.eq.${sellerId}),and(buyer_id.eq.${sellerId},seller_id.eq.${buyerId})`)
+    .eq('buyer_id', buyerId)
+    .eq('seller_id', sellerId)
     .maybeSingle();
 
   if (existing) {
@@ -53,6 +70,9 @@ export async function createMessage(conversationId: string, text: string) {
   const trimmed = text.trim();
   if (!trimmed) {
     return { error: 'Mesajul nu poate fi gol' };
+  }
+  if (trimmed.length > 2000) {
+    return { error: 'Mesajul este prea lung (max 2000 de caractere)' };
   }
 
   // Verify the sender is a participant in the conversation.
@@ -91,6 +111,24 @@ export async function createMessage(conversationId: string, text: string) {
 
 export async function getMessages(conversationId: string, limit: number = 50) {
   const supabase = await createServerClient();
+
+  // Defense-in-depth beyond RLS: require an authenticated participant before
+  // returning any messages (so a leaked/edited policy can't become an IDOR).
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
+    return { error: 'Autentificare necesară' };
+  }
+  const { data: convo, error: convoError } = await supabase
+    .from('conversations')
+    .select('buyer_id, seller_id')
+    .eq('id', conversationId)
+    .single();
+  if (convoError || !convo) {
+    return { error: 'Conversația nu a fost găsită' };
+  }
+  if (convo.buyer_id !== user.id && convo.seller_id !== user.id) {
+    return { error: 'Nu aveți permisiunea să vedeți această conversație' };
+  }
 
   const { data: messages, error } = await supabase
     .from('messages')

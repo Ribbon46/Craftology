@@ -113,6 +113,12 @@ CREATE POLICY "Users can update their own profile"
   TO authenticated
   USING (auth.uid() = id);
 
+-- Column-scope the update: a user may edit their own username/full_name/avatar,
+-- but NOT `rating` (a public trust signal) — that stays server/service-role
+-- controlled so a seller can't self-inflate their score.
+REVOKE UPDATE ON profiles FROM authenticated;
+GRANT UPDATE (username, full_name, avatar_url) ON profiles TO authenticated;
+
 -- Listings: world-readable (public browsing, no login required);
 -- only the owner may insert / update / delete.
 ALTER TABLE listings ENABLE ROW LEVEL SECURITY;
@@ -149,11 +155,24 @@ CREATE POLICY "Conversations are readable by participants"
   TO authenticated
   USING (auth.uid() = buyer_id OR auth.uid() = seller_id);
 
-CREATE POLICY "Conversations are insertable by participants"
+-- The caller must be the BUYER, can't converse with themselves, and the named
+-- seller must actually own the listing. createConversation derives both ids
+-- server-side; this is the matching defense-in-depth at the DB layer (a bare
+-- "is one of the two participants" check let a user forge a thread naming a
+-- victim as the other party).
+CREATE POLICY "Conversations are insertable by buyer"
   ON conversations
   FOR INSERT
   TO authenticated
-  WITH CHECK (auth.uid() = buyer_id OR auth.uid() = seller_id);
+  WITH CHECK (
+    auth.uid() = buyer_id
+    AND buyer_id <> seller_id
+    AND EXISTS (
+      SELECT 1 FROM listings l
+      WHERE l.id = conversations.listing_id
+        AND l.seller_id = conversations.seller_id
+    )
+  );
 
 -- Messages: readable / writable only by conversation participants.
 ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
@@ -182,6 +201,24 @@ CREATE POLICY "Messages are insertable by sender"
       AND (c.buyer_id = auth.uid() OR c.seller_id = auth.uid())
     )
   );
+
+-- Participants may UPDATE messages in their conversations, but the column grant
+-- below limits that to the `read` flag — so read receipts work (the table had
+-- RLS on with no UPDATE policy, which silently no-op'd markMessagesAsRead in
+-- production) without letting anyone tamper with another user's message text.
+CREATE POLICY "Messages are updatable by participants"
+  ON messages
+  FOR UPDATE
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM conversations c
+      WHERE c.id = messages.conversation_id
+      AND (c.buyer_id = auth.uid() OR c.seller_id = auth.uid())
+    )
+  );
+REVOKE UPDATE ON messages FROM authenticated;
+GRANT UPDATE (read) ON messages TO authenticated;
 
 -- =====================================================================
 -- Storage: listings_images bucket + policies

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type Stripe from 'stripe';
 import { stripe, isStripeConfigured } from '@/lib/stripe';
 import { createClient } from '@supabase/supabase-js';
 
@@ -26,7 +27,15 @@ export async function POST(req: NextRequest) {
   }
 
   if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as { metadata?: { listing_id?: string } };
+    const session = event.data.object as Stripe.Checkout.Session;
+
+    // Only mark sold once payment is actually collected. Async/delayed methods
+    // complete the session as 'unpaid' and can fail later, so a bare
+    // `completed` event must not flip inventory and block other buyers.
+    if (session.payment_status !== 'paid') {
+      return NextResponse.json({ received: true, note: 'payment not yet collected' });
+    }
+
     const listingId = session.metadata?.listing_id;
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

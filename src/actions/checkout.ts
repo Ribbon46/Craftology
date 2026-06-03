@@ -53,6 +53,8 @@ export async function createCheckoutSession(listingId: string) {
     });
     return { url: session.url };
   } catch (e) {
-    return { error: `Eroare la inițierea plății: ${(e as Error).message}` };
+    // Log the raw Stripe error server-side; return a clean, generic message.
+    console.error('Stripe checkout error:', e);
+    return { error: 'Eroare la inițierea plății. Încearcă din nou.' };
   }
 }

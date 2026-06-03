@@ -17,7 +17,9 @@ export const listingFormSchema = z.object({
     .number()
     .min(1, 'Prețul trebuie să fie cel puțin 1 leu')
     .max(1000000, 'Prețul nu poate depăși 1.000.000 de lei'),
-  category: z.string().min(1, 'Vă rugăm să selectați o categorie'),
+  // Constrain to the known category set so arbitrary values can't be injected
+  // into the public feed/filters via a direct server-action call.
+  category: z.enum(['Bijuterii', 'Haine', 'Lumânări', 'Accesorii', 'Frumusețe']),
 });
 
 export type ListingFormValues = z.infer<typeof listingFormSchema>;

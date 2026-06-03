@@ -39,7 +39,7 @@ export default function ListingDetailPage() {
     if (!listing) return;
     if (!user) { setOpen(true); return; }
     setMessaging(true);
-    await createConversation(user.id, listing.seller_id, listing.id);
+    await createConversation(listing.id);
     setMessaging(false);
     router.push('/messages');
   };
