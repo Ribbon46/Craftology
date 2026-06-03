@@ -1,36 +1,75 @@
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
+export const metadata = { title: 'Politica de Confidențialitate · Craftology' };
+
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen px-4 py-6 pb-24">
-      <Link href="/" className="inline-flex items-center text-ink-soft hover:text-ink mb-4">
-        <ArrowLeft className="w-4 h-4 mr-1" />
-        Înapoi
+    <div className="min-h-screen px-5 py-6 pb-24 max-w-2xl mx-auto">
+      <Link href="/" className="inline-flex items-center text-ink-soft hover:text-clay mb-5 text-sm">
+        <ArrowLeft className="w-4 h-4 mr-1.5" /> Înapoi
       </Link>
-      <h1 className="text-2xl font-bold text-ink mb-4">Politica de confidențialitate</h1>
-      <div className="space-y-4 text-sm text-ink-soft leading-relaxed">
+      <h1 className="font-display text-3xl text-ink mb-1">Politica de Confidențialitate</h1>
+      <p className="text-xs text-ink-faint mb-6">Conformă cu GDPR (Regulamentul UE 2016/679). Ultima actualizare: [DATĂ]</p>
+
+      <div className="space-y-5 text-sm text-ink-soft leading-relaxed [&_h2]:font-display [&_h2]:text-lg [&_h2]:text-ink [&_h2]:mt-6 [&_h2]:mb-1">
+        <h2>1. Operatorul de date</h2>
         <p>
-          Confidențialitatea ta este importantă pentru noi. Această politică descrie ce date
-          colectăm și cum le folosim, în conformitate cu GDPR.
+          <strong>Deco Kubik SRL</strong>, [ADRESĂ], CUI [CUI]. Pentru orice solicitare privind datele tale:
+          <strong> [EMAIL]</strong>.
         </p>
-        <h2 className="text-base font-semibold text-ink">Date colectate</h2>
+
+        <h2>2. Ce date colectăm</h2>
         <p>
-          Colectăm adresa de email și informațiile de profil pe care le furnizezi (nume, fotografie,
-          anunțuri). Acestea sunt necesare pentru funcționarea contului tău.
+          <strong>Cont:</strong> adresă de email, parolă (criptată), nume. <strong>Profil:</strong> nume afișat,
+          fotografie, evaluări. <strong>Anunțuri și mesaje:</strong> conținutul produselor și al conversațiilor.
+          <strong> Plăți:</strong> procesate de Stripe — nu stocăm datele cardului tău. <strong>Tehnice:</strong>{' '}
+          cookie-uri strict necesare pentru autentificare.
         </p>
-        <h2 className="text-base font-semibold text-ink">Utilizarea datelor</h2>
+
+        <h2>3. Scopuri și temei legal</h2>
         <p>
-          Datele sunt folosite exclusiv pentru a oferi serviciile platformei: autentificare, afișarea
-          anunțurilor și comunicarea între cumpărători și vânzători.
+          Furnizarea serviciului și executarea contractului (art. 6(1)(b) GDPR): cont, anunțuri, comenzi, mesaje.
+          Procesarea plăților și prevenirea fraudei (interes legitim / obligație legală). Comunicări legate de cont.
+          Respectarea obligațiilor legale (fiscale, contabile).
         </p>
-        <h2 className="text-base font-semibold text-ink">Drepturile tale</h2>
+
+        <h2>4. Persoane împuternicite (procesatori)</h2>
         <p>
-          Ai dreptul de a accesa, corecta sau șterge datele tale personale în orice moment, din setările
-          contului.
+          Folosim furnizori care prelucrează date în numele nostru: <strong>Supabase</strong> (bază de date și
+          autentificare), <strong>Vercel</strong> (găzduire), <strong>Stripe</strong> (plăți). Aceștia pot prelucra
+          date în afara României/UE, cu garanții adecvate (clauze contractuale standard).
         </p>
-        <p className="text-xs text-ink-faint pt-4">
-          Acesta este un document provizoriu și va fi completat înainte de lansarea publică.
+
+        <h2>5. Cât timp păstrăm datele</h2>
+        <p>
+          Datele de cont — pe durata existenței contului. Datele de tranzacție — conform termenelor legale
+          (contabile/fiscale, de regulă până la 10 ani). Poți cere ștergerea contului oricând.
+        </p>
+
+        <h2>6. Drepturile tale</h2>
+        <p>
+          Ai dreptul de acces, rectificare, ștergere („dreptul de a fi uitat”), restricționare, portabilitate și
+          opoziție, precum și dreptul de a-ți retrage consimțământul. Le poți exercita scriind la [EMAIL]. Ai
+          dreptul de a depune o plângere la <strong>ANSPDCP</strong> (Autoritatea Națională de Supraveghere a
+          Prelucrării Datelor cu Caracter Personal, dataprotection.ro).
+        </p>
+
+        <h2>7. Cookie-uri</h2>
+        <p>
+          Folosim doar cookie-uri strict necesare (sesiunea de autentificare). Nu folosim cookie-uri de publicitate.
+        </p>
+
+        <h2>8. Securitate</h2>
+        <p>
+          Aplicăm măsuri tehnice rezonabile (criptare în tranzit, acces restricționat la baza de date prin
+          Row Level Security). Niciun sistem nu este 100% sigur, dar ne angajăm să protejăm datele tale.
+        </p>
+
+        <p className="text-xs text-ink-faint pt-6 border-t border-line mt-6">
+          ⚠️ Document-șablon. Completează câmpurile [ ] și obține revizuirea unui avocat / specialist GDPR înainte
+          de lansare. Vezi și{' '}
+          <Link href="/terms" className="text-clay underline underline-offset-2">Termenii și Condițiile</Link>.
         </p>
       </div>
     </div>
