@@ -1,7 +1,7 @@
 import { chromium, devices } from 'playwright';
 import fs from 'fs';
 
-const BASE = 'http://localhost:3000';
+const BASE = process.env.SHOT_BASE || 'http://localhost:3000';
 const OUT = './_shots';
 fs.mkdirSync(OUT, { recursive: true });
 

@@ -10,8 +10,8 @@ const config: CapacitorConfig = {
   appName: 'Craftology',
   webDir: 'public',
   server: {
-    // TODO: replace with your Vercel production URL after deploying.
-    url: 'https://craftology.vercel.app',
+    // Live Vercel production deployment — the native shell loads this.
+    url: 'https://craftology-peach.vercel.app',
     cleartext: false,
   },
   android: {

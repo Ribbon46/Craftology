@@ -1,8 +1,12 @@
 # Craftology — Deployment Guide
 
-The app is production-ready and connected to Supabase. Two remaining stages need
-**your accounts / local tooling**; everything else (code, schema, Capacitor scaffold)
-is done.
+> **STATUS: LIVE** → https://craftology-peach.vercel.app (production, real Supabase data).
+> Redeploy anytime with **`npm run deploy`** (injects the Supabase env from `.env.local`
+> so the deployment always uses live data — see note below).
+
+The app is production-ready and connected to Supabase. The remaining items below need
+**your accounts / local tooling** (env persistence for git auto-deploy, custom domain,
+Android SDK for the APK).
 
 ---
 

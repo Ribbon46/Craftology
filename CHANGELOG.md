@@ -92,3 +92,9 @@ All notable changes to this project will be documented in this file.
 - **Seeded live content:** created the `deco_kubik` brand seller + 8 on-brand listings (mărgele, lumânări, etc., warm placeholder imagery) so the live feed is populated.
 - **Playwright** added (dev dependency) with `scripts/shots.mjs` for device-emulated screenshots (iPhone/desktop).
 - **Capacitor** installed + `android/` project scaffolded (`appId: ro.decokubik.craftology`); uses the `server.url` pattern (the native shell loads the hosted Vercel site, since Server Actions need a Node host). See `DEPLOY.md` for the Vercel + APK steps (account/tooling-gated).
+
+## [2026-06-03] - Phase 10: LIVE on Vercel
+- **Deployed to production: https://craftology-peach.vercel.app** — reads the live Supabase DB (seeded Deco Kubik listings) in the Atelier design; verified on phone + desktop.
+- Code pushed to GitHub `Ribbon46/Craftology`; Vercel project `ribbon46s-projects/craftology` linked + deployed.
+- **Env-var workaround:** `vercel env add` stores blank values in a non-interactive shell, so the production env is injected at deploy time via `--build-env`/`--env`. Added `scripts/deploy.mjs` + **`npm run deploy`** (reads `.env.local`, injects the `NEXT_PUBLIC_SUPABASE_*` values) so every deploy stays live without relying on the Vercel env store. For git-push auto-deploy, the two vars must also be stored in the Vercel dashboard.
+- Capacitor `server.url` pointed at the live URL + `npx cap sync` (Android project ready to build once an Android SDK is installed).
