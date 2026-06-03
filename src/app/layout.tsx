@@ -29,6 +29,7 @@ export const metadata: Metadata = {
   title: { default: APP_NAME_FULL, template: '%s · Craftology' },
   description: DESCRIPTION,
   applicationName: 'Craftology',
+  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'Craftology' },
   openGraph: {
     title: APP_NAME_FULL,
     description: DESCRIPTION,

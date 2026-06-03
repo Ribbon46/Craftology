@@ -25,4 +25,11 @@ const splash = (bg, fg) => `<svg xmlns="http://www.w3.org/2000/svg" width="2732"
 await sharp(Buffer.from(icon)).png().toFile('assets/icon.png');
 await sharp(Buffer.from(splash(PAPER, CLAY))).png().toFile('assets/splash.png');
 await sharp(Buffer.from(splash(INK, CREAM))).png().toFile('assets/splash-dark.png');
-console.log('Generated assets/icon.png, splash.png, splash-dark.png');
+
+// PWA + iOS home-screen icons
+fs.mkdirSync('public', { recursive: true });
+await sharp(Buffer.from(icon)).resize(192, 192).png().toFile('public/icon-192.png');
+await sharp(Buffer.from(icon)).resize(512, 512).png().toFile('public/icon-512.png');
+await sharp(Buffer.from(icon)).resize(180, 180).png().toFile('src/app/apple-icon.png');
+
+console.log('Generated app icons, splash, PWA (192/512) + apple-touch-icon');
