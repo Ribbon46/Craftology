@@ -39,3 +39,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# UI screenshot scratch output
+/_shots/
+
+# capacitor / android build artifacts
+/android/.gradle/
+/android/build/
+/android/app/build/
+/android/local.properties
+/android/.idea/
+/android/capacitor-cordova-android-plugins/
