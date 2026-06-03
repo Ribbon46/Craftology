@@ -5,9 +5,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Search, Star } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { CATEGORIES } from '@/config/app';
 import { searchListings } from '@/lib/data/listings';
 import { Listing } from '@/lib/mock';
+import { CategoryChips } from '@/components/CategoryChips';
 
 const CATEGORY_OPTIONS = [{ id: 'all', label: 'Toate' }].concat(
   Object.entries(CATEGORIES).map(([id, label]) => ({ id, label })),
@@ -48,21 +50,12 @@ export default function SearchPage() {
           />
         </div>
 
-        <div className="flex space-x-2 overflow-x-auto pb-2 no-scrollbar">
-          {CATEGORY_OPTIONS.map((category) => (
-            <button
-              key={category.id}
-              onClick={() => setSelectedCategory(category.id)}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
-                selectedCategory === category.id
-                  ? 'bg-ink text-paper'
-                  : 'bg-cream text-ink hover:bg-line'
-              }`}
-            >
-              {category.label}
-            </button>
-          ))}
-        </div>
+        <CategoryChips
+          options={CATEGORY_OPTIONS.map((c) => ({ key: c.id, label: c.label }))}
+          active={selectedCategory}
+          onChange={setSelectedCategory}
+          className="pb-2"
+        />
       </div>
 
       <div className="px-4">
@@ -84,12 +77,13 @@ export default function SearchPage() {
             {results.map((listing) => (
               <Link key={listing.id} href={`/listings/${listing.id}`}>
                 <Card className="overflow-hidden border-line transition-all active:scale-[0.98]">
-                  <div className="aspect-square w-full overflow-hidden bg-cream">
-                    <img
+                  <div className="relative aspect-square w-full overflow-hidden bg-cream">
+                    <Image
                       src={listing.image_urls[0]}
                       alt={listing.title}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
+                      fill
+                      sizes="(min-width:1024px) 25vw, (min-width:640px) 33vw, 50vw"
+                      className="object-cover"
                     />
                   </div>
                   <CardContent className="p-3">

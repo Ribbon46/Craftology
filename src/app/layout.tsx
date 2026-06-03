@@ -43,7 +43,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
+  // No maximumScale / user-scalable:false — users must be able to pinch-zoom
+  // (WCAG 1.4.4). Proper touch targets make double-tap-zoom suppression moot.
   viewportFit: 'cover',
   // Status-bar / browser-chrome colour follows the device theme.
   themeColor: [

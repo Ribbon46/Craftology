@@ -77,7 +77,7 @@
   --surface: #fffdf7;
   --ink: #2a211a;
   --ink-soft: #6f6153;
-  --ink-faint: #9c8f7f;
+  --ink-faint: #7d6f5e; /* darkened to clear WCAG 4.5:1 on cream/surface */
   --clay: #b9572f;
   --clay-deep: #984427;
   --clay-soft: #f0d9cc;
@@ -133,7 +133,7 @@
   --surface: #241d17;   /* cards, inputs, raised surfaces */
   --ink: #f2ebdc;       /* primary text — warm parchment */
   --ink-soft: #b7a890;
-  --ink-faint: #877a68;
+  --ink-faint: #9b8d79; /* lightened to clear contrast on the espresso bg */
   --clay: #db7d52;      /* brightened so it sings against the dark */
   --clay-deep: #c2663c;
   --clay-soft: #3a2419; /* dark tinted well for avatar/icon fallbacks */

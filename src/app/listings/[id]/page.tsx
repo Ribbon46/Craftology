@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Star, Share2, ArrowLeft, MessageCircle, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { fetchListingById } from '@/lib/data/listings';
 import { Listing } from '@/lib/mock';
 import { useSession } from '@/lib/hooks';
@@ -93,11 +94,14 @@ export default function ListingDetailPage() {
       <div className="px-5 lg:px-8 lg:grid lg:grid-cols-2 lg:gap-12 lg:items-start">
         {/* Image */}
         <div className="animate-float-in lg:sticky lg:top-28">
-          <div className="aspect-square w-full overflow-hidden rounded-2xl bg-cream border border-line mb-3">
-            <img
+          <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-cream border border-line mb-3">
+            <Image
               src={listing.image_urls[selectedImage] ?? listing.image_urls[0]}
               alt={listing.title}
-              className="w-full h-full object-cover"
+              fill
+              priority
+              sizes="(min-width:1024px) 50vw, 100vw"
+              className="object-cover"
             />
           </div>
           {listing.image_urls.length > 1 && (

@@ -4,10 +4,12 @@ import { useRef, useCallback, useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Star } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { CATEGORIES, MESSAGES } from '@/config/app';
 import { fetchListingsPage } from '@/lib/data/listings';
 import { Listing } from '@/lib/mock';
 import { PullToRefresh } from '@/components/PullToRefresh';
+import { CategoryChips } from '@/components/CategoryChips';
 
 export const dynamic = 'force-dynamic';
 
@@ -68,17 +70,12 @@ export default function HomePage() {
       <div className="min-h-screen">
       {/* Category filter — sticks under the header (offset adapts to header height) */}
       <div className="sticky top-16 lg:top-[72px] z-30 bg-paper/90 backdrop-blur-md border-b border-line">
-        <div className="mx-auto w-full max-w-6xl px-4 lg:px-8 py-3 overflow-x-auto no-scrollbar">
-          <div className="flex gap-2 min-w-max">
-            <button onClick={() => setActiveCategory('all')} className={`chip ${activeCategory === 'all' ? 'chip-active' : 'chip-inactive'}`}>
-              Toate
-            </button>
-            {Object.entries(CATEGORIES).map(([key, label]) => (
-              <button key={key} onClick={() => setActiveCategory(key)} className={`chip ${activeCategory === key ? 'chip-active' : 'chip-inactive'}`}>
-                {label}
-              </button>
-            ))}
-          </div>
+        <div className="mx-auto w-full max-w-6xl px-4 lg:px-8 py-3">
+          <CategoryChips
+            options={[{ key: 'all', label: 'Toate' }, ...Object.entries(CATEGORIES).map(([key, label]) => ({ key, label }))]}
+            active={activeCategory}
+            onChange={setActiveCategory}
+          />
         </div>
       </div>
 
@@ -122,11 +119,12 @@ export default function HomePage() {
                 >
                   <div className="relative aspect-[4/5] overflow-hidden bg-cream group">
                     {listing.image_urls?.[0] ? (
-                      <img
+                      <Image
                         src={listing.image_urls[0]}
                         alt={listing.title}
-                        loading="lazy"
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        fill
+                        sizes="(min-width:1280px) 20vw, (min-width:1024px) 25vw, (min-width:640px) 33vw, 50vw"
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     ) : (
                       <div className="w-full h-full grid place-items-center text-ink-faint text-xs">Fără imagine</div>

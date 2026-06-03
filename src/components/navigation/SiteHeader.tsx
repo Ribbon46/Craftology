@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Search, Plus, Sun, Moon, LogIn } from 'lucide-react';
@@ -9,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { useTheme } from '@/lib/theme';
 import { useSession } from '@/lib/hooks';
 import { useAuthModal } from '@/lib/auth-modal';
+import { useSlidingIndicator } from '@/lib/use-sliding-indicator';
 
 const NAV = [
   { href: '/', label: 'Acasă' },
@@ -19,7 +19,8 @@ const NAV = [
 
 // Adaptive header: a compact brand bar on phones (bottom tab bar handles nav),
 // a full storefront nav on desktop (brand · links · search · Vinde). Theme
-// toggle + dedicated auth control live on the right on every size.
+// toggle + dedicated auth control live on the right on every size. The active
+// desktop link is marked by a single liquid-glass pill that slides between them.
 export function SiteHeader() {
   const pathname = usePathname();
   const { toggle } = useTheme();
@@ -31,45 +32,9 @@ export function SiteHeader() {
     user?.email?.charAt(0) ||
     'C';
 
-  // Desktop nav: a single frosted "liquid glass" pill that slides + stretches
-  // between items as the active route changes (measured from the live DOM).
-  const navRef = useRef<HTMLDivElement>(null);
-  const linkRefs = useRef<Array<HTMLAnchorElement | null>>([]);
-  const [pill, setPill] = useState<{ left: number; width: number; ready: boolean }>({
-    left: 0,
-    width: 0,
-    ready: false,
-  });
-
-  const activeIndex = NAV.findIndex((l) =>
-    l.href === '/' ? pathname === '/' : pathname.startsWith(l.href),
-  );
-
-  useEffect(() => {
-    const measure = () => {
-      const nav = navRef.current;
-      const el = activeIndex >= 0 ? linkRefs.current[activeIndex] : null;
-      if (!nav || !el || el.offsetWidth === 0) {
-        setPill((p) => (p.ready ? { ...p, ready: false } : p));
-        return;
-      }
-      const navBox = nav.getBoundingClientRect();
-      const box = el.getBoundingClientRect();
-      setPill({ left: box.left - navBox.left, width: box.width, ready: true });
-    };
-
-    measure();
-    const raf = requestAnimationFrame(measure); // re-measure after layout settles
-    window.addEventListener('resize', measure);
-    // Web fonts swap in after first paint and change text width — re-measure then.
-    if (typeof document !== 'undefined' && 'fonts' in document) {
-      document.fonts.ready.then(measure).catch(() => {});
-    }
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener('resize', measure);
-    };
-  }, [activeIndex, pathname]);
+  const activeHref =
+    NAV.find((l) => (l.href === '/' ? pathname === '/' : pathname.startsWith(l.href)))?.href ?? null;
+  const { containerRef, register, pill } = useSlidingIndicator<HTMLElement>(activeHref);
 
   return (
     <header
@@ -83,27 +48,27 @@ export function SiteHeader() {
         </Link>
 
         {/* Desktop nav links with a sliding liquid-glass active indicator */}
-        <nav ref={navRef} className="hidden lg:flex items-center gap-7 mx-auto relative">
+        <nav ref={containerRef} className="hidden lg:flex items-center gap-7 mx-auto relative">
           <span
             aria-hidden
-            className="pointer-events-none absolute top-1/2 -translate-y-1/2 h-9 rounded-full bg-clay/10 dark:bg-clay/20 ring-1 ring-clay/20 backdrop-blur-sm shadow-[0_2px_12px_-4px_rgba(185,87,47,0.45)]"
+            className="pointer-events-none absolute rounded-full bg-clay/10 dark:bg-clay/20 ring-1 ring-clay/20 backdrop-blur-sm shadow-[0_2px_12px_-4px_rgba(185,87,47,0.45)]"
             style={{
               left: pill.left - 14,
+              top: pill.top - 6,
               width: pill.width + 28,
+              height: pill.height + 12,
               opacity: pill.ready ? 1 : 0,
               transition:
-                'left .55s cubic-bezier(.22,1,.36,1), width .55s cubic-bezier(.22,1,.36,1), opacity .3s ease',
+                'left .55s cubic-bezier(.22,1,.36,1), width .55s cubic-bezier(.22,1,.36,1), top .55s ease, height .55s ease, opacity .3s ease',
             }}
           />
-          {NAV.map((link, i) => {
-            const active = i === activeIndex;
+          {NAV.map((link) => {
+            const active = link.href === activeHref;
             return (
               <Link
                 key={link.href}
                 href={link.href}
-                ref={(el) => {
-                  linkRefs.current[i] = el;
-                }}
+                ref={register(link.href)}
                 className={cn(
                   'relative z-10 text-sm tracking-wide py-1 transition-colors duration-300',
                   active ? 'text-clay' : 'text-ink-soft hover:text-ink',

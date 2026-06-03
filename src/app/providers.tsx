@@ -12,7 +12,17 @@ import { BackButtonHandler } from '@/components/BackButtonHandler';
  * Server Component (Next.js App Router convention).
  */
 export function Providers({ children }: { children: ReactNode }) {
-  const [queryClient] = useState(() => new QueryClient());
+  // A handmade-goods catalog changes slowly — keep fetched pages warm across
+  // navigation/category toggles and don't refetch on window focus, to cut
+  // redundant Supabase queries and bytes on metered mobile connections.
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: { staleTime: 60_000, gcTime: 5 * 60_000, refetchOnWindowFocus: false, retry: 1 },
+        },
+      }),
+  );
 
   return (
     <QueryClientProvider client={queryClient}>

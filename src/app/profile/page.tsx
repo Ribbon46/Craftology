@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -159,10 +160,10 @@ export default function ProfilePage() {
                     <div className="flex">
                       <button
                         onClick={() => router.push(`/listings/${listing.id}`)}
-                        className="w-24 h-24 flex-shrink-0 overflow-hidden bg-cream"
+                        className="relative w-24 h-24 flex-shrink-0 overflow-hidden bg-cream"
                       >
                         {listing.image_urls?.[0] && (
-                          <img src={listing.image_urls[0]} alt={listing.title} className="w-full h-full object-cover" />
+                          <Image src={listing.image_urls[0]} alt={listing.title} fill sizes="96px" className="object-cover" />
                         )}
                       </button>
                       <CardContent className="p-3 flex-1 min-w-0">
