@@ -22,10 +22,20 @@ const hanken = Hanken_Grotesk({
   display: 'swap',
 });
 
+const DESCRIPTION =
+  'Marketplace curat de produse handmade românești — bijuterii, haine, lumânări, accesorii și frumusețe. Vânzători verificați.';
+
 export const metadata: Metadata = {
-  title: APP_NAME_FULL,
-  description: 'Marketplace de produse handmade românești — bijuterii, haine, lumânări, accesorii și frumusețe.',
+  title: { default: APP_NAME_FULL, template: '%s · Craftology' },
+  description: DESCRIPTION,
   applicationName: 'Craftology',
+  openGraph: {
+    title: APP_NAME_FULL,
+    description: DESCRIPTION,
+    siteName: 'Craftology',
+    locale: 'ro_RO',
+    type: 'website',
+  },
 };
 
 export const viewport: Viewport = {

@@ -4,7 +4,7 @@
 
 import { createClient } from '@/lib/supabase/client';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
-import { Listing, MOCK_LISTINGS, findMockListing } from '@/lib/mock';
+import { Listing, MOCK_LISTINGS, findMockListing, SellerProfile } from '@/lib/mock';
 
 const PAGE_SIZE = 20;
 
@@ -96,4 +96,40 @@ export async function searchListings(query: string, category?: string): Promise<
     list = list.filter((l) => l.title.toLowerCase().includes(lower));
   }
   return list;
+}
+
+/** All listings for one seller (their profile page). */
+export async function fetchSellerListings(sellerId: string): Promise<Listing[]> {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('listings')
+        .select(SELECT)
+        .eq('seller_id', sellerId)
+        .order('created_at', { ascending: false });
+      if (!error && data) return data as unknown as Listing[];
+    } catch {
+      // fall through to mock
+    }
+  }
+  return MOCK_LISTINGS.filter((l) => l.seller_id === sellerId);
+}
+
+/** A single profile row (the signed-in user's own profile). */
+export async function fetchProfile(userId: string): Promise<SellerProfile | null> {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url, rating')
+        .eq('id', userId)
+        .single();
+      if (!error && data) return data as unknown as SellerProfile;
+    } catch {
+      // fall through
+    }
+  }
+  return null;
 }
