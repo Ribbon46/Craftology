@@ -19,7 +19,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen px-4 py-6 pb-24">
+    <div className="min-h-screen px-4 py-6 pb-24 mx-auto w-full max-w-2xl">
       <Link href="/profile" className="inline-flex items-center text-ink-soft hover:text-ink mb-4">
         <ArrowLeft className="w-4 h-4 mr-1" />
         Înapoi la profil

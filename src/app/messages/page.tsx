@@ -161,7 +161,7 @@ export default function MessagesPage() {
   // ---- Chat thread view ----
   if (selectedConversation) {
     return (
-      <div className="flex flex-col h-[calc(100vh-8rem)]">
+      <div className="flex flex-col h-[calc(100vh-8rem)] mx-auto w-full max-w-3xl">
         <div className="flex items-center px-4 py-3 border-b border-line bg-surface">
           <button
             onClick={() => setSelectedConversation(null)}
@@ -255,7 +255,7 @@ export default function MessagesPage() {
 
   // ---- Inbox view ----
   return (
-    <div className="min-h-screen pb-20 pt-4">
+    <div className="min-h-screen pb-20 pt-4 mx-auto w-full max-w-3xl">
       <div className="px-4 mb-6">
         <h1 className="text-2xl font-bold text-ink">Mesaje</h1>
         <p className="text-ink-soft mt-1">Conversațiile tale cu cumpărătorii și vânzătorii</p>

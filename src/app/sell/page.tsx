@@ -160,7 +160,7 @@ export default function SellPage() {
   }
 
   return (
-    <div className="min-h-screen pb-20 pt-4">
+    <div className="min-h-screen pb-20 pt-4 mx-auto w-full max-w-2xl">
       <div className="px-4 mb-6">
         <h1 className="text-2xl font-bold text-ink">Vinde un produs</h1>
         <p className="text-ink-soft mt-1">Completează informațiile produsului tău handmade</p>

@@ -82,17 +82,17 @@ export default function ListingDetailPage() {
   const formatPrice = (n: number) => new Intl.NumberFormat('ro-RO', { maximumFractionDigits: 0 }).format(n);
 
   return (
-    <div className="min-h-screen pb-8">
-      <div className="px-5 pt-4 pb-3">
+    <div className="min-h-screen pb-8 mx-auto w-full max-w-5xl">
+      <div className="px-5 lg:px-8 pt-4 pb-3">
         <Link href="/" className="inline-flex items-center text-sm text-ink-soft hover:text-clay transition-colors">
           <ArrowLeft className="w-4 h-4 mr-1.5" />
           Înapoi la feed
         </Link>
       </div>
 
-      <div className="px-5">
+      <div className="px-5 lg:px-8 lg:grid lg:grid-cols-2 lg:gap-12 lg:items-start">
         {/* Image */}
-        <div className="animate-float-in">
+        <div className="animate-float-in lg:sticky lg:top-28">
           <div className="aspect-square w-full overflow-hidden rounded-2xl bg-cream border border-line mb-3">
             <img
               src={listing.image_urls[selectedImage] ?? listing.image_urls[0]}
@@ -117,8 +117,8 @@ export default function ListingDetailPage() {
           )}
         </div>
 
-        {/* Title + price */}
-        <div className="mt-6">
+        {/* Info column */}
+        <div className="mt-6 lg:mt-0">
           <div className="flex items-center justify-between gap-3 mb-2">
             <span className="px-3 py-1 rounded-full bg-clay-soft text-clay-deep text-[11px] font-semibold uppercase tracking-wider">
               {listing.category}
@@ -130,14 +130,13 @@ export default function ListingDetailPage() {
               </span>
             )}
           </div>
-          <h1 className="font-display text-[28px] leading-tight text-ink text-balance mb-3">{listing.title}</h1>
+          <h1 className="font-display text-[28px] lg:text-[40px] leading-tight text-ink text-balance mb-3">{listing.title}</h1>
           <div className="flex items-baseline gap-1.5">
             <span className="price text-4xl font-semibold text-clay">{formatPrice(listing.price)}</span>
             <span className="text-ink-soft text-lg">lei</span>
           </div>
-        </div>
 
-        {/* Seller */}
+          {/* Seller */}
         <div className="mt-6 flex items-center gap-3 p-4 rounded-2xl bg-surface border border-line">
           <div className="w-11 h-11 rounded-full overflow-hidden bg-cream ring-1 ring-line grid place-items-center flex-shrink-0">
             {seller?.avatar_url ? (
@@ -187,6 +186,7 @@ export default function ListingDetailPage() {
             <Share2 className="w-4 h-4 mr-2" />
             Partajează
           </Button>
+        </div>
         </div>
       </div>
     </div>

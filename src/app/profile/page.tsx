@@ -76,7 +76,7 @@ export default function ProfilePage() {
   const formatPrice = (n: number) => new Intl.NumberFormat('ro-RO', { maximumFractionDigits: 0 }).format(n);
 
   return (
-    <div className="min-h-screen pb-20 pt-4">
+    <div className="min-h-screen pb-20 pt-4 mx-auto w-full max-w-2xl">
       <div className="px-4 mb-5">
         <h1 className="font-display text-2xl text-ink">Profilul meu</h1>
       </div>

@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import { Fraunces, Hanken_Grotesk } from 'next/font/google';
 import { BottomNav } from '@/components/navigation/BottomNav';
-import { TopNav } from '@/components/navigation/TopNav';
+import { SiteHeader } from '@/components/navigation/SiteHeader';
+import { SiteFooter } from '@/components/navigation/SiteFooter';
 import { Providers } from './providers';
 import { APP_NAME_FULL } from '@/config/app';
 import './globals.css';
@@ -56,10 +57,11 @@ export default function RootLayout({
     <html lang="ro" className={`${fraunces.variable} ${hanken.variable}`}>
       <body className="paper-grain min-h-screen bg-cream text-ink font-sans">
         <Providers>
-          {/* Phone-width atelier column, framed on the cream backdrop for desktop */}
-          <div className="relative max-w-md mx-auto min-h-screen flex flex-col bg-paper md:border-x md:border-line md:shadow-atelier-lg">
-            <TopNav />
-            <main className="flex-1 pb-28">{children}</main>
+          <div className="min-h-screen flex flex-col">
+            <SiteHeader />
+            {/* Mobile keeps bottom-nav clearance; desktop hands spacing to the footer */}
+            <main className="flex-1 pb-28 lg:pb-0">{children}</main>
+            <SiteFooter />
             <BottomNav />
           </div>
         </Providers>

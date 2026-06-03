@@ -39,14 +39,18 @@ export default function HomePage() {
   const formatPrice = (price: number) =>
     new Intl.NumberFormat('ro-RO', { style: 'currency', currency: 'RON', maximumFractionDigits: 0 }).format(price);
 
-  if (status === 'pending') {
-    return (
-      <div className="flex items-center justify-center h-[60vh]">
-        <span className="font-display italic text-ink-soft">Se încarcă produse…</span>
-      </div>
-    );
-  }
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const days = Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24));
+    if (days <= 0) return 'Astăzi';
+    if (days === 1) return 'Ieri';
+    if (days < 7) return `${days} zile în urmă`;
+    return date.toLocaleDateString('ro-RO', { day: 'numeric', month: 'numeric' });
+  };
 
+  if (status === 'pending') {
+    return <div className="flex items-center justify-center h-[60vh] font-display italic text-ink-soft">Se încarcă produse…</div>;
+  }
   if (status === 'error') {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] px-6 text-center">
@@ -60,22 +64,15 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen">
-      {/* Category filter — sticks below the brand nav */}
-      <div className="sticky top-16 z-30 bg-paper/90 backdrop-blur-md border-b border-line">
-        <div className="px-4 py-3 overflow-x-auto no-scrollbar">
+      {/* Category filter — sticks under the header (offset adapts to header height) */}
+      <div className="sticky top-16 lg:top-[72px] z-30 bg-paper/90 backdrop-blur-md border-b border-line">
+        <div className="mx-auto w-full max-w-6xl px-4 lg:px-8 py-3 overflow-x-auto no-scrollbar">
           <div className="flex gap-2 min-w-max">
-            <button
-              onClick={() => setActiveCategory('all')}
-              className={`chip ${activeCategory === 'all' ? 'chip-active' : 'chip-inactive'}`}
-            >
+            <button onClick={() => setActiveCategory('all')} className={`chip ${activeCategory === 'all' ? 'chip-active' : 'chip-inactive'}`}>
               Toate
             </button>
             {Object.entries(CATEGORIES).map(([key, label]) => (
-              <button
-                key={key}
-                onClick={() => setActiveCategory(key)}
-                className={`chip ${activeCategory === key ? 'chip-active' : 'chip-inactive'}`}
-              >
+              <button key={key} onClick={() => setActiveCategory(key)} className={`chip ${activeCategory === key ? 'chip-active' : 'chip-inactive'}`}>
                 {label}
               </button>
             ))}
@@ -83,17 +80,20 @@ export default function HomePage() {
         </div>
       </div>
 
-      <main className="px-4 pt-5 pb-6">
-        <header className="mb-5">
-          <p className="text-[11px] uppercase tracking-[0.25em] text-clay mb-1">Atelier</p>
-          <h1 className="font-display text-[26px] leading-tight text-ink text-balance">
-            {activeCategory === 'all'
-              ? 'Lucrate manual, cu suflet'
-              : CATEGORIES[activeCategory as keyof typeof CATEGORIES]}
+      <main className="mx-auto w-full max-w-6xl px-4 lg:px-8">
+        {/* Editorial hero — compact on phone, full headline on desktop */}
+        <header className="pt-5 lg:pt-14 mb-5 lg:mb-10">
+          <p className="text-[11px] uppercase tracking-[0.25em] text-clay mb-1 lg:mb-3">Atelier · Deco Kubik</p>
+          <h1 className="font-display text-[26px] lg:text-[52px] leading-[1.05] text-ink text-balance max-w-3xl">
+            {activeCategory === 'all' ? 'Lucrate manual, cu suflet' : CATEGORIES[activeCategory as keyof typeof CATEGORIES]}
           </h1>
-          <p className="text-sm text-ink-soft mt-1">
+          <p className="hidden lg:block text-lg text-ink-soft mt-4 max-w-xl leading-relaxed">
+            Piese unicat de la creatori români verificați — fiecare produs, făcut cu mâna.
+          </p>
+          <p className="text-sm text-ink-soft mt-1 lg:mt-5">
             {listings.length} {listings.length === 1 ? 'produs disponibil' : 'produse disponibile'}
           </p>
+          <div className="hidden lg:block rule-craft w-24 mt-7" />
         </header>
 
         {listings.length === 0 ? (
@@ -110,7 +110,7 @@ export default function HomePage() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 lg:gap-6 pb-10">
               {listings.map((listing, i) => (
                 <Link
                   key={listing.id}
@@ -133,11 +133,14 @@ export default function HomePage() {
                       {listing.category}
                     </span>
                   </div>
-                  <div className="p-3">
-                    <h3 className="font-display text-[15px] leading-snug text-ink line-clamp-2 min-h-[2.5em] mb-1">
+                  <div className="p-3 lg:p-4">
+                    <h3 className="font-display text-[15px] lg:text-base leading-snug text-ink line-clamp-2 min-h-[2.5em] mb-1">
                       {listing.title}
                     </h3>
-                    <span className="price text-lg font-semibold text-ink">{formatPrice(listing.price)}</span>
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="price text-lg lg:text-xl font-semibold text-ink">{formatPrice(listing.price)}</span>
+                      <span className="hidden lg:block text-xs text-ink-faint">{formatTimeAgo(listing.created_at)}</span>
+                    </div>
                     <div className="flex items-center gap-1.5 mt-2.5 pt-2.5 border-t border-line/70 min-w-0">
                       <div className="w-5 h-5 rounded-full bg-cream overflow-hidden flex-shrink-0 ring-1 ring-line">
                         {listing.profiles?.avatar_url ? (
@@ -148,9 +151,7 @@ export default function HomePage() {
                           </span>
                         )}
                       </div>
-                      <span className="text-[11px] text-ink-soft truncate min-w-0">
-                        {listing.profiles?.username ?? 'vânzător'}
-                      </span>
+                      <span className="text-[11px] text-ink-soft truncate min-w-0">{listing.profiles?.username ?? 'vânzător'}</span>
                       {listing.profiles?.rating != null && (
                         <span className="ml-auto flex items-center gap-0.5 text-[11px] font-medium text-gold flex-shrink-0">
                           <Star className="w-3 h-3 fill-gold" />
@@ -168,14 +169,12 @@ export default function HomePage() {
                 <div className="w-6 h-6 border-2 border-clay border-t-transparent rounded-full animate-spin" />
               </div>
             )}
-
             {!hasNextPage && (
               <div className="py-10 text-center">
                 <div className="rule-craft w-16 mx-auto mb-3" />
                 <p className="font-display italic text-ink-soft text-sm">{MESSAGES.endOfFeed}</p>
               </div>
             )}
-
             <div ref={sentinelRef} className="h-1" />
           </>
         )}

@@ -35,7 +35,7 @@ export default function SearchPage() {
   }, [searchQuery, selectedCategory]);
 
   return (
-    <div className="min-h-screen pb-20 pt-4">
+    <div className="min-h-screen pb-20 pt-4 mx-auto w-full max-w-5xl">
       <div className="px-4 mb-6">
         <div className="relative mb-4">
           <Search className="absolute left-3 top-2.5 h-5 w-5 text-ink-faint" />
@@ -80,7 +80,7 @@ export default function SearchPage() {
             <p className="text-sm">Încearcă să cauți după alt termen.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {results.map((listing) => (
               <Link key={listing.id} href={`/listings/${listing.id}`}>
                 <Card className="overflow-hidden border-line transition-all active:scale-[0.98]">
