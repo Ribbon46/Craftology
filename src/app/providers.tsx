@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, ReactNode } from 'react';
 import { AuthModalProvider } from '@/lib/auth-modal';
 import { AuthModal } from '@/components/auth/AuthModal';
+import { BackButtonHandler } from '@/components/BackButtonHandler';
 
 /**
  * Client-side provider tree. Kept separate so the root layout can remain a
@@ -18,6 +19,8 @@ export function Providers({ children }: { children: ReactNode }) {
         {children}
         {/* Single, globally-controlled auth modal */}
         <AuthModal />
+        {/* Native Android Back → previous screen instead of exit */}
+        <BackButtonHandler />
       </AuthModalProvider>
     </QueryClientProvider>
   );
