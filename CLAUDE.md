@@ -3,6 +3,7 @@
 ## Tech Stack
 - **Framework:** Next.js 16 (App Router, Turbopack)
 - **Styling:** Tailwind CSS (v4), shadcn/ui — **"Atelier" theme** (warm cream/espresso/clay/sage/gold). Fonts: **Fraunces** (display, via `--font-fraunces`) + **Hanken Grotesk** (body, `--font-hanken`), `next/font` w/ `latin-ext`. Brand color utilities: `bg-clay text-ink border-line bg-cream bg-surface text-gold` etc. (defined in `globals.css` `@theme`). Paper-grain via `.paper-grain`; cards via `.atelier-card`; chips via `.chip`.
+- **SSR data layer:** client pages read via `src/lib/data/listings.ts` (browser client, used by React Query). Server Components read via `src/lib/data/listings.server.ts` (`fetchListingsPageServer`/`fetchListingByIdServer`) — a **cookieless anon client** so public reads stay ISR-cacheable (never use the cookie-based `createServerClient` for public catalog reads, or the page is forced dynamic). Mutations `revalidatePath('/')`.
 - **Liquid-glass indicator:** `src/lib/use-sliding-indicator.tsx` (measure active item → slide a frosted clay pill) powers the desktop nav (`SiteHeader`), the phone bottom bar (`BottomNav`), and the category chips (`CategoryChips`, used on Acasă + Caută). Reuse it for any new "active tab" UI rather than re-implementing.
 - **Images:** product images use `next/image` (`fill` + `sizes`); `next.config.ts` whitelists `**.supabase.co`/`placehold.co`/`ui-avatars.com` and allows SVG **only** with attachment-disposition + sandbox CSP (placeholder host serves SVG; real uploads are raster-only). Any new image host must be added to `remotePatterns` or rendering 400s.
 - **Theming (light/dark):** Each brand color in `@theme inline` is `var(--cream)` / `var(--ink)` / … — those switchable vars are set in `:root` (light Atelier) and overridden in `.dark` (nocturne). Flipping the `.dark` class on `<html>` re-skins the whole app (utilities *and* `.chip`/`.atelier-card` CSS) with no per-component dark classes. `src/lib/theme.tsx` owns state: defaults to the device's `prefers-color-scheme` when the user hasn't chosen, remembers an explicit pick in `localStorage['craftology-theme']`, and follows the system until then. A pre-paint inline script in `layout.tsx` (`THEME_INIT`) sets the class before first frame (no flash) — **keep it in sync with `theme.tsx`**. Toggle lives in `SiteHeader` (CSS-driven icons, no hydration flash) and `profile/settings`. Don't pair `text-white` with `bg-ink` (ink inverts to cream) — use `text-paper`; media overlays over photos use fixed `bg-black/*`.
@@ -18,12 +19,12 @@
 ```
 src/app/
 ├── layout.tsx          # Root layout with QueryClientProvider, mobile container
-├── page.tsx            # Home page (Vinted-style feed with infinite scroll)
+├── page.tsx            # Home: Server Component (ISR revalidate 60s) → HomeFeed.tsx (client island, infinite scroll/categories/pull-to-refresh, React Query seeded with the server-fetched first page)
 ├── search/page.tsx     # Search page with filters
 ├── sell/page.tsx       # Product listing form with dropzone
 ├── messages/page.tsx   # Messages/inbox
 ├── profile/page.tsx    # User profile with tabs
-└── listings/[id]/page.tsx  # Product detail with carousel
+└── listings/[id]/page.tsx  # Product detail: Server Component (ISR 300s) w/ generateMetadata (OG/Twitter) + notFound() → ListingDetailClient.tsx (gallery/buy/message island)
 ```
 
 ## Component Hierarchy

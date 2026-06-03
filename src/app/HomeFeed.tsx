@@ -1,0 +1,193 @@
+'use client';
+
+import { useRef, useCallback, useState } from 'react';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { Star } from 'lucide-react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { CATEGORIES, MESSAGES } from '@/config/app';
+import { fetchListingsPage, type ListingsPage } from '@/lib/data/listings';
+import { Listing } from '@/lib/mock';
+import { PullToRefresh } from '@/components/PullToRefresh';
+import { CategoryChips } from '@/components/CategoryChips';
+
+// Client feed island. The first "all" page is fetched on the server (page.tsx)
+// and passed in as `initialPage`, so the grid is in the initial HTML (fast LCP +
+// SEO) while infinite scroll, category switching, and pull-to-refresh stay
+// client-side. React Query is seeded so the default view doesn't refetch on mount.
+export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
+  const [activeCategory, setActiveCategory] = useState<string>('all');
+
+  const { data, error, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage, status, refetch } =
+    useInfiniteQuery({
+      queryKey: ['listings', activeCategory],
+      queryFn: ({ pageParam }) => fetchListingsPage({ cursor: pageParam, category: activeCategory }),
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+      initialPageParam: 0 as number | null,
+      initialData:
+        activeCategory === 'all'
+          ? { pages: [initialPage], pageParams: [0 as number | null] }
+          : undefined,
+    });
+
+  const observer = useRef<IntersectionObserver | null>(null);
+  const sentinelRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (isFetching) return;
+      if (observer.current) observer.current.disconnect();
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasNextPage) fetchNextPage();
+      });
+      if (node) observer.current.observe(node);
+    },
+    [isFetching, hasNextPage, fetchNextPage],
+  );
+
+  const listings: Listing[] = data?.pages.flatMap((page) => page.data) ?? [];
+
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat('ro-RO', { style: 'currency', currency: 'RON', maximumFractionDigits: 0 }).format(price);
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const days = Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24));
+    if (days <= 0) return 'Astăzi';
+    if (days === 1) return 'Ieri';
+    if (days < 7) return `${days} zile în urmă`;
+    return date.toLocaleDateString('ro-RO', { day: 'numeric', month: 'numeric' });
+  };
+
+  if (status === 'error') {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] px-6 text-center">
+        <p className="text-clay-deep mb-3">Eroare la încărcare: {(error as Error).message}</p>
+        <button onClick={() => window.location.reload()} className="px-5 py-2 rounded-full bg-ink text-paper text-sm">
+          Încearcă din nou
+        </button>
+      </div>
+    );
+  }
+  // Pending with no cached data yet (e.g. switching to a fresh category). The
+  // default "all" view is seeded from the server, so this won't flash on load.
+  if (!data) {
+    return <div className="flex items-center justify-center h-[60vh] font-display italic text-ink-soft">Se încarcă produse…</div>;
+  }
+
+  return (
+    <PullToRefresh onRefresh={() => refetch()}>
+      <div className="min-h-screen">
+      {/* Category filter — sticks under the header (offset adapts to header height) */}
+      <div className="sticky top-16 lg:top-[72px] z-30 bg-paper/90 backdrop-blur-md border-b border-line">
+        <div className="mx-auto w-full max-w-6xl px-4 lg:px-8 py-3">
+          <CategoryChips
+            options={[{ key: 'all', label: 'Toate' }, ...Object.entries(CATEGORIES).map(([key, label]) => ({ key, label }))]}
+            active={activeCategory}
+            onChange={setActiveCategory}
+          />
+        </div>
+      </div>
+
+      <main className="mx-auto w-full max-w-6xl px-4 lg:px-8">
+        {/* Editorial hero — compact on phone, full headline on desktop */}
+        <header className="pt-5 lg:pt-14 mb-5 lg:mb-10">
+          <p className="text-[11px] uppercase tracking-[0.25em] text-clay mb-1 lg:mb-3">Atelier · Deco Kubik</p>
+          <h1 className="font-display text-[26px] lg:text-[52px] leading-[1.05] text-ink text-balance max-w-3xl">
+            {activeCategory === 'all' ? 'Lucrate manual, cu suflet' : CATEGORIES[activeCategory as keyof typeof CATEGORIES]}
+          </h1>
+          <p className="hidden lg:block text-lg text-ink-soft mt-4 max-w-xl leading-relaxed">
+            Piese unicat de la creatori români verificați — fiecare produs, făcut cu mâna.
+          </p>
+          <p className="text-sm text-ink-soft mt-1 lg:mt-5">
+            {listings.length} {listings.length === 1 ? 'produs disponibil' : 'produse disponibile'}
+          </p>
+          <div className="hidden lg:block rule-craft w-24 mt-7" />
+        </header>
+
+        {listings.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+            <div className="w-16 h-16 rounded-full bg-clay-soft grid place-items-center mb-4">
+              <Star className="w-7 h-7 text-clay" />
+            </div>
+            <h3 className="font-display text-lg text-ink mb-1.5 text-balance">{MESSAGES.noListings}</h3>
+            {activeCategory !== 'all' && (
+              <button onClick={() => setActiveCategory('all')} className="text-clay text-sm underline underline-offset-4 mt-1">
+                Vezi toate categoriile
+              </button>
+            )}
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 lg:gap-6 pb-10">
+              {listings.map((listing, i) => (
+                <Link
+                  key={listing.id}
+                  href={`/listings/${listing.id}`}
+                  className="atelier-card reveal block"
+                  style={{ animationDelay: `${Math.min(i, 12) * 45}ms` }}
+                >
+                  <div className="relative aspect-[4/5] overflow-hidden bg-cream group">
+                    {listing.image_urls?.[0] ? (
+                      <Image
+                        src={listing.image_urls[0]}
+                        alt={listing.title}
+                        fill
+                        sizes="(min-width:1280px) 20vw, (min-width:1024px) 25vw, (min-width:640px) 33vw, 50vw"
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="w-full h-full grid place-items-center text-ink-faint text-xs">Fără imagine</div>
+                    )}
+                    <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-paper/90 backdrop-blur-sm text-[9px] font-semibold uppercase tracking-wider text-clay">
+                      {listing.category}
+                    </span>
+                  </div>
+                  <div className="p-3 lg:p-4">
+                    <h3 className="font-display text-[15px] lg:text-base leading-snug text-ink line-clamp-2 min-h-[2.5em] mb-1">
+                      {listing.title}
+                    </h3>
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="price text-lg lg:text-xl font-semibold text-ink">{formatPrice(listing.price)}</span>
+                      <span className="hidden lg:block text-xs text-ink-faint">{formatTimeAgo(listing.created_at)}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-2.5 pt-2.5 border-t border-line/70 min-w-0">
+                      <div className="w-5 h-5 rounded-full bg-cream overflow-hidden flex-shrink-0 ring-1 ring-line">
+                        {listing.profiles?.avatar_url ? (
+                          <img src={listing.profiles.avatar_url} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="grid place-items-center w-full h-full text-[9px] font-semibold text-ink-soft">
+                            {listing.profiles?.username?.charAt(0).toUpperCase() ?? 'V'}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[11px] text-ink-soft truncate min-w-0">{listing.profiles?.username ?? 'vânzător'}</span>
+                      {listing.profiles?.rating != null && (
+                        <span className="ml-auto flex items-center gap-0.5 text-[11px] font-medium text-gold flex-shrink-0">
+                          <Star className="w-3 h-3 fill-gold" />
+                          {listing.profiles.rating.toFixed(1)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+
+            {isFetchingNextPage && (
+              <div className="py-6 flex justify-center">
+                <div className="w-6 h-6 border-2 border-clay border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+            {!hasNextPage && (
+              <div className="py-10 text-center">
+                <div className="rule-craft w-16 mx-auto mb-3" />
+                <p className="font-display italic text-ink-soft text-sm">{MESSAGES.endOfFeed}</p>
+              </div>
+            )}
+            <div ref={sentinelRef} className="h-1" />
+          </>
+        )}
+      </main>
+      </div>
+    </PullToRefresh>
+  );
+}
