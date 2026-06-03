@@ -1,6 +1,7 @@
 'use server';
 
 import { createServerClient } from '@/lib/supabase/server';
+import { checkRateLimit } from '@/lib/ratelimit';
 import { listingFormSchema } from '@/schemas/listing';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
@@ -14,6 +15,9 @@ export async function createListing(formData: FormData) {
   if (authError || !user) {
     return { error: 'Autentificare necesară' };
   }
+
+  const rl = await checkRateLimit('listing', user.id);
+  if (!rl.ok) return { error: 'Ai creat prea multe anunțuri într-un timp scurt. Încearcă mai târziu.' };
 
   // Validate form data
   const validatedData = listingFormSchema.safeParse({

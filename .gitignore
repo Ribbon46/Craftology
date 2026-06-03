@@ -42,6 +42,13 @@ next-env.d.ts
 
 # UI screenshot scratch output
 /_shots/
+/_verify/
+
+# playwright e2e output
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
 
 # capacitor / android build artifacts
 /android/.gradle/

@@ -96,6 +96,37 @@ Payments go to the shop's own Stripe account (single-seller MVP).
 > Multi-seller payouts (money straight to each seller) = **Stripe Connect** with
 > destination charges — a future upgrade once there are independent sellers.
 
+---
+
+## 4. Rate limiting (optional — built, add Upstash keys to activate)
+
+Per-user throttling on the write actions (messages, conversations, listings) is
+wired in `src/lib/ratelimit.ts` but **inert until both Upstash REST vars are set**.
+
+> ⚠️ The Upstash **account/management API key** (a UUID) is NOT what's needed here.
+> `@upstash/ratelimit` needs a specific Redis database's REST credentials.
+
+1. console.upstash.com → create a **Redis** database (free tier is plenty).
+2. Open it → **REST API** section → copy both values:
+   ```
+   UPSTASH_REDIS_REST_URL=https://your-db.upstash.io
+   UPSTASH_REDIS_REST_TOKEN=AX…   # long token, not the account UUID
+   ```
+3. Add both to `.env.local` (local) **and** Vercel env (production), then redeploy.
+
+Limits (sliding window, per user): 20 messages/min, 10 new conversations/min,
+10 listings/hour. Fails **open** on a Redis error so a hiccup never blocks users.
+
+## Testing
+
+End-to-end tests (Playwright) cover the critical paths — feed render + category
+filter, listing detail + actions, real 404 for bad ids, Open Graph tags on shared
+links, search empty state, the auth modal, and the dark-theme toggle/persistence.
+
+```bash
+npm run test:e2e          # spins up a dev server, runs mobile + desktop projects
+```
+
 ## Future
 - **Stripe Connect** for seller-direct payouts.
 - Per-conversation unread counts + last-message preview in `getConversations`.

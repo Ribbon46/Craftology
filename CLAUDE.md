@@ -13,6 +13,8 @@
 - **Backend:** Supabase (PostgreSQL with RLS enabled)
 - **Auth:** @supabase/ssr (Server-Side Rendering cookie management)
 - **Validation:** Zod (form schemas)
+- **Rate limiting:** @upstash/ratelimit + @upstash/redis (`src/lib/ratelimit.ts`, gated by `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN`; inert + fails-open when unset)
+- **E2E:** Playwright (`@playwright/test`, `e2e/`, `npm run test:e2e` — mobile + desktop projects against a dev server)
 - **UI Components:** button, dialog, input, dropdown-menu, card, tabs, badge, textarea, Dropzone
 
 ## Current Routing Structure

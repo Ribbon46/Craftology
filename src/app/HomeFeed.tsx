@@ -131,6 +131,7 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
                         src={listing.image_urls[0]}
                         alt={listing.title}
                         fill
+                        priority={i < 4}
                         sizes="(min-width:1280px) 20vw, (min-width:1024px) 25vw, (min-width:640px) 33vw, 50vw"
                         className="object-cover transition-transform duration-500 group-hover:scale-105"
                       />

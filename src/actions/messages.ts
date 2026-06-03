@@ -1,6 +1,7 @@
 'use server';
 
 import { createServerClient } from '@/lib/supabase/server';
+import { checkRateLimit } from '@/lib/ratelimit';
 import { revalidatePath } from 'next/cache';
 
 export async function createConversation(listingId: string) {
@@ -10,6 +11,9 @@ export async function createConversation(listingId: string) {
   if (authError || !user) {
     return { error: 'Autentificare necesară' };
   }
+
+  const rl = await checkRateLimit('conversation', user.id);
+  if (!rl.ok) return { error: 'Prea multe conversații noi. Încearcă din nou peste un minut.' };
 
   // Never trust client-supplied participant ids. The buyer is ALWAYS the
   // authenticated caller; the seller is whoever actually owns the listing.
@@ -66,6 +70,9 @@ export async function createMessage(conversationId: string, text: string) {
   if (authError || !user) {
     return { error: 'Autentificare necesară' };
   }
+
+  const rl = await checkRateLimit('message', user.id);
+  if (!rl.ok) return { error: 'Trimiți mesaje prea repede. Așteaptă un minut.' };
 
   const trimmed = text.trim();
   if (!trimmed) {
