@@ -25,13 +25,15 @@ src/app/
 
 ## Component Hierarchy
 - `components/ui/`: shadcn components + Dropzone (image upload)
-- `components/navigation/`: TopNav, BottomNav
+- `components/navigation/`: **SiteHeader** (adaptive: phone brand bar / desktop full nav), **SiteFooter** (desktop only), **BottomNav** (mobile only, `lg:hidden`)
 - `components/auth/`: AuthModal
 - `actions/`: Server actions for listings, messages
 - `schemas/`: Zod validation schemas
 - `config/app.ts`: Application configuration, Romanian constants
 
-## Mobile-First Design
+## Responsive / Adaptive Design
+- **Adapts by width:** phone = app column + bottom tab bar; **desktop (`lg`+) = full-width storefront** (top nav, editorial Fraunces hero, 2→3→4→5-col grid, 2-col listing detail, footer). Tablet/landscape sits between. No global phone-column wrapper — `<main>` is full-width; each page sets its own desktop `max-w-*`. The Capacitor Android app + iPhone PWA load the live site, so they inherit all of this.
+- Mobile-first base:
 - Max-width container (640px) with mx-auto centering
 - Safe area padding (top: env(safe-area-inset-top))
 - Bottom nav with safe area bottom padding (env(safe-area-inset-bottom))

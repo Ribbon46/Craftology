@@ -105,3 +105,10 @@ All notable changes to this project will be documented in this file.
   - `src/lib/stripe.ts` (gated like Supabase — app runs without keys), `createCheckoutSession` server action (`src/actions/checkout.ts`), a **"Cumpără · X lei"** button on the listing detail (redirects to Stripe-hosted Checkout), `/checkout/success` page, and `/api/webhooks/stripe` which marks a listing `sold` on `checkout.session.completed` (uses `SUPABASE_SERVICE_ROLE_KEY` to bypass RLS).
   - Inert until `STRIPE_SECRET_KEY` is set (button reports "not configured"). Env placeholders in `.env.local`; activation steps in `DEPLOY.md`.
 - Build green: 13 routes.
+
+## [2026-06-03] - Phase 12: Adaptive desktop UI + PWA + native polish
+- **Adaptive shell** (`SiteHeader` + `SiteFooter`, replacing the phone-column wrapper): phone keeps the app column + bottom tab bar; **desktop (lg+) is a full storefront** — top nav (brand · links · search · Vinde), an editorial Fraunces hero, a 2→3→4→5-col product grid, a **2-column listing detail** (sticky gallery), and a footer. Content pages get desktop max-widths; search grid widened. Verified at 360 / 390 / 768 / 1440. Removed dead `TopNav`.
+- **PWA**: `manifest.ts` + icons (192/512/maskable) + apple-touch-icon + appleWebApp metadata → installable on iPhone (Add to Home Screen) and Android, no App Store.
+- **Branding**: generated a clay-"C" launcher icon + splash (`@capacitor/assets`) + web favicon; rebuilt + installed on the S25+.
+- **Android Back** navigates in-app history instead of exiting (`@capacitor/app` + `BackButtonHandler`).
+- Note: native **iOS App Store** app requires a Mac (Xcode) — scaffolding documented; the PWA covers iPhone users now.
