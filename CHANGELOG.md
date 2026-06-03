@@ -98,3 +98,10 @@ All notable changes to this project will be documented in this file.
 - Code pushed to GitHub `Ribbon46/Craftology`; Vercel project `ribbon46s-projects/craftology` linked + deployed.
 - **Env-var workaround:** `vercel env add` stores blank values in a non-interactive shell, so the production env is injected at deploy time via `--build-env`/`--env`. Added `scripts/deploy.mjs` + **`npm run deploy`** (reads `.env.local`, injects the `NEXT_PUBLIC_SUPABASE_*` values) so every deploy stays live without relying on the Vercel env store. For git-push auto-deploy, the two vars must also be stored in the Vercel dashboard.
 - Capacitor `server.url` pointed at the live URL + `npx cap sync` (Android project ready to build once an Android SDK is installed).
+
+## [2026-06-03] - Phase 11: Android APK on device + Stripe checkout
+- Built the debug APK and **installed + launched it on a Samsung S25+** over adb. Confirmed env persistence: a stored-env-only deploy serves live data (the dashboard vars are "Sensitive", which is why `vercel env pull` reads them blank). Git-push auto-deploy is now live-data.
+- **Stripe Checkout** added (single-account → the shop's Stripe account; Stripe Connect for seller-direct payouts is the future multi-seller step):
+  - `src/lib/stripe.ts` (gated like Supabase — app runs without keys), `createCheckoutSession` server action (`src/actions/checkout.ts`), a **"Cumpără · X lei"** button on the listing detail (redirects to Stripe-hosted Checkout), `/checkout/success` page, and `/api/webhooks/stripe` which marks a listing `sold` on `checkout.session.completed` (uses `SUPABASE_SERVICE_ROLE_KEY` to bypass RLS).
+  - Inert until `STRIPE_SECRET_KEY` is set (button reports "not configured"). Env placeholders in `.env.local`; activation steps in `DEPLOY.md`.
+- Build green: 13 routes.

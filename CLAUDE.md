@@ -62,6 +62,10 @@ See `supabase/schema.sql` for profiles, listings, conversations, messages tables
 - `createMessage` - Send message
 - `getMessages` - Fetch conversation
 - `getConversations` - Fetch inbox
+- `createCheckoutSession` - Stripe Checkout for a listing (`src/actions/checkout.ts`)
+
+## Payments (Stripe)
+- `src/lib/stripe.ts` (`isStripeConfigured()` gate, like Supabase), `createCheckoutSession` action, "Cumpără" button on listing detail, `/checkout/success`, webhook `/api/webhooks/stripe` (marks listing sold; needs `SUPABASE_SERVICE_ROLE_KEY`). Single-account → shop's Stripe; Connect = future. Inert until `STRIPE_SECRET_KEY` set. See `DEPLOY.md`.
 
 ## Demo vs Live Mode
 The app runs fully on mock data until valid Supabase keys exist. `isSupabaseConfigured()` (`src/lib/supabase/config.ts`) is the switch; `src/lib/data/listings.ts` and the message actions read live data when configured and fall back to mock otherwise. Mock data lives in `src/lib/mock.ts`; the mock Supabase client in `src/lib/supabase/mock-client.ts`.

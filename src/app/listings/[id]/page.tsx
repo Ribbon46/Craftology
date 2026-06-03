@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Star, Share2, ArrowLeft, MessageCircle } from 'lucide-react';
+import { Star, Share2, ArrowLeft, MessageCircle, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
 import { fetchListingById } from '@/lib/data/listings';
 import { Listing } from '@/lib/mock';
 import { useSession } from '@/lib/hooks';
 import { useAuthModal } from '@/lib/auth-modal';
 import { createConversation } from '@/actions/messages';
+import { createCheckoutSession } from '@/actions/checkout';
 
 export default function ListingDetailPage() {
   const params = useParams<{ id: string }>();
@@ -22,6 +23,8 @@ export default function ListingDetailPage() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [following, setFollowing] = useState(false);
   const [messaging, setMessaging] = useState(false);
+  const [buying, setBuying] = useState(false);
+  const [buyError, setBuyError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -39,6 +42,19 @@ export default function ListingDetailPage() {
     await createConversation(user.id, listing.seller_id, listing.id);
     setMessaging(false);
     router.push('/messages');
+  };
+
+  const handleBuy = async () => {
+    if (!listing) return;
+    setBuyError(null);
+    setBuying(true);
+    const res = await createCheckoutSession(listing.id);
+    if ('url' in res && res.url) {
+      window.location.href = res.url;
+    } else {
+      setBuyError(('error' in res && res.error) || 'Plata nu a putut fi inițiată.');
+      setBuying(false);
+    }
   };
 
   const handleShare = async () => {
@@ -156,11 +172,18 @@ export default function ListingDetailPage() {
 
         {/* Actions */}
         <div className="mt-7 space-y-3">
-          <Button className="w-full h-[52px] text-base rounded-full" onClick={handleMessageSeller} disabled={messaging}>
-            <MessageCircle className="w-5 h-5 mr-2" />
+          {buyError && (
+            <div className="p-3 rounded-xl bg-clay-soft text-clay-deep text-sm text-center">{buyError}</div>
+          )}
+          <Button className="w-full h-[52px] text-base rounded-full" onClick={handleBuy} disabled={buying}>
+            <ShoppingBag className="w-5 h-5 mr-2" />
+            {buying ? 'Se redirecționează…' : `Cumpără · ${formatPrice(listing.price)} lei`}
+          </Button>
+          <Button variant="outline" className="w-full h-12 rounded-full" onClick={handleMessageSeller} disabled={messaging}>
+            <MessageCircle className="w-4 h-4 mr-2" />
             {messaging ? 'Se deschide…' : 'Trimite mesaj'}
           </Button>
-          <Button variant="outline" className="w-full h-12 rounded-full" onClick={handleShare}>
+          <Button variant="ghost" className="w-full h-11 rounded-full text-ink-soft" onClick={handleShare}>
             <Share2 className="w-4 h-4 mr-2" />
             Partajează
           </Button>

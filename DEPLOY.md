@@ -76,7 +76,27 @@ and **JDK 17**.
 
 ---
 
+## 3. Stripe checkout (optional — scaffolded, add keys to activate)
+
+The "Cumpără" button + webhook are built but **inert until you add Stripe keys**.
+Payments go to the shop's own Stripe account (single-seller MVP).
+
+1. Stripe dashboard → Developers → API keys → copy the **Secret key** (`sk_test_…` to test).
+2. Add to `.env.local` (local) **and** Vercel env (production):
+   ```
+   STRIPE_SECRET_KEY=sk_test_…
+   ```
+3. (Optional, to auto-mark items sold) Add a webhook in Stripe → Developers → Webhooks:
+   - Endpoint: `https://craftology-peach.vercel.app/api/webhooks/stripe`
+   - Event: `checkout.session.completed`
+   - Copy the signing secret → set `STRIPE_WEBHOOK_SECRET=whsec_…`
+   - Also set `SUPABASE_SERVICE_ROLE_KEY` (Supabase → Settings → API) so the webhook can update the listing.
+4. Redeploy (`npm run deploy`). Now "Cumpără" opens Stripe Checkout in RON.
+
+> Multi-seller payouts (money straight to each seller) = **Stripe Connect** with
+> destination charges — a future upgrade once there are independent sellers.
+
 ## Future
-- Direct **Stripe** checkout (money straight to the seller).
+- **Stripe Connect** for seller-direct payouts.
 - Per-conversation unread counts + last-message preview in `getConversations`.
 - Replace seeded sample listings with real Deco Kubik products.
