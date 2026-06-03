@@ -112,3 +112,10 @@ All notable changes to this project will be documented in this file.
 - **Branding**: generated a clay-"C" launcher icon + splash (`@capacitor/assets`) + web favicon; rebuilt + installed on the S25+.
 - **Android Back** navigates in-app history instead of exiting (`@capacitor/app` + `BackButtonHandler`).
 - Note: native **iOS App Store** app requires a Mac (Xcode) — scaffolding documented; the PWA covers iPhone users now.
+
+## [2026-06-03] - Phase 13: Dark theme, header auth button, pull-to-refresh, modal fix
+- **Dark theme ("Atelier Nocturne"):** refactored the brand palette in `globals.css` so each `@theme inline` color points at a switchable `var(--cream)`/`var(--ink)`/… defined in `:root` (light) and overridden in `.dark` (warm espresso night). One class on `<html>` re-skins the entire app. New `src/lib/theme.tsx` (provider + `useTheme`) + a pre-paint inline script in `layout.tsx` (no flash). **Defaults to the device's system dark toggle** when the user hasn't chosen, remembers an explicit pick in `localStorage`, and keeps following the system until then. Toggle in the header (CSS-driven sun/moon, no hydration flash) and in `profile/settings`. `themeColor` is now per-scheme. Fixed `text-white`-on-`bg-ink` pairs (→ `text-paper`) and gave photo overlays fixed `bg-black/*`.
+- **Dedicated auth button:** `SiteHeader` now shows a **"Conectează-te"** button (opens the login/sign-up modal) when signed out, and an account avatar linking to `/profile` when signed in — on phone *and* desktop.
+- **Pull-to-refresh** (`src/components/PullToRefresh.tsx`): Chrome-mobile-style gesture — at the top of the home feed, pulling down reveals a spinner and refetches listings. Touch-only (inert with a mouse). Browser's native pull-to-refresh suppressed via `overscroll-behavior-y: contain`.
+- **AuthModal boundaries fixed:** the legal footer was a broken `flex` of `<p>`/`<Link>` siblings that collided on narrow widths; it's now one flowing, centered paragraph (wraps cleanly on phone). Roomier modal padding.
+- Verified light + dark at phone (Pixel 7) and desktop (1440) via Playwright (`scripts/verify-theme.mjs`); production build green (17 routes).

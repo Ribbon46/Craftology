@@ -198,7 +198,7 @@ export default function MessagesPage() {
               <div
                 className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${
                   msg.sender === 'me'
-                    ? 'bg-ink text-white rounded-tr-none shadow-sm'
+                    ? 'bg-ink text-paper rounded-tr-none shadow-sm'
                     : 'bg-surface text-ink rounded-tl-none border border-line shadow-sm'
                 }`}
               >
@@ -244,7 +244,7 @@ export default function MessagesPage() {
               onChange={(e) => setNewMessage(e.target.value)}
               className="flex-1 bg-cream border-line focus:ring-2 focus:ring-ink"
             />
-            <Button type="submit" size="icon" className="rounded-full bg-ink hover:bg-ink text-white" disabled={!newMessage.trim()}>
+            <Button type="submit" size="icon" className="rounded-full bg-ink hover:bg-ink text-paper" disabled={!newMessage.trim()}>
               <Send className="w-4 h-4" />
             </Button>
           </form>
@@ -295,7 +295,7 @@ export default function MessagesPage() {
                           {conv.lastMessage || 'Apasă pentru a deschide conversația'}
                         </p>
                         {conv.unreadCount > 0 && (
-                          <span className="flex items-center justify-center w-5 h-5 bg-ink text-white text-xs rounded-full flex-shrink-0">
+                          <span className="flex items-center justify-center w-5 h-5 bg-ink text-paper text-xs rounded-full flex-shrink-0">
                             {conv.unreadCount}
                           </span>
                         )}

@@ -55,7 +55,7 @@ export default function SearchPage() {
               onClick={() => setSelectedCategory(category.id)}
               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
                 selectedCategory === category.id
-                  ? 'bg-ink text-white'
+                  ? 'bg-ink text-paper'
                   : 'bg-cream text-ink hover:bg-line'
               }`}
             >

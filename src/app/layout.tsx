@@ -45,8 +45,17 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   viewportFit: 'cover',
-  themeColor: '#f6f0e4',
+  // Status-bar / browser-chrome colour follows the device theme.
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f6f0e4' },
+    { media: '(prefers-color-scheme: dark)', color: '#17120f' },
+  ],
 };
+
+// Runs before paint so the theme is correct on first frame (no flash).
+// An explicit saved choice wins; otherwise we follow the device's dark toggle.
+// Keep in sync with src/lib/theme.tsx.
+const THEME_INIT = `(function(){try{var k='craftology-theme',s=localStorage.getItem(k),d=s?s==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;var e=document.documentElement;if(d)e.classList.add('dark');e.style.colorScheme=d?'dark':'light';}catch(e){}})();`;
 
 export default function RootLayout({
   children,
@@ -54,8 +63,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ro" className={`${fraunces.variable} ${hanken.variable}`}>
+    <html lang="ro" className={`${fraunces.variable} ${hanken.variable}`} suppressHydrationWarning>
       <body className="paper-grain min-h-screen bg-cream text-ink font-sans">
+        {/* Runs before paint → correct theme on first frame (no flash). */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
         <Providers>
           <div className="min-h-screen flex flex-col">
             <SiteHeader />

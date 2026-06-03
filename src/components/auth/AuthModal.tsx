@@ -80,26 +80,26 @@ export function AuthModal() {
         if (!next) reset();
       }}
     >
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>
+      <DialogContent className="sm:max-w-md p-6">
+        <DialogHeader className="pr-6">
+          <DialogTitle className="font-display text-xl">
             {isLogin ? 'Bine ai venit la Craftology' : 'Creează un cont'}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-pretty">
             {isLogin
               ? 'Accesează-ți contul pentru a vinde și cumpăra produse handmade.'
               : 'Înregistrează-te pentru a începe să vinzi produse handmade românești.'}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="py-4">
+        <form onSubmit={handleSubmit} className="py-2">
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm dark:bg-red-950/40 dark:border-red-900/60 dark:text-red-300">
               {error}
             </div>
           )}
           {info && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md text-green-700 text-sm">
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md text-green-700 text-sm dark:bg-green-950/40 dark:border-green-900/60 dark:text-green-300">
               {info}
             </div>
           )}
@@ -180,16 +180,17 @@ export function AuthModal() {
           </p>
         </form>
 
-        <div className="flex items-center justify-center space-x-2 text-sm text-ink-soft">
-          <p>Continuând, ești de acord cu</p>
-          <Link href="/terms" className="text-ink hover:underline">
-            Termeni
-          </Link>
-          <p>și</p>
-          <Link href="/privacy" className="text-ink hover:underline">
+        <p className="text-center text-xs leading-relaxed text-ink-soft text-pretty px-1">
+          Continuând, ești de acord cu{' '}
+          <Link href="/terms" className="text-ink underline underline-offset-2 hover:text-clay">
+            Termenii
+          </Link>{' '}
+          și{' '}
+          <Link href="/privacy" className="text-ink underline underline-offset-2 hover:text-clay">
             Politica de confidențialitate
           </Link>
-        </div>
+          .
+        </p>
       </DialogContent>
     </Dialog>
   );

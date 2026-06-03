@@ -7,13 +7,14 @@ import Link from 'next/link';
 import { CATEGORIES, MESSAGES } from '@/config/app';
 import { fetchListingsPage } from '@/lib/data/listings';
 import { Listing } from '@/lib/mock';
+import { PullToRefresh } from '@/components/PullToRefresh';
 
 export const dynamic = 'force-dynamic';
 
 export default function HomePage() {
   const [activeCategory, setActiveCategory] = useState<string>('all');
 
-  const { data, error, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage, status } =
+  const { data, error, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage, status, refetch } =
     useInfiniteQuery({
       queryKey: ['listings', activeCategory],
       queryFn: ({ pageParam }) => fetchListingsPage({ cursor: pageParam, category: activeCategory }),
@@ -63,7 +64,8 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen">
+    <PullToRefresh onRefresh={() => refetch()}>
+      <div className="min-h-screen">
       {/* Category filter — sticks under the header (offset adapts to header height) */}
       <div className="sticky top-16 lg:top-[72px] z-30 bg-paper/90 backdrop-blur-md border-b border-line">
         <div className="mx-auto w-full max-w-6xl px-4 lg:px-8 py-3 overflow-x-auto no-scrollbar">
@@ -179,6 +181,7 @@ export default function HomePage() {
           </>
         )}
       </main>
-    </div>
+      </div>
+    </PullToRefresh>
   );
 }

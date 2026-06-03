@@ -14,20 +14,22 @@
   --font-mono: var(--font-geist-mono, ui-monospace, monospace);
   --font-heading: var(--font-fraunces), Georgia, serif;
 
-  /* Brand palette (usable as bg-clay, text-ink, border-line, etc.) */
-  --color-cream: #f6f0e4;
-  --color-paper: #fbf6ec;
-  --color-surface: #fffdf7;
-  --color-ink: #2a211a;
-  --color-ink-soft: #6f6153;
-  --color-ink-faint: #9c8f7f;
-  --color-clay: #b9572f;
-  --color-clay-deep: #984427;
-  --color-clay-soft: #f0d9cc;
-  --color-sage: #6c7355;
-  --color-gold: #b58432;
-  --color-line: #e7dcc8;
-  --color-line-strong: #d8c9ad;
+  /* Brand palette — indirected through switchable :root / .dark variables so
+     the ENTIRE app (utilities like bg-cream/text-ink AND the .chip/.atelier-card
+     component CSS below) flips with a single `.dark` class on <html>. */
+  --color-cream: var(--cream);
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+  --color-clay: var(--clay);
+  --color-clay-deep: var(--clay-deep);
+  --color-clay-soft: var(--clay-soft);
+  --color-sage: var(--sage);
+  --color-gold: var(--gold);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
 
   /* shadcn token bridge */
   --color-background: var(--background);
@@ -67,6 +69,22 @@
 
 :root {
   --radius: 0.9rem;
+  color-scheme: light;
+
+  /* Atelier — light (warm cream / espresso). These feed the brand utilities. */
+  --cream: #f6f0e4;
+  --paper: #fbf6ec;
+  --surface: #fffdf7;
+  --ink: #2a211a;
+  --ink-soft: #6f6153;
+  --ink-faint: #9c8f7f;
+  --clay: #b9572f;
+  --clay-deep: #984427;
+  --clay-soft: #f0d9cc;
+  --sage: #6c7355;
+  --gold: #b58432;
+  --line: #e7dcc8;
+  --line-strong: #d8c9ad;
 
   /* Map shadcn semantic tokens onto the Atelier palette */
   --background: #f6f0e4;
@@ -102,6 +120,62 @@
   --sidebar-ring: #b9572f;
 }
 
+/* =====================================================================
+   Atelier — Nocturne (dark). Warm espresso night, not flat grey: the
+   same handcrafted palette, dimmed. Applied via `.dark` on <html>.
+   ===================================================================== */
+.dark {
+  color-scheme: dark;
+
+  /* Brand palette (drives every bg-cream / text-ink / border-line, etc.) */
+  --cream: #17120f;     /* app base background */
+  --paper: #1e1814;     /* header, bottom nav, chrome */
+  --surface: #241d17;   /* cards, inputs, raised surfaces */
+  --ink: #f2ebdc;       /* primary text — warm parchment */
+  --ink-soft: #b7a890;
+  --ink-faint: #877a68;
+  --clay: #db7d52;      /* brightened so it sings against the dark */
+  --clay-deep: #c2663c;
+  --clay-soft: #3a2419; /* dark tinted well for avatar/icon fallbacks */
+  --sage: #99a17c;
+  --gold: #d7a44f;
+  --line: #362c22;
+  --line-strong: #4b3d2e;
+
+  /* shadcn semantic tokens */
+  --background: #17120f;
+  --foreground: #f2ebdc;
+  --card: #241d17;
+  --card-foreground: #f2ebdc;
+  --popover: #1e1814;
+  --popover-foreground: #f2ebdc;
+  --primary: #db7d52;
+  --primary-foreground: #1a140f;
+  --secondary: #2a2118;
+  --secondary-foreground: #ece1cd;
+  --muted: #2a2118;
+  --muted-foreground: #b7a890;
+  --accent: #33281b;
+  --accent-foreground: #f2ebdc;
+  --destructive: #e2674f;
+  --border: #362c22;
+  --input: #4b3d2e;
+  --ring: #db7d52;
+  --chart-1: #db7d52;
+  --chart-2: #99a17c;
+  --chart-3: #d7a44f;
+  --chart-4: #b08d6f;
+  --chart-5: #c2663c;
+  --sidebar: #1e1814;
+  --sidebar-foreground: #f2ebdc;
+  --sidebar-primary: #db7d52;
+  --sidebar-primary-foreground: #1a140f;
+  --sidebar-accent: #33281b;
+  --sidebar-accent-foreground: #f2ebdc;
+  --sidebar-border: #362c22;
+  --sidebar-ring: #db7d52;
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -112,6 +186,9 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    /* Suppress the browser's native pull-to-refresh / scroll-chaining so our
+       custom pull-to-refresh (see PullToRefresh.tsx) owns the gesture. */
+    overscroll-behavior-y: contain;
   }
   h1, h2, h3, .font-display {
     font-family: var(--font-display);
@@ -153,6 +230,12 @@
   mix-blend-mode: multiply;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
 }
+/* On dark, multiply would crush the grain to black — lighten it instead. */
+.dark .paper-grain::after { mix-blend-mode: soft-light; opacity: 0.08; }
+
+/* Warmer-to-black elevation in the dark theme */
+.dark .shadow-atelier { box-shadow: 0 1px 2px rgba(0,0,0,0.45), 0 8px 24px -12px rgba(0,0,0,0.75); }
+.dark .shadow-atelier-lg { box-shadow: 0 2px 4px rgba(0,0,0,0.5), 0 24px 48px -20px rgba(0,0,0,0.85); }
 
 /* =====================================================================
    Motion
