@@ -168,3 +168,8 @@ Completed the deferred perf refactor (audit #2/#4) — the two most important pa
 - **Small wins:** branded `error.tsx` + `not-found.tsx`; **image downscaling on upload** (sharp → longest edge ~1600px, EXIF-rotated, fail-safe to original); **Vercel Analytics + Speed Insights** in the layout.
 - **Gotcha fixed:** a root `loading.tsx` made every route stream (200 committed early), turning `notFound()` into a soft-404 (200 + 404 UI). Removed it to keep real HTTP 404s for bad/deleted listing ids. Verified: bad id → **404**, good id → 200.
 - Verified: SEO endpoints (`/robots.txt`, `/sitemap.xml` w/ 8 listings, `/opengraph-image` 200 png), Product JSON-LD present, OG image renders on-brand; build green (21 routes); **E2E 20 passed / 2 skipped**.
+
+## [2026-06-04] - Phase 20: Sorting + price filtering
+- **Sort** (Cele mai noi / Preț: mic→mare / Preț: mare→mic) + a **price-range filter** (min/max lei) on the home feed via a new `FeedControls` component; the search page gets the same sort dropdown.
+- Wired through `fetchListingsPage` + `searchListings` — Supabase `.order()` / `.gte()` / `.lte()` with a matching sort/filter path in mock mode — and keyed into React Query so changing any control (category, sort, price) refetches. `initialData` (the SSR first page) now seeds **only the exact default view**, so a sort/filter change can't flash stale default data.
+- E2E: added a price-ascending assertion (parses the rendered card prices, polls until non-decreasing). Suite: **22 passed / 2 skipped**. Verified the control UI on-brand (sort dropdown + collapsible price panel).

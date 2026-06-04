@@ -3,11 +3,11 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Search, Star } from 'lucide-react';
+import { Search, Star, ArrowDownUp, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { CATEGORIES } from '@/config/app';
-import { searchListings } from '@/lib/data/listings';
+import { searchListings, type SortOption } from '@/lib/data/listings';
 import { Listing } from '@/lib/mock';
 import { CategoryChips } from '@/components/CategoryChips';
 
@@ -18,13 +18,14 @@ const CATEGORY_OPTIONS = [{ id: 'all', label: 'Toate' }].concat(
 export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [sort, setSort] = useState<SortOption>('newest');
   const [results, setResults] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
     setLoading(true);
-    searchListings(searchQuery, selectedCategory)
+    searchListings(searchQuery, selectedCategory, sort)
       .then((r) => {
         if (active) setResults(r);
       })
@@ -34,7 +35,7 @@ export default function SearchPage() {
     return () => {
       active = false;
     };
-  }, [searchQuery, selectedCategory]);
+  }, [searchQuery, selectedCategory, sort]);
 
   return (
     <div className="min-h-screen pb-20 pt-4 mx-auto w-full max-w-5xl">
@@ -59,10 +60,24 @@ export default function SearchPage() {
       </div>
 
       <div className="px-4">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-ink">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <h2 className="text-lg font-semibold text-ink min-w-0 truncate">
             {searchQuery ? `Rezultate pentru: "${searchQuery}"` : `Toate produsele (${results.length})`}
           </h2>
+          <div className="relative flex-shrink-0">
+            <ArrowDownUp className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-soft" />
+            <select
+              aria-label="Sortează"
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortOption)}
+              className="appearance-none rounded-full border border-line bg-surface text-ink text-sm pl-9 pr-9 py-2 hover:border-clay/40 focus:outline-none focus:ring-2 focus:ring-clay/30 cursor-pointer"
+            >
+              <option value="newest">Cele mai noi</option>
+              <option value="price_asc">Preț: mic → mare</option>
+              <option value="price_desc">Preț: mare → mic</option>
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-soft" />
+          </div>
         </div>
 
         {loading ? (

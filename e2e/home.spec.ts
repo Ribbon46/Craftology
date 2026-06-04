@@ -16,3 +16,19 @@ test('category chips filter the feed', async ({ page }) => {
   // The hero headline switches to the chosen category.
   await expect(page.getByRole('heading', { name: 'Bijuterii' })).toBeVisible();
 });
+
+test('sorting by price orders the feed ascending', async ({ page }) => {
+  await page.goto('/');
+  await page.getByLabel('Sortează').selectOption('price_asc');
+  // Poll until the rendered card prices are in non-decreasing order.
+  await expect
+    .poll(
+      async () => {
+        const texts = await page.locator('.price').allInnerTexts();
+        const prices = texts.map((t) => parseInt(t.replace(/\D/g, ''), 10)).filter((n) => !Number.isNaN(n));
+        return prices.length > 1 && prices.every((p, i) => i === 0 || prices[i - 1] <= p);
+      },
+      { timeout: 8000 },
+    )
+    .toBe(true);
+});

@@ -6,10 +6,11 @@ import { Star } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { CATEGORIES, MESSAGES } from '@/config/app';
-import { fetchListingsPage, type ListingsPage } from '@/lib/data/listings';
+import { fetchListingsPage, type ListingsPage, type SortOption } from '@/lib/data/listings';
 import { Listing } from '@/lib/mock';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { CategoryChips } from '@/components/CategoryChips';
+import { FeedControls } from '@/components/FeedControls';
 
 // Client feed island. The first "all" page is fetched on the server (page.tsx)
 // and passed in as `initialPage`, so the grid is in the initial HTML (fast LCP +
@@ -17,17 +18,24 @@ import { CategoryChips } from '@/components/CategoryChips';
 // client-side. React Query is seeded so the default view doesn't refetch on mount.
 export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
   const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [sort, setSort] = useState<SortOption>('newest');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+
+  const min = minPrice !== '' ? Number(minPrice) : undefined;
+  const max = maxPrice !== '' ? Number(maxPrice) : undefined;
+  // initialData (server-rendered first page) only applies to the exact default
+  // view — otherwise a sort/filter change would briefly show stale default data.
+  const isDefaultView = activeCategory === 'all' && sort === 'newest' && minPrice === '' && maxPrice === '';
 
   const { data, error, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage, status, refetch } =
     useInfiniteQuery({
-      queryKey: ['listings', activeCategory],
-      queryFn: ({ pageParam }) => fetchListingsPage({ cursor: pageParam, category: activeCategory }),
+      queryKey: ['listings', activeCategory, sort, min ?? null, max ?? null],
+      queryFn: ({ pageParam }) =>
+        fetchListingsPage({ cursor: pageParam, category: activeCategory, sort, minPrice: min, maxPrice: max }),
       getNextPageParam: (lastPage) => lastPage.nextCursor,
       initialPageParam: 0 as number | null,
-      initialData:
-        activeCategory === 'all'
-          ? { pages: [initialPage], pageParams: [0 as number | null] }
-          : undefined,
+      initialData: isDefaultView ? { pages: [initialPage], pageParams: [0 as number | null] } : undefined,
     });
 
   const observer = useRef<IntersectionObserver | null>(null);
@@ -102,6 +110,19 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
           </p>
           <div className="hidden lg:block rule-craft w-24 mt-7" />
         </header>
+
+        <div className="mb-5 lg:mb-7">
+          <FeedControls
+            sort={sort}
+            onSortChange={setSort}
+            minPrice={minPrice}
+            maxPrice={maxPrice}
+            onPriceChange={(mn, mx) => {
+              setMinPrice(mn);
+              setMaxPrice(mx);
+            }}
+          />
+        </div>
 
         {listings.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
