@@ -180,3 +180,9 @@ Phase 2 greenlit; decisions locked in `docs/PLAN-MARKETPLACE-RO.md` (15% commiss
 - RLS + **column grants**: approved sellers' public columns are world-readable (buyer display); a user sees only their own row otherwise; users may apply (forced `pending`) + edit only their own contact/details; `status`/Stripe/review fields are server/admin-only (service role); **anon never reads CUI or internal fields**.
 - Seeded the founding **Deco Kubik** seller as `approved` so existing listings stay valid.
 - Applied live (migration `phase2_sellers_table`) + mirrored in `supabase/schema.sql`; verified 3 policies + the exact anon column grants.
+
+## [2026-06-04] - Phase 2 · Stages 2–3: seller application + admin review
+- **Seller application** (`/seller/apply` + `applyAsSeller`/`getMySeller`): form for company name + **CUI** (persoană juridică), buyer-facing contact methods, workshop description, and a **mandatory** Terms+Privacy acceptance checkbox (timestamped). Re-applying is blocked; the page shows live status (pending / approved / rejected+reason / suspended). Entry point in Profil → Setări ("Devino vânzător").
+- **Admin review panel** (`/admin/sellers` + `listSellerApplications`/`reviewSeller`): approve / reject-with-reason / suspend. Admin-gated via `ADMIN_USER_IDS` (defaults to the Deco Kubik owner id); review actions use the **service-role key** to set `status` (which normal users are barred from writing). `/admin` disallowed in robots.
+- E2E: logged-out gates for both pages. Suite **26 passed / 2 skipped**; build green.
+- **Blocked on you:** enable **Stripe Connect** in the Stripe dashboard → then Stages 4–5 (Connect onboarding + 15% destination-charge checkout) can go live. Stages 6–7 (20-product cap + buyer-facing contact display, seller dashboard) are buildable next without it.

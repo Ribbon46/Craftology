@@ -1,0 +1,155 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { ArrowLeft, Store, Clock, CheckCircle2, XCircle } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { useAuthModal } from '@/lib/auth-modal';
+import { getMySeller, applyAsSeller, type SellerRow } from '@/actions/seller';
+
+export default function SellerApplyPage() {
+  const { setOpen } = useAuthModal();
+  const [loading, setLoading] = useState(true);
+  const [authed, setAuthed] = useState(false);
+  const [seller, setSeller] = useState<SellerRow | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+
+  const refresh = () =>
+    getMySeller().then((r) => {
+      setAuthed(r.authed);
+      setSeller(r.seller);
+      setLoading(false);
+    });
+
+  useEffect(() => {
+    refresh();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(null);
+    setSaving(true);
+    const res = await applyAsSeller(new FormData(e.currentTarget));
+    setSaving(false);
+    if ('error' in res && res.error) {
+      setError(res.error);
+      return;
+    }
+    setDone(true);
+    refresh();
+  };
+
+  return (
+    <div className="min-h-screen px-4 py-6 pb-24 mx-auto w-full max-w-2xl">
+      <Link href="/profile" className="inline-flex items-center text-ink-soft hover:text-ink mb-4">
+        <ArrowLeft className="w-4 h-4 mr-1" />
+        Înapoi
+      </Link>
+      <div className="flex items-center gap-2 mb-1">
+        <Store className="w-6 h-6 text-clay" />
+        <h1 className="font-display text-2xl text-ink">Devino vânzător</h1>
+      </div>
+      <p className="text-ink-soft mb-6">Vinde-ți produsele handmade pe Craftology, alături de creatori verificați.</p>
+
+      {loading ? (
+        <p className="text-ink-soft py-8 text-center">Se încarcă…</p>
+      ) : !authed ? (
+        <Card>
+          <CardContent className="p-6 text-center">
+            <p className="text-ink-soft mb-4">Autentifică-te pentru a trimite o cerere de vânzător.</p>
+            <Button className="rounded-full" onClick={() => setOpen(true)}>Autentificare</Button>
+          </CardContent>
+        </Card>
+      ) : seller ? (
+        <StatusCard seller={seller} />
+      ) : done ? (
+        <StatusCard seller={{ status: 'pending' } as SellerRow} />
+      ) : (
+        <Card>
+          <CardContent className="p-6">
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {error && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm dark:bg-red-950/40 dark:border-red-900/60 dark:text-red-300">
+                  {error}
+                </div>
+              )}
+
+              <div className="rounded-xl bg-cream border border-line p-3 text-sm text-ink-soft">
+                Pentru a putea emite facturi, vânzătorii trebuie să fie <strong className="text-ink">persoană juridică</strong> (firmă, PFA sau II).
+              </div>
+
+              <Field label="Denumire firmă *" name="company_name" placeholder="ex: Atelier Handmade SRL" required />
+              <Field label="CUI (cod fiscal) *" name="cui" placeholder="ex: RO12345678" required />
+
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-ink">Date de contact (afișate cumpărătorilor) *</p>
+                <Field name="contact_email" type="email" placeholder="Email de contact" />
+                <Field name="contact_phone" placeholder="Telefon de contact" />
+                <Field name="contact_other" placeholder="Website / rețele sociale (opțional)" />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-ink" htmlFor="workshop_description">Despre atelierul tău</label>
+                <Textarea id="workshop_description" name="workshop_description" rows={4} placeholder="Descrie ce produse faci, materialele, povestea atelierului…" className="resize-none" />
+              </div>
+
+              <label className="flex items-start gap-3 text-sm text-ink-soft">
+                <input type="checkbox" name="accept_terms" className="mt-1 w-4 h-4 accent-clay" />
+                <span>
+                  Accept{' '}
+                  <Link href="/terms" target="_blank" className="text-ink underline underline-offset-2 hover:text-clay">Termenii și Condițiile</Link>{' '}
+                  și{' '}
+                  <Link href="/privacy" target="_blank" className="text-ink underline underline-offset-2 hover:text-clay">Politica de confidențialitate</Link>.
+                </span>
+              </label>
+
+              <Button type="submit" className="w-full rounded-full" disabled={saving}>
+                {saving ? 'Se trimite…' : 'Trimite cererea'}
+              </Button>
+              <p className="text-xs text-ink-faint text-center">
+                Cererea e verificată manual. După aprobare, vei finaliza configurarea plăților prin Stripe.
+              </p>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+function Field({ label, name, ...rest }: { label?: string; name: string } & React.ComponentProps<typeof Input>) {
+  return (
+    <div className="space-y-1.5">
+      {label && <label className="text-sm font-medium text-ink" htmlFor={name}>{label}</label>}
+      <Input id={name} name={name} {...rest} />
+    </div>
+  );
+}
+
+function StatusCard({ seller }: { seller: SellerRow }) {
+  const map = {
+    pending: { icon: Clock, color: 'text-gold', title: 'Cererea ta este în verificare', body: 'Îți mulțumim! Verificăm cererea și revenim cât de curând. Vei putea finaliza plățile prin Stripe după aprobare.' },
+    approved: { icon: CheckCircle2, color: 'text-sage', title: 'Ești vânzător aprobat 🎉', body: 'Felicitări! Poți publica produse. (Configurarea plăților Stripe urmează la pasul următor.)' },
+    rejected: { icon: XCircle, color: 'text-clay-deep', title: 'Cererea a fost respinsă', body: seller.rejection_reason || 'Din păcate, cererea nu a fost aprobată momentan.' },
+    suspended: { icon: XCircle, color: 'text-clay-deep', title: 'Cont de vânzător suspendat', body: 'Contul tău de vânzător este suspendat. Contactează-ne pentru detalii.' },
+  } as const;
+  const s = map[seller.status] ?? map.pending;
+  const Icon = s.icon;
+  return (
+    <Card>
+      <CardContent className="p-6 text-center">
+        <Icon className={`w-12 h-12 mx-auto mb-3 ${s.color}`} />
+        <h2 className="font-display text-xl text-ink mb-2">{s.title}</h2>
+        <p className="text-ink-soft mb-4 max-w-sm mx-auto">{s.body}</p>
+        {seller.status === 'approved' && (
+          <Link href="/sell"><Button className="rounded-full">Adaugă un produs</Button></Link>
+        )}
+      </CardContent>
+    </Card>
+  );
+}

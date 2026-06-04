@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, LogOut, User, Bell, Shield, Moon } from 'lucide-react';
+import { ArrowLeft, LogOut, User, Bell, Shield, Moon, Store } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useSession, signOut } from '@/lib/hooks';
@@ -54,6 +54,10 @@ export default function SettingsPage() {
             <Link href="/profile/edit" className="w-full flex items-center px-4 py-4 text-left hover:bg-cream transition-colors">
               <User className="w-5 h-5 text-ink-soft mr-3" />
               <span className="flex-1 text-ink">Editează profilul</span>
+            </Link>
+            <Link href="/seller/apply" className="w-full flex items-center px-4 py-4 text-left hover:bg-cream transition-colors">
+              <Store className="w-5 h-5 text-ink-soft mr-3" />
+              <span className="flex-1 text-ink">Devino vânzător</span>
             </Link>
             <button className="w-full flex items-center px-4 py-4 text-left hover:bg-cream transition-colors">
               <Bell className="w-5 h-5 text-ink-soft mr-3" />

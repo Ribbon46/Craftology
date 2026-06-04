@@ -8,7 +8,7 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: '*',
       allow: '/',
       // Private / account-only areas — no value being indexed.
-      disallow: ['/messages', '/profile', '/sell', '/checkout'],
+      disallow: ['/messages', '/profile', '/sell', '/checkout', '/admin'],
     },
     sitemap: `${BASE}/sitemap.xml`,
   };
