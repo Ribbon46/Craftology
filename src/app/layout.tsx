@@ -3,6 +3,8 @@ import { Fraunces, Hanken_Grotesk } from 'next/font/google';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { SiteHeader } from '@/components/navigation/SiteHeader';
 import { SiteFooter } from '@/components/navigation/SiteFooter';
+import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Providers } from './providers';
 import { APP_NAME_FULL } from '@/config/app';
 import './globals.css';
@@ -27,6 +29,7 @@ const DESCRIPTION =
   'Marketplace curat de produse handmade românești — bijuterii, haine, lumânări, accesorii și frumusețe. Vânzători verificați.';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://craftology-peach.vercel.app'),
   title: { default: APP_NAME_FULL, template: '%s · Craftology' },
   description: DESCRIPTION,
   applicationName: 'Craftology',
@@ -77,6 +80,9 @@ export default function RootLayout({
             <BottomNav />
           </div>
         </Providers>
+        {/* Production traffic + Core Web Vitals (no-op off Vercel) */}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

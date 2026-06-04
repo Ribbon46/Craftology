@@ -41,5 +41,27 @@ export default async function ListingDetailPage({ params }: Params) {
   const listing = await fetchListingByIdServer(id);
   if (!listing) notFound();
 
-  return <ListingDetailClient listing={listing} />;
+  // Product structured data → rich Google results (price + availability).
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: listing.title,
+    description: listing.description,
+    image: listing.image_urls ?? [],
+    category: listing.category,
+    offers: {
+      '@type': 'Offer',
+      price: listing.price,
+      priceCurrency: 'RON',
+      availability: listing.status === 'active' ? 'https://schema.org/InStock' : 'https://schema.org/SoldOut',
+    },
+  };
+
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <ListingDetailClient listing={listing} />
+    </>
+  );
 }
+

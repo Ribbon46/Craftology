@@ -173,7 +173,36 @@ export async function getConversations(userId: string) {
     return { error: `Eroare la primirea conversațiilor: ${error.message}` };
   }
 
-  return { success: true, conversations: conversations ?? [] };
+  const convos = (conversations ?? []) as Array<{ id: string }>;
+  if (convos.length === 0) return { success: true, conversations: [] };
+
+  // Enrich each conversation with its last message + unread count. RLS limits
+  // the messages query to conversations the user participates in (which is
+  // exactly the ones listed), so one batched query is safe and sufficient.
+  const ids = convos.map((c) => c.id);
+  const { data: msgs } = await supabase
+    .from('messages')
+    .select('conversation_id, text, created_at, sender_id, read')
+    .in('conversation_id', ids)
+    .order('created_at', { ascending: true });
+
+  const last = new Map<string, { text: string; at: string }>();
+  const unread = new Map<string, number>();
+  for (const m of (msgs ?? []) as Array<{ conversation_id: string; text: string; created_at: string; sender_id: string; read: boolean }>) {
+    last.set(m.conversation_id, { text: m.text, at: m.created_at }); // asc → last write wins
+    if (!m.read && m.sender_id !== userId) {
+      unread.set(m.conversation_id, (unread.get(m.conversation_id) ?? 0) + 1);
+    }
+  }
+
+  const enriched = convos.map((c) => ({
+    ...c,
+    last_message_text: last.get(c.id)?.text ?? null,
+    last_message_at: last.get(c.id)?.at ?? null,
+    unread_count: unread.get(c.id) ?? 0,
+  }));
+
+  return { success: true, conversations: enriched };
 }
 
 export async function markMessagesAsRead(conversationId: string) {

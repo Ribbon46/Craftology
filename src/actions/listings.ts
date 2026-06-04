@@ -1,5 +1,6 @@
 'use server';
 
+import sharp from 'sharp';
 import { createServerClient } from '@/lib/supabase/server';
 import { checkRateLimit } from '@/lib/ratelimit';
 import { listingFormSchema } from '@/schemas/listing';
@@ -72,9 +73,21 @@ export async function createListing(formData: FormData) {
     const imageId = crypto.randomUUID();
     const imagePath = `listings/${user.id}/${imageId}.${ext}`;
 
+    // Downscale oversized originals (longest edge ~1600px, EXIF-rotated) so we
+    // don't store multi-MB photos. Fail-safe: on any error, store the original.
+    let body: File | Buffer = image;
+    if (ext !== 'gif') {
+      try {
+        const input = Buffer.from(await image.arrayBuffer());
+        body = await sharp(input).rotate().resize(1600, 1600, { fit: 'inside', withoutEnlargement: true }).toBuffer();
+      } catch {
+        body = image;
+      }
+    }
+
     const { error: uploadError } = await supabase.storage
       .from('listings_images')
-      .upload(imagePath, image, {
+      .upload(imagePath, body, {
         cacheControl: '3600',
         upsert: false,
         contentType: image.type,

@@ -51,10 +51,10 @@ export default function SettingsPage() {
                 />
               </button>
             </div>
-            <button className="w-full flex items-center px-4 py-4 text-left hover:bg-cream transition-colors">
+            <Link href="/profile/edit" className="w-full flex items-center px-4 py-4 text-left hover:bg-cream transition-colors">
               <User className="w-5 h-5 text-ink-soft mr-3" />
               <span className="flex-1 text-ink">Editează profilul</span>
-            </button>
+            </Link>
             <button className="w-full flex items-center px-4 py-4 text-left hover:bg-cream transition-colors">
               <Bell className="w-5 h-5 text-ink-soft mr-3" />
               <span className="flex-1 text-ink">Notificări</span>

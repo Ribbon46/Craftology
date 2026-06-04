@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Send, ArrowLeft, Paperclip, MoreVertical, Check, CheckCheck } from 'lucide-react';
-import { createMessage, getMessages, getConversations } from '@/actions/messages';
+import { createMessage, getMessages, getConversations, markMessagesAsRead } from '@/actions/messages';
 import { useSession } from '@/lib/hooks';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { avatarFor } from '@/lib/mock';
@@ -79,9 +79,9 @@ export default function MessagesPage() {
                 id: c.id,
                 otherName: other?.full_name || other?.username || 'Utilizator',
                 otherAvatar: other?.avatar_url ?? null,
-                lastMessage: '',
-                lastMessageTime: c.updated_at ? fmtTime(c.updated_at) : '',
-                unreadCount: 0,
+                lastMessage: c.last_message_text ?? '',
+                lastMessageTime: fmtTime(c.last_message_at ?? c.updated_at),
+                unreadCount: c.unread_count ?? 0,
                 listingTitle: c.listings?.title ?? '',
               };
             }),
@@ -127,6 +127,9 @@ export default function MessagesPage() {
       } else {
         setMessages([]);
       }
+      // Mark the other party's messages read + clear the badge locally.
+      markMessagesAsRead(conversationId).catch(() => {});
+      setConversations((prev) => prev.map((c) => (c.id === conversationId ? { ...c, unreadCount: 0 } : c)));
     } catch {
       setMessages([]);
     }

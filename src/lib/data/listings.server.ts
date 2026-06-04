@@ -73,3 +73,21 @@ export async function fetchListingsPageServer(
   const slice = filtered.slice(offset, offset + PAGE_SIZE);
   return { data: slice, nextCursor: offset + PAGE_SIZE < filtered.length ? offset + PAGE_SIZE : null };
 }
+
+/** Active listing ids + timestamps, for the sitemap. */
+export async function fetchListingIdsServer(): Promise<Array<{ id: string; created_at: string }>> {
+  if (isSupabaseConfigured()) {
+    try {
+      const { data, error } = await anon()
+        .from('listings')
+        .select('id, created_at')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1000);
+      if (!error && data) return data as Array<{ id: string; created_at: string }>;
+    } catch {
+      // fall through to mock
+    }
+  }
+  return MOCK_LISTINGS.map((l) => ({ id: l.id, created_at: l.created_at }));
+}
