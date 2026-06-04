@@ -82,3 +82,23 @@ export async function syncSellerStripeStatus() {
     return { onboarded: false };
   }
 }
+
+/** A single-use link into the seller's hosted Stripe Express dashboard (manage
+ *  payouts, bank details, identity). Only for onboarded sellers. */
+export async function createStripeLoginLink() {
+  if (!isStripeConfigured() || !stripe || !isServiceConfigured()) return { error: 'Indisponibil momentan.' };
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'Autentificare necesară' };
+
+  const svc = createServiceClient();
+  const { data: seller } = await svc.from('sellers').select('stripe_account_id, stripe_onboarded').eq('id', user.id).maybeSingle();
+  if (!seller?.stripe_account_id || !seller.stripe_onboarded) return { error: 'Plățile nu sunt configurate încă.' };
+
+  try {
+    const link = await stripe.accounts.createLoginLink(seller.stripe_account_id);
+    return { url: link.url };
+  } catch {
+    return { error: 'Nu am putut deschide panoul Stripe.' };
+  }
+}

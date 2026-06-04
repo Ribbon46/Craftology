@@ -3,7 +3,10 @@
 import sharp from 'sharp';
 import { createServerClient } from '@/lib/supabase/server';
 import { checkRateLimit } from '@/lib/ratelimit';
+import { isPlatformOwner } from '@/lib/owner';
 import { listingFormSchema } from '@/schemas/listing';
+
+const NEW_SELLER_LISTING_CAP = 20; // until their first sale
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
@@ -19,6 +22,30 @@ export async function createListing(formData: FormData) {
 
   const rl = await checkRateLimit('listing', user.id);
   if (!rl.ok) return { error: 'Ai creat prea multe anunțuri într-un timp scurt. Încearcă mai târziu.' };
+
+  // Seller eligibility (marketplace): the platform owner lists freely; everyone
+  // else must be an approved + Stripe-onboarded seller, and new sellers are
+  // capped until their first sale.
+  if (!isPlatformOwner(user.id)) {
+    const { data: seller } = await supabase
+      .from('sellers')
+      .select('status, stripe_onboarded')
+      .eq('id', user.id)
+      .maybeSingle();
+    if (!seller || seller.status !== 'approved') {
+      return { error: 'Trebuie să fii vânzător aprobat pentru a publica produse.' };
+    }
+    if (!seller.stripe_onboarded) {
+      return { error: 'Finalizează configurarea plăților (Stripe) înainte de a publica produse.' };
+    }
+    const { data: mine } = await supabase.from('listings').select('status').eq('seller_id', user.id);
+    const rows = (mine ?? []) as Array<{ status: string }>;
+    const active = rows.filter((l) => l.status === 'active').length;
+    const sold = rows.filter((l) => l.status === 'sold').length;
+    if (sold === 0 && active >= NEW_SELLER_LISTING_CAP) {
+      return { error: `Vânzătorii noi pot avea maximum ${NEW_SELLER_LISTING_CAP} de produse până la prima vânzare.` };
+    }
+  }
 
   // Validate form data
   const validatedData = listingFormSchema.safeParse({

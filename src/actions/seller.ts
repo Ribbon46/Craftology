@@ -1,7 +1,34 @@
 'use server';
 
 import { createServerClient } from '@/lib/supabase/server';
+import { isPlatformOwner } from '@/lib/owner';
 import { revalidatePath } from 'next/cache';
+
+export type SellEligibility =
+  | 'ok'
+  | 'auth'
+  | 'not_seller'
+  | 'pending'
+  | 'rejected'
+  | 'suspended'
+  | 'not_onboarded';
+
+/** Whether the current user may publish listings (platform owner, or an
+ *  approved + Stripe-onboarded seller), with the reason if not. */
+export async function canSell(): Promise<{ canSell: boolean; reason: SellEligibility }> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { canSell: false, reason: 'auth' };
+  if (isPlatformOwner(user.id)) return { canSell: true, reason: 'ok' };
+
+  const { data: seller } = await supabase.from('sellers').select('status, stripe_onboarded').eq('id', user.id).maybeSingle();
+  if (!seller) return { canSell: false, reason: 'not_seller' };
+  if (seller.status === 'pending') return { canSell: false, reason: 'pending' };
+  if (seller.status === 'rejected') return { canSell: false, reason: 'rejected' };
+  if (seller.status === 'suspended') return { canSell: false, reason: 'suspended' };
+  if (!seller.stripe_onboarded) return { canSell: false, reason: 'not_onboarded' };
+  return { canSell: true, reason: 'ok' };
+}
 
 export interface SellerRow {
   id: string;

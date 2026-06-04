@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,6 +14,7 @@ import {
 import { Dropzone } from '@/components/ui/Dropzone';
 import { CATEGORIES } from '@/config/app';
 import { createListing } from '@/actions/listings';
+import { canSell, type SellEligibility } from '@/actions/seller';
 import { useSession } from '@/lib/hooks';
 import { useAuthModal } from '@/lib/auth-modal';
 import { useRouter } from 'next/navigation';
@@ -23,6 +24,13 @@ export default function SellPage() {
   const { user, loading } = useSession();
   const { setOpen } = useAuthModal();
   const router = useRouter();
+  const [eligibility, setEligibility] = useState<{ canSell: boolean; reason: SellEligibility } | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    setEligibility(null);
+    canSell().then(setEligibility);
+  }, [user]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
@@ -141,6 +149,13 @@ export default function SellPage() {
         </div>
       </div>
     );
+  }
+
+  if (!eligibility) {
+    return <div className="flex items-center justify-center min-h-screen text-ink-soft">Se verifică…</div>;
+  }
+  if (!eligibility.canSell) {
+    return <SellGate reason={eligibility.reason} />;
   }
 
   if (success) {
@@ -272,6 +287,31 @@ export default function SellPage() {
             </form>
           </CardContent>
         </Card>
+      </div>
+    </div>
+  );
+}
+
+function SellGate({ reason }: { reason: SellEligibility }) {
+  const map: Record<SellEligibility, { title: string; body: string; cta: string }> = {
+    ok: { title: '', body: '', cta: '' },
+    auth: { title: 'Autentificare necesară', body: 'Autentifică-te pentru a vinde.', cta: 'Înapoi la feed' },
+    not_seller: { title: 'Devino vânzător', body: 'Pentru a publica produse, trimite o cerere de vânzător.', cta: 'Trimite o cerere' },
+    pending: { title: 'Cerere în verificare', body: 'Cererea ta de vânzător este în curs de verificare. Revino după aprobare.', cta: 'Vezi statusul' },
+    rejected: { title: 'Cerere respinsă', body: 'Cererea ta de vânzător a fost respinsă.', cta: 'Vezi detalii' },
+    suspended: { title: 'Cont suspendat', body: 'Contul tău de vânzător este suspendat.', cta: 'Vezi detalii' },
+    not_onboarded: { title: 'Configurează plățile', body: 'Finalizează configurarea plăților prin Stripe pentru a putea publica produse.', cta: 'Configurează plățile' },
+  };
+  const m = map[reason];
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen px-4 text-center">
+      <div className="max-w-xs">
+        <h2 className="font-display text-2xl text-ink mb-3">{m.title}</h2>
+        <p className="text-ink-soft mb-6">{m.body}</p>
+        <Link href="/seller/apply">
+          <Button className="w-full rounded-full mb-3">{m.cta}</Button>
+        </Link>
+        <Link href="/" className="text-sm text-ink-soft hover:text-ink underline">Înapoi la feed</Link>
       </div>
     </div>
   );

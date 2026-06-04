@@ -77,6 +77,12 @@ See `supabase/schema.sql` for profiles, listings, conversations, messages tables
 - `getConversations` - Fetch inbox
 - `createCheckoutSession` - Stripe Checkout for a listing (`src/actions/checkout.ts`)
 
+## Marketplace (Phase 2 — verified sellers + commission)
+Decisions locked in `docs/PLAN-MARKETPLACE-RO.md` (RO): **15% commission**, manual approval (Varianta A), legal-entity sellers (CUI), mandatory T&C accept, buyer-facing contact, weekly payouts, 20-product cap until first sale.
+- **Data:** `sellers` table (row = application; `status` pending→approved/rejected/suspended; CUI/contact/stripe fields). RLS + column grants — status/Stripe/review fields are service-role-only; approved sellers' public columns world-readable.
+- **Flow:** `/seller/apply` (apply + status + Stripe onboarding) → `/admin/sellers` (review, `ADMIN_USER_IDS`-gated, service-role status writes) → `/seller/dashboard` (products + payouts). Actions: `src/actions/seller.ts` (apply/getMySeller/**canSell**), `src/actions/admin.ts` (list/review), `src/actions/connect.ts` (onboarding link, status sync, Express login link).
+- **Money:** Stripe Connect **Express (business)**. `createCheckoutSession` → platform-owned listings check out to the platform (100%); marketplace listings use a **direct charge** on the seller's connected account (`{ stripeAccount }`) with `application_fee_amount` = 15%. `src/lib/owner.ts` = platform-owner ids; `src/lib/supabase/admin.ts` = service-role client.
+
 ## Payments (Stripe)
 - `src/lib/stripe.ts` (`isStripeConfigured()` gate, like Supabase), `createCheckoutSession` action, "Cumpără" button on listing detail, `/checkout/success`, webhook `/api/webhooks/stripe` (marks listing sold; needs `SUPABASE_SERVICE_ROLE_KEY`). Single-account → shop's Stripe; Connect = future. Inert until `STRIPE_SECRET_KEY` set. See `DEPLOY.md`.
 

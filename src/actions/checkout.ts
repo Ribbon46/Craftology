@@ -4,17 +4,9 @@ import { headers } from 'next/headers';
 import { stripe, isStripeConfigured } from '@/lib/stripe';
 import { createServerClient } from '@/lib/supabase/server';
 import { createServiceClient, isServiceConfigured } from '@/lib/supabase/admin';
+import { isPlatformOwner } from '@/lib/owner';
 
 const COMMISSION_RATE = 0.15; // platform takes 15% (see docs/PLAN-MARKETPLACE-RO.md)
-
-// Listings owned by the platform owner (Deco Kubik) check out to the platform's
-// own Stripe account (100%); marketplace sellers use direct charges + fee.
-function platformOwnerIds(): string[] {
-  return (process.env.ADMIN_USER_IDS ?? '3f6538a6-af42-48fe-99b3-56ed9fbcaf08')
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
 
 /**
  * Stripe Checkout for a listing.
@@ -53,7 +45,7 @@ export async function createCheckoutSession(listingId: string) {
 
   try {
     // Platform's own product (Deco Kubik) → money to the platform, no split.
-    if (platformOwnerIds().includes(listing.seller_id)) {
+    if (isPlatformOwner(listing.seller_id)) {
       const session = await stripe.checkout.sessions.create({
         mode: 'payment',
         line_items,

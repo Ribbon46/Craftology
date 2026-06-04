@@ -10,3 +10,8 @@ test('the admin sellers panel denies access to non-admins', async ({ page }) => 
   await page.goto('/admin/sellers');
   await expect(page.getByRole('heading', { name: 'Acces interzis' })).toBeVisible();
 });
+
+test('the seller dashboard requires login when logged out', async ({ page }) => {
+  await page.goto('/seller/dashboard');
+  await expect(page.getByRole('heading', { name: 'Panoul vânzătorului' })).toBeVisible();
+});

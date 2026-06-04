@@ -74,6 +74,33 @@ export async function fetchListingsPageServer(
   return { data: slice, nextCursor: offset + PAGE_SIZE < filtered.length ? offset + PAGE_SIZE : null };
 }
 
+export interface SellerPublic {
+  id: string;
+  company_name: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  contact_other: string | null;
+  status: string;
+}
+
+/** Public seller info (company + contact methods) for buyer display on a
+ *  listing. RLS exposes these columns only for `approved` sellers to anon. */
+export async function fetchSellerPublicById(id: string): Promise<SellerPublic | null> {
+  if (isSupabaseConfigured()) {
+    try {
+      const { data, error } = await anon()
+        .from('sellers')
+        .select('id, company_name, contact_email, contact_phone, contact_other, status')
+        .eq('id', id)
+        .maybeSingle();
+      if (!error && data) return data as SellerPublic;
+    } catch {
+      // fall through
+    }
+  }
+  return null;
+}
+
 /** Active listing ids + timestamps, for the sitemap. */
 export async function fetchListingIdsServer(): Promise<Array<{ id: string; created_at: string }>> {
   if (isSupabaseConfigured()) {

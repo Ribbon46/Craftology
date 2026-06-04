@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { fetchListingByIdServer } from '@/lib/data/listings.server';
+import { fetchListingByIdServer, fetchSellerPublicById } from '@/lib/data/listings.server';
 import { ListingDetailClient } from './ListingDetailClient';
 
 // A product is fixed content — server-render it (fast LCP + real SEO) and cache
@@ -41,6 +41,8 @@ export default async function ListingDetailPage({ params }: Params) {
   const listing = await fetchListingByIdServer(id);
   if (!listing) notFound();
 
+  const sellerContact = await fetchSellerPublicById(listing.seller_id);
+
   // Product structured data → rich Google results (price + availability).
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -60,7 +62,7 @@ export default async function ListingDetailPage({ params }: Params) {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <ListingDetailClient listing={listing} />
+      <ListingDetailClient listing={listing} sellerContact={sellerContact} />
     </>
   );
 }

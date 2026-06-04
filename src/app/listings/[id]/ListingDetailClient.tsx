@@ -16,7 +16,14 @@ import { createCheckoutSession } from '@/actions/checkout';
 // rendered on the server (see page.tsx) and passed in as a prop, so the static
 // content (image, title, price, description) is in the initial HTML for fast
 // LCP + SEO; only the buy/message/share/gallery interactivity is client-side.
-export function ListingDetailClient({ listing }: { listing: Listing }) {
+interface SellerContact {
+  company_name: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  contact_other: string | null;
+}
+
+export function ListingDetailClient({ listing, sellerContact }: { listing: Listing; sellerContact?: SellerContact | null }) {
   const router = useRouter();
   const { user } = useSession();
   const { setOpen } = useAuthModal();
@@ -138,6 +145,24 @@ export function ListingDetailClient({ listing }: { listing: Listing }) {
             {following ? 'Urmărit' : 'Urmărește'}
           </Button>
         </div>
+
+        {/* Direct seller contact (shown for approved sellers) */}
+        {sellerContact && (sellerContact.contact_email || sellerContact.contact_phone || sellerContact.contact_other) && (
+          <div className="mt-3 p-4 rounded-2xl bg-surface border border-line text-sm">
+            <p className="font-medium text-ink mb-1.5">
+              Contact vânzător{sellerContact.company_name ? ` · ${sellerContact.company_name}` : ''}
+            </p>
+            <div className="space-y-1 text-ink-soft">
+              {sellerContact.contact_email && (
+                <p>✉ <a href={`mailto:${sellerContact.contact_email}`} className="hover:text-clay underline underline-offset-2">{sellerContact.contact_email}</a></p>
+              )}
+              {sellerContact.contact_phone && (
+                <p>☎ <a href={`tel:${sellerContact.contact_phone}`} className="hover:text-clay underline underline-offset-2">{sellerContact.contact_phone}</a></p>
+              )}
+              {sellerContact.contact_other && <p>🔗 {sellerContact.contact_other}</p>}
+            </div>
+          </div>
+        )}
 
         {/* Description */}
         <div className="mt-6">

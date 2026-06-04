@@ -177,7 +177,8 @@ function StatusCard({ seller, onboarding, onOnboard }: { seller: SellerRow; onbo
               <p className="inline-flex items-center gap-1.5 text-sage text-sm font-medium">
                 <CheckCircle2 className="w-4 h-4" /> Plăți configurate
               </p>
-              <div>
+              <div className="flex flex-wrap justify-center gap-2">
+                <Link href="/seller/dashboard"><Button variant="outline" className="rounded-full">Panoul vânzătorului</Button></Link>
                 <Link href="/sell"><Button className="rounded-full">Adaugă un produs</Button></Link>
               </div>
             </div>
