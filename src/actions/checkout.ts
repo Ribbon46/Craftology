@@ -1,14 +1,27 @@
 'use server';
 
+import { headers } from 'next/headers';
 import { stripe, isStripeConfigured } from '@/lib/stripe';
 import { createServerClient } from '@/lib/supabase/server';
-import { headers } from 'next/headers';
+import { createServiceClient, isServiceConfigured } from '@/lib/supabase/admin';
+
+const COMMISSION_RATE = 0.15; // platform takes 15% (see docs/PLAN-MARKETPLACE-RO.md)
+
+// Listings owned by the platform owner (Deco Kubik) check out to the platform's
+// own Stripe account (100%); marketplace sellers use direct charges + fee.
+function platformOwnerIds(): string[] {
+  return (process.env.ADMIN_USER_IDS ?? '3f6538a6-af42-48fe-99b3-56ed9fbcaf08')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
 
 /**
- * Creates a Stripe Checkout Session for a listing and returns the hosted
- * payment URL. The client redirects to it. Payment goes to the shop's Stripe
- * account (single-seller MVP). For a multi-seller marketplace this becomes
- * Stripe Connect with destination charges so funds route to each seller.
+ * Stripe Checkout for a listing.
+ * - Platform-owned listing → normal checkout to the platform account.
+ * - Marketplace seller → **direct charge** on the seller's connected account
+ *   (seller is merchant + bears Stripe fee) with a 15% `application_fee_amount`
+ *   to the platform. Requires the seller to have completed Connect onboarding.
  */
 export async function createCheckoutSession(listingId: string) {
   if (!isStripeConfigured() || !stripe) {
@@ -18,7 +31,7 @@ export async function createCheckoutSession(listingId: string) {
   const supabase = await createServerClient();
   const { data: listing, error } = await supabase
     .from('listings')
-    .select('id, title, price, image_urls, status')
+    .select('id, title, price, image_urls, status, seller_id')
     .eq('id', listingId)
     .single();
 
@@ -26,34 +39,57 @@ export async function createCheckoutSession(listingId: string) {
   if (listing.status === 'sold') return { error: 'Acest produs a fost deja vândut.' };
 
   const h = await headers();
-  const origin =
-    h.get('origin') ?? (h.get('host') ? `https://${h.get('host')}` : 'https://craftology-peach.vercel.app');
+  const base = h.get('origin') ?? (h.get('host') ? `https://${h.get('host')}` : 'https://craftology-peach.vercel.app');
+  const unitAmount = Math.round(Number(listing.price) * 100);
+  const images = (listing.image_urls ?? [])
+    .filter((u: string) => typeof u === 'string' && u.startsWith('http'))
+    .slice(0, 1);
+
+  const line_items = [
+    { quantity: 1, price_data: { currency: 'ron', unit_amount: unitAmount, product_data: { name: listing.title, images } } },
+  ];
+  const success_url = `${base}/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
+  const cancel_url = `${base}/listings/${listing.id}`;
 
   try {
-    const session = await stripe.checkout.sessions.create({
-      mode: 'payment',
-      line_items: [
-        {
-          quantity: 1,
-          price_data: {
-            currency: 'ron',
-            unit_amount: Math.round(Number(listing.price) * 100),
-            product_data: {
-              name: listing.title,
-              images: (listing.image_urls ?? [])
-                .filter((u: string) => typeof u === 'string' && u.startsWith('http'))
-                .slice(0, 1),
-            },
-          },
-        },
-      ],
-      metadata: { listing_id: listing.id },
-      success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/listings/${listing.id}`,
-    });
+    // Platform's own product (Deco Kubik) → money to the platform, no split.
+    if (platformOwnerIds().includes(listing.seller_id)) {
+      const session = await stripe.checkout.sessions.create({
+        mode: 'payment',
+        line_items,
+        metadata: { listing_id: listing.id },
+        success_url,
+        cancel_url,
+      });
+      return { url: session.url };
+    }
+
+    // Marketplace seller → direct charge on their connected account + 15% fee.
+    if (!isServiceConfigured()) return { error: 'Plățile pentru vânzători nu sunt configurate complet.' };
+    const svc = createServiceClient();
+    const { data: seller } = await svc
+      .from('sellers')
+      .select('stripe_account_id, stripe_onboarded, status')
+      .eq('id', listing.seller_id)
+      .maybeSingle();
+
+    if (!seller || seller.status !== 'approved' || !seller.stripe_account_id || !seller.stripe_onboarded) {
+      return { error: 'Vânzătorul nu poate primi plăți momentan.' };
+    }
+
+    const session = await stripe.checkout.sessions.create(
+      {
+        mode: 'payment',
+        line_items,
+        payment_intent_data: { application_fee_amount: Math.round(unitAmount * COMMISSION_RATE) },
+        metadata: { listing_id: listing.id },
+        success_url,
+        cancel_url,
+      },
+      { stripeAccount: seller.stripe_account_id },
+    );
     return { url: session.url };
   } catch (e) {
-    // Log the raw Stripe error server-side; return a clean, generic message.
     console.error('Stripe checkout error:', e);
     return { error: 'Eroare la inițierea plății. Încearcă din nou.' };
   }

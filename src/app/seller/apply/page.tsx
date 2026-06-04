@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Store, Clock, CheckCircle2, XCircle } from 'lucide-react';
+import { ArrowLeft, Store, Clock, CheckCircle2, XCircle, CreditCard } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useAuthModal } from '@/lib/auth-modal';
 import { getMySeller, applyAsSeller, type SellerRow } from '@/actions/seller';
+import { createSellerOnboardingLink, syncSellerStripeStatus } from '@/actions/connect';
 
 export default function SellerApplyPage() {
   const { setOpen } = useAuthModal();
@@ -16,6 +17,7 @@ export default function SellerApplyPage() {
   const [authed, setAuthed] = useState(false);
   const [seller, setSeller] = useState<SellerRow | null>(null);
   const [saving, setSaving] = useState(false);
+  const [onboarding, setOnboarding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
@@ -27,7 +29,18 @@ export default function SellerApplyPage() {
     });
 
   useEffect(() => {
-    refresh();
+    const fromStripe =
+      typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('stripe') === 'return';
+    (async () => {
+      if (fromStripe) {
+        try {
+          await syncSellerStripeStatus();
+        } catch {
+          /* ignore */
+        }
+      }
+      await refresh();
+    })();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -44,6 +57,18 @@ export default function SellerApplyPage() {
     refresh();
   };
 
+  const handleOnboard = async () => {
+    setError(null);
+    setOnboarding(true);
+    const res = await createSellerOnboardingLink();
+    if ('url' in res && res.url) {
+      window.location.href = res.url;
+    } else {
+      setError(('error' in res && res.error) || 'Nu am putut deschide configurarea plăților.');
+      setOnboarding(false);
+    }
+  };
+
   return (
     <div className="min-h-screen px-4 py-6 pb-24 mx-auto w-full max-w-2xl">
       <Link href="/profile" className="inline-flex items-center text-ink-soft hover:text-ink mb-4">
@@ -56,6 +81,12 @@ export default function SellerApplyPage() {
       </div>
       <p className="text-ink-soft mb-6">Vinde-ți produsele handmade pe Craftology, alături de creatori verificați.</p>
 
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm dark:bg-red-950/40 dark:border-red-900/60 dark:text-red-300">
+          {error}
+        </div>
+      )}
+
       {loading ? (
         <p className="text-ink-soft py-8 text-center">Se încarcă…</p>
       ) : !authed ? (
@@ -65,20 +96,12 @@ export default function SellerApplyPage() {
             <Button className="rounded-full" onClick={() => setOpen(true)}>Autentificare</Button>
           </CardContent>
         </Card>
-      ) : seller ? (
-        <StatusCard seller={seller} />
-      ) : done ? (
-        <StatusCard seller={{ status: 'pending' } as SellerRow} />
+      ) : seller || done ? (
+        <StatusCard seller={seller ?? ({ status: 'pending', stripe_onboarded: false } as SellerRow)} onboarding={onboarding} onOnboard={handleOnboard} />
       ) : (
         <Card>
           <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="space-y-5">
-              {error && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm dark:bg-red-950/40 dark:border-red-900/60 dark:text-red-300">
-                  {error}
-                </div>
-              )}
-
               <div className="rounded-xl bg-cream border border-line p-3 text-sm text-ink-soft">
                 Pentru a putea emite facturi, vânzătorii trebuie să fie <strong className="text-ink">persoană juridică</strong> (firmă, PFA sau II).
               </div>
@@ -112,7 +135,7 @@ export default function SellerApplyPage() {
                 {saving ? 'Se trimite…' : 'Trimite cererea'}
               </Button>
               <p className="text-xs text-ink-faint text-center">
-                Cererea e verificată manual. După aprobare, vei finaliza configurarea plăților prin Stripe.
+                Cererea e verificată manual. După aprobare, vei configura plățile prin Stripe.
               </p>
             </form>
           </CardContent>
@@ -131,23 +154,39 @@ function Field({ label, name, ...rest }: { label?: string; name: string } & Reac
   );
 }
 
-function StatusCard({ seller }: { seller: SellerRow }) {
+function StatusCard({ seller, onboarding, onOnboard }: { seller: SellerRow; onboarding: boolean; onOnboard: () => void }) {
   const map = {
-    pending: { icon: Clock, color: 'text-gold', title: 'Cererea ta este în verificare', body: 'Îți mulțumim! Verificăm cererea și revenim cât de curând. Vei putea finaliza plățile prin Stripe după aprobare.' },
-    approved: { icon: CheckCircle2, color: 'text-sage', title: 'Ești vânzător aprobat 🎉', body: 'Felicitări! Poți publica produse. (Configurarea plăților Stripe urmează la pasul următor.)' },
+    pending: { icon: Clock, color: 'text-gold', title: 'Cererea ta este în verificare', body: 'Îți mulțumim! Verificăm cererea și revenim cât de curând.' },
+    approved: { icon: CheckCircle2, color: 'text-sage', title: 'Ești vânzător aprobat 🎉', body: 'Felicitări! Mai e un singur pas: configurează plățile prin Stripe ca să poți încasa bani.' },
     rejected: { icon: XCircle, color: 'text-clay-deep', title: 'Cererea a fost respinsă', body: seller.rejection_reason || 'Din păcate, cererea nu a fost aprobată momentan.' },
     suspended: { icon: XCircle, color: 'text-clay-deep', title: 'Cont de vânzător suspendat', body: 'Contul tău de vânzător este suspendat. Contactează-ne pentru detalii.' },
   } as const;
   const s = map[seller.status] ?? map.pending;
   const Icon = s.icon;
+
   return (
     <Card>
       <CardContent className="p-6 text-center">
         <Icon className={`w-12 h-12 mx-auto mb-3 ${s.color}`} />
         <h2 className="font-display text-xl text-ink mb-2">{s.title}</h2>
         <p className="text-ink-soft mb-4 max-w-sm mx-auto">{s.body}</p>
+
         {seller.status === 'approved' && (
-          <Link href="/sell"><Button className="rounded-full">Adaugă un produs</Button></Link>
+          seller.stripe_onboarded ? (
+            <div className="space-y-3">
+              <p className="inline-flex items-center gap-1.5 text-sage text-sm font-medium">
+                <CheckCircle2 className="w-4 h-4" /> Plăți configurate
+              </p>
+              <div>
+                <Link href="/sell"><Button className="rounded-full">Adaugă un produs</Button></Link>
+              </div>
+            </div>
+          ) : (
+            <Button className="rounded-full" onClick={onOnboard} disabled={onboarding}>
+              <CreditCard className="w-4 h-4 mr-2" />
+              {onboarding ? 'Se deschide…' : 'Configurează plățile (Stripe)'}
+            </Button>
+          )
         )}
       </CardContent>
     </Card>
