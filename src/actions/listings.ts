@@ -170,6 +170,7 @@ export async function deleteListing(listingId: string) {
   }
 
   revalidatePath('/');
+  revalidatePath(`/listings/${listingId}`);
   return { success: true };
 }
 
@@ -213,5 +214,6 @@ export async function updateListingStatus(listingId: string, status: 'active' | 
   }
 
   revalidatePath('/');
+  revalidatePath(`/listings/${listingId}`);
   return { success: true };
 }

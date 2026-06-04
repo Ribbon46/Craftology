@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import type Stripe from 'stripe';
 import { stripe, isStripeConfigured } from '@/lib/stripe';
 import { createClient } from '@supabase/supabase-js';
@@ -43,6 +44,9 @@ export async function POST(req: NextRequest) {
     if (listingId && url && serviceKey) {
       const admin = createClient(url, serviceKey);
       await admin.from('listings').update({ status: 'sold' }).eq('id', listingId);
+      // Bust the ISR cache so the sold item leaves the feed + its page updates now.
+      revalidatePath('/');
+      revalidatePath(`/listings/${listingId}`);
     }
   }
 
