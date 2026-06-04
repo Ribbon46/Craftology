@@ -267,3 +267,52 @@ CREATE POLICY "Users can delete their own listing images"
     bucket_id = 'listings_images'
     AND (storage.foldername(name))[2] = auth.uid()::text
   );
+
+-- =====================================================================
+-- Phase 2: verified-seller marketplace — `sellers`
+-- A row here IS the seller application; `status` tracks it (pending →
+-- approved/rejected/suspended). id = profiles.id = auth.uid(). Sellers must be a
+-- persoană juridică (company_name + cui) and must have accepted the Terms.
+-- status / stripe_account_id / review fields are server/admin-controlled (set via
+-- the service-role key); users can only apply + edit their own contact details.
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS sellers (
+  id UUID PRIMARY KEY REFERENCES profiles (id) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'suspended')),
+  company_name TEXT NOT NULL,
+  cui TEXT NOT NULL,
+  contact_email TEXT,
+  contact_phone TEXT,
+  contact_other TEXT,
+  workshop_description TEXT,
+  stripe_account_id TEXT,
+  stripe_onboarded BOOLEAN NOT NULL DEFAULT FALSE,
+  terms_accepted_at TIMESTAMPTZ NOT NULL,
+  reviewed_at TIMESTAMPTZ,
+  rejection_reason TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS sellers_status_idx ON sellers (status);
+
+ALTER TABLE sellers ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Sellers approved-public or own" ON sellers;
+CREATE POLICY "Sellers approved-public or own" ON sellers
+  FOR SELECT USING (status = 'approved' OR auth.uid() = id);
+
+DROP POLICY IF EXISTS "Apply as self pending" ON sellers;
+CREATE POLICY "Apply as self pending" ON sellers
+  FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = id AND status = 'pending');
+
+DROP POLICY IF EXISTS "Edit own seller row" ON sellers;
+CREATE POLICY "Edit own seller row" ON sellers
+  FOR UPDATE TO authenticated USING (auth.uid() = id);
+
+REVOKE ALL ON sellers FROM anon, authenticated;
+GRANT SELECT (id, status, company_name, contact_email, contact_phone, contact_other, workshop_description, created_at) ON sellers TO anon;
+GRANT SELECT (id, status, company_name, cui, contact_email, contact_phone, contact_other, workshop_description, stripe_onboarded, reviewed_at, rejection_reason, created_at) ON sellers TO authenticated;
+GRANT INSERT (id, company_name, cui, contact_email, contact_phone, contact_other, workshop_description, terms_accepted_at) ON sellers TO authenticated;
+GRANT UPDATE (company_name, cui, contact_email, contact_phone, contact_other, workshop_description) ON sellers TO authenticated;

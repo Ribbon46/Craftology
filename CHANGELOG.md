@@ -173,3 +173,10 @@ Completed the deferred perf refactor (audit #2/#4) — the two most important pa
 - **Sort** (Cele mai noi / Preț: mic→mare / Preț: mare→mic) + a **price-range filter** (min/max lei) on the home feed via a new `FeedControls` component; the search page gets the same sort dropdown.
 - Wired through `fetchListingsPage` + `searchListings` — Supabase `.order()` / `.gte()` / `.lte()` with a matching sort/filter path in mock mode — and keyed into React Query so changing any control (category, sort, price) refetches. `initialData` (the SSR first page) now seeds **only the exact default view**, so a sort/filter change can't flash stale default data.
 - E2E: added a price-ascending assertion (parses the rendered card prices, polls until non-decreasing). Suite: **22 passed / 2 skipped**. Verified the control UI on-brand (sort dropdown + collapsible price panel).
+
+## [2026-06-04] - Phase 2 (marketplace) · Stage 1: seller data model
+Phase 2 greenlit; decisions locked in `docs/PLAN-MARKETPLACE-RO.md` (15% commission, Varianta A approval, legal-entity sellers, mandatory T&C + buyer-facing contact methods, weekly payouts, 20-product cap for new sellers).
+- New **`sellers`** table (the row *is* the application; `status` pending→approved/rejected/suspended): `company_name` + `cui` (persoană juridică), contact methods, workshop description, `stripe_account_id`/`stripe_onboarded`, `terms_accepted_at`, review fields. `id` = `profiles.id` = `auth.uid()`.
+- RLS + **column grants**: approved sellers' public columns are world-readable (buyer display); a user sees only their own row otherwise; users may apply (forced `pending`) + edit only their own contact/details; `status`/Stripe/review fields are server/admin-only (service role); **anon never reads CUI or internal fields**.
+- Seeded the founding **Deco Kubik** seller as `approved` so existing listings stay valid.
+- Applied live (migration `phase2_sellers_table`) + mirrored in `supabase/schema.sql`; verified 3 policies + the exact anon column grants.
