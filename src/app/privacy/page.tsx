@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, TriangleAlert } from 'lucide-react';
 
 export const metadata = { title: 'Politica de Confidențialitate · Craftology' };
 
@@ -66,10 +66,13 @@ export default function PrivacyPage() {
           Row Level Security). Niciun sistem nu este 100% sigur, dar ne angajăm să protejăm datele tale.
         </p>
 
-        <p className="text-xs text-ink-faint pt-6 border-t border-line mt-6">
-          ⚠️ Document-șablon. Completează câmpurile [ ] și obține revizuirea unui avocat / specialist GDPR înainte
-          de lansare. Vezi și{' '}
-          <Link href="/terms" className="text-clay underline underline-offset-2">Termenii și Condițiile</Link>.
+        <p className="flex items-start gap-1.5 text-xs text-ink-faint pt-6 border-t border-line mt-6">
+          <TriangleAlert className="w-3.5 h-3.5 text-clay flex-shrink-0 mt-px" />
+          <span>
+            Document-șablon. Completează câmpurile [ ] și obține revizuirea unui avocat / specialist GDPR înainte
+            de lansare. Vezi și{' '}
+            <Link href="/terms" className="text-clay underline underline-offset-2">Termenii și Condițiile</Link>.
+          </span>
         </p>
       </div>
     </div>

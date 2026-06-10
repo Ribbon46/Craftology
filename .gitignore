@@ -59,3 +59,6 @@ next-env.d.ts
 /android/capacitor-cordova-android-plugins/
 
 .vercel
+
+# local design-audit screenshots
+/.design-audit

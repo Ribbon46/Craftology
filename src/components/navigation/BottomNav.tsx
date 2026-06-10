@@ -43,7 +43,9 @@ export function BottomNav() {
             width: pill.width - 12,
             height: pill.height - 16,
             opacity: pill.ready ? 1 : 0,
-            transition: 'left .5s cubic-bezier(.22,1,.36,1), width .5s cubic-bezier(.22,1,.36,1), opacity .3s ease',
+            transition: pill.animate
+              ? 'left .5s cubic-bezier(.22,1,.36,1), width .5s cubic-bezier(.22,1,.36,1), opacity .3s ease'
+              : 'opacity .3s ease',
           }}
         />
         {BOTTOM_NAV_ITEMS.map((item) => {

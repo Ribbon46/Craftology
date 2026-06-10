@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, TriangleAlert } from 'lucide-react';
 
 export const metadata = { title: 'Termeni și Condiții · Craftology' };
 
@@ -59,7 +59,7 @@ export default function TermsPage() {
         <p>
           Plățile sunt procesate securizat prin <strong>Stripe</strong>. Prețurile sunt afișate în RON și includ
           TVA acolo unde este aplicabil. Pentru vânzările vânzătorilor verificați, Platforma reține un
-          <strong> comision de [X]%</strong> din valoarea tranzacției, iar restul este transferat vânzătorului
+          <strong> comision de 15%</strong> din valoarea tranzacției, iar restul este transferat vânzătorului
           (mai puțin comisioanele procesatorului de plăți). Vânzătorii sunt responsabili pentru obligațiile lor
           fiscale (facturare, TVA, impozite).
         </p>
@@ -106,9 +106,12 @@ export default function TermsPage() {
         <h2>12. Modificări</h2>
         <p>Putem actualiza acești Termeni; versiunea curentă este publicată pe această pagină.</p>
 
-        <p className="text-xs text-ink-faint pt-6 border-t border-line mt-6">
-          ⚠️ Document-șablon. Înainte de lansarea publică, completează câmpurile [ ] și fă-l revizuit de un avocat
-          (drept comercial / protecția consumatorului / GDPR în România).
+        <p className="flex items-start gap-1.5 text-xs text-ink-faint pt-6 border-t border-line mt-6">
+          <TriangleAlert className="w-3.5 h-3.5 text-clay flex-shrink-0 mt-px" />
+          <span>
+            Document-șablon. Înainte de lansarea publică, completează câmpurile [ ] și fă-l revizuit de un avocat
+            (drept comercial / protecția consumatorului / GDPR în România).
+          </span>
         </p>
       </div>
     </div>

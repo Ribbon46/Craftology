@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Store, CreditCard, PackageOpen } from 'lucide-react';
+import { ArrowLeft, Store, CreditCard, PackageOpen, Plus } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useSession } from '@/lib/hooks';
@@ -22,6 +22,7 @@ export default function SellerDashboardPage() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [opening, setOpening] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (sessionLoading) return;
@@ -34,10 +35,15 @@ export default function SellerDashboardPage() {
   }, [user, sessionLoading]);
 
   const openStripe = async () => {
+    setError(null);
     setOpening(true);
     const res = await createStripeLoginLink();
-    if ('url' in res && res.url) window.location.href = res.url;
-    else setOpening(false);
+    if ('url' in res && res.url) {
+      window.location.href = res.url;
+    } else {
+      setError(('error' in res && res.error) || 'Nu am putut deschide panoul de plăți.');
+      setOpening(false);
+    }
   };
 
   if (!sessionLoading && !user) {
@@ -50,7 +56,13 @@ export default function SellerDashboardPage() {
     );
   }
 
-  if (loading) return <div className="flex items-center justify-center h-[60vh] text-ink-soft">Se încarcă…</div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <div className="w-6 h-6 border-2 border-clay border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (!seller || seller.status !== 'approved') {
     return (
@@ -58,7 +70,7 @@ export default function SellerDashboardPage() {
         <Store className="w-10 h-10 text-clay mb-3" />
         <h1 className="font-display text-2xl text-ink mb-2">Panoul vânzătorului</h1>
         <p className="text-ink-soft mb-6 max-w-xs">
-          {seller ? 'Contul tău de vânzător nu este (încă) activ.' : 'Nu ești încă vânzător pe Craftology.'}
+          {seller ? 'Contul tău de vânzător nu este încă activ.' : 'Nu ești încă vânzător pe Craftology.'}
         </p>
         <Link href="/seller/apply"><Button className="rounded-full">Devino vânzător</Button></Link>
       </div>
@@ -80,6 +92,12 @@ export default function SellerDashboardPage() {
         <h1 className="font-display text-2xl text-ink">{seller.company_name}</h1>
       </div>
       <p className="text-ink-soft mb-6">Panoul tău de vânzător</p>
+
+      {error && (
+        <div className="mb-4 p-3 rounded-xl bg-destructive/10 border border-destructive/25 text-destructive text-sm">
+          {error}
+        </div>
+      )}
 
       {/* Stats + payouts */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
@@ -103,7 +121,12 @@ export default function SellerDashboardPage() {
 
       <div className="flex items-center justify-between mb-3">
         <h2 className="font-display text-lg text-ink">Produsele tale</h2>
-        <Button size="sm" className="rounded-full" onClick={() => router.push('/sell')}>+ Adaugă</Button>
+        <Link href="/sell">
+          <Button size="sm" className="rounded-full">
+            <Plus className="w-4 h-4 mr-1" />
+            Adaugă
+          </Button>
+        </Link>
       </div>
 
       {listings.length === 0 ? (

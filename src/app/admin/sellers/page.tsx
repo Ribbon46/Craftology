@@ -2,9 +2,17 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, Mail, Phone, Link2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { isAdminUser, listSellerApplications, reviewSeller } from '@/actions/admin';
 
 interface Seller {
@@ -31,6 +39,11 @@ export default function AdminSellersPage() {
   const [allowed, setAllowed] = useState<boolean | null>(null);
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  // Reject flow goes through a themed dialog (a native prompt() would be
+  // unstyled chrome and lets an empty reason through).
+  const [rejecting, setRejecting] = useState<Seller | null>(null);
+  const [reason, setReason] = useState('');
 
   const load = useCallback(async () => {
     const res = await listSellerApplications();
@@ -44,27 +57,51 @@ export default function AdminSellersPage() {
     });
   }, [load]);
 
-  const act = async (id: string, action: 'approve' | 'reject' | 'suspend') => {
-    let reason: string | undefined;
-    if (action === 'reject') {
-      reason = window.prompt('Motivul respingerii (afișat vânzătorului):') ?? undefined;
-      if (reason === undefined) return; // cancelled
+  const act = async (id: string, action: 'approve' | 'reject' | 'suspend', rejectionReason?: string) => {
+    setError(null);
+    if (action === 'reject' && !rejectionReason) {
+      const seller = sellers.find((s) => s.id === id);
+      if (seller) {
+        setReason('');
+        setRejecting(seller);
+      }
+      return;
     }
     setBusy(id);
-    await reviewSeller(id, action, reason);
-    await load();
-    setBusy(null);
+    try {
+      const res = await reviewSeller(id, action, rejectionReason);
+      if (res && typeof res === 'object' && 'error' in res && res.error) {
+        setError(String(res.error));
+      }
+      await load();
+    } catch {
+      setError('Acțiunea nu a reușit. Încearcă din nou.');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const confirmReject = async () => {
+    if (!rejecting || !reason.trim()) return;
+    const id = rejecting.id;
+    const trimmed = reason.trim();
+    setRejecting(null);
+    await act(id, 'reject', trimmed);
   };
 
   if (allowed === null) {
-    return <div className="flex items-center justify-center h-[60vh] text-ink-soft">Se încarcă…</div>;
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <div className="w-6 h-6 border-2 border-clay border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
   }
   if (!allowed) {
     return (
       <div className="flex flex-col items-center justify-center h-[70vh] px-6 text-center">
         <h1 className="font-display text-2xl text-ink mb-2">Acces interzis</h1>
         <p className="text-ink-soft mb-6">Această pagină e disponibilă doar administratorilor.</p>
-        <Link href="/"><Button className="rounded-full">Înapoi la feed</Button></Link>
+        <Link href="/"><Button className="rounded-full">Înapoi acasă</Button></Link>
       </div>
     );
   }
@@ -83,24 +120,56 @@ export default function AdminSellersPage() {
         <h1 className="font-display text-2xl text-ink">Cereri vânzători</h1>
       </div>
 
+      {error && (
+        <div className="mb-4 p-3 rounded-xl bg-destructive/10 border border-destructive/25 text-destructive text-sm">
+          {error}
+        </div>
+      )}
+
       {sellers.length === 0 ? (
         <p className="text-ink-soft text-center py-10">Nicio cerere încă.</p>
       ) : (
         <div className="space-y-6">
           {pending.length > 0 && (
             <section className="space-y-3">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-soft">De verificat ({pending.length})</h2>
+              <h2 className="text-[11px] uppercase tracking-[0.2em] text-ink-faint">De verificat ({pending.length})</h2>
               {pending.map((s) => <SellerCard key={s.id} s={s} busy={busy === s.id} onAct={act} />)}
             </section>
           )}
           {others.length > 0 && (
             <section className="space-y-3">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-soft">Procesate</h2>
+              <h2 className="text-[11px] uppercase tracking-[0.2em] text-ink-faint">Procesate</h2>
               {others.map((s) => <SellerCard key={s.id} s={s} busy={busy === s.id} onAct={act} />)}
             </section>
           )}
         </div>
       )}
+
+      <Dialog open={rejecting !== null} onOpenChange={(open) => !open && setRejecting(null)}>
+        <DialogContent className="sm:max-w-md p-6">
+          <DialogHeader className="pr-6">
+            <DialogTitle className="font-display text-xl">Respinge cererea</DialogTitle>
+            <DialogDescription>
+              {rejecting?.company_name} — motivul respingerii este afișat vânzătorului.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            rows={3}
+            placeholder="ex: CUI-ul nu este valid sau firma nu este activă."
+            className="resize-none"
+          />
+          <div className="flex justify-end gap-2 pt-1">
+            <Button variant="outline" className="rounded-full" onClick={() => setRejecting(null)}>
+              Renunță
+            </Button>
+            <Button className="rounded-full" disabled={!reason.trim()} onClick={confirmReject}>
+              Respinge
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -118,10 +187,25 @@ function SellerCard({ s, busy, onAct }: { s: Seller; busy: boolean; onAct: (id: 
           <span className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-semibold ${badge.cls}`}>{badge.text}</span>
         </div>
         {s.workshop_description && <p className="text-sm text-ink-soft mb-2">{s.workshop_description}</p>}
-        <div className="text-xs text-ink-soft space-y-0.5 mb-3">
-          {s.contact_email && <p>✉ {s.contact_email}</p>}
-          {s.contact_phone && <p>☎ {s.contact_phone}</p>}
-          {s.contact_other && <p>🔗 {s.contact_other}</p>}
+        <div className="text-xs text-ink-soft space-y-1 mb-3">
+          {s.contact_email && (
+            <p className="flex items-center gap-1.5">
+              <Mail className="w-3.5 h-3.5 text-ink-faint flex-shrink-0" />
+              {s.contact_email}
+            </p>
+          )}
+          {s.contact_phone && (
+            <p className="flex items-center gap-1.5">
+              <Phone className="w-3.5 h-3.5 text-ink-faint flex-shrink-0" />
+              {s.contact_phone}
+            </p>
+          )}
+          {s.contact_other && (
+            <p className="flex items-center gap-1.5">
+              <Link2 className="w-3.5 h-3.5 text-ink-faint flex-shrink-0" />
+              {s.contact_other}
+            </p>
+          )}
           {s.rejection_reason && <p className="text-clay-deep">Motiv respingere: {s.rejection_reason}</p>}
         </div>
         <div className="flex flex-wrap gap-2">

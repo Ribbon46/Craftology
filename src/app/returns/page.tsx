@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, TriangleAlert } from 'lucide-react';
 
 export const metadata = { title: 'Politica de Retur · Craftology' };
 
@@ -52,10 +52,13 @@ export default function ReturnsPage() {
           (ec.europa.eu/consumers/odr).
         </p>
 
-        <p className="text-xs text-ink-faint pt-6 border-t border-line mt-6">
-          ⚠️ Document-șablon. Completează câmpurile [ ] și fă-l revizuit de un avocat înainte de lansare. Vezi și{' '}
-          <Link href="/terms" className="text-clay underline underline-offset-2">Termeni</Link> și{' '}
-          <Link href="/privacy" className="text-clay underline underline-offset-2">Confidențialitate</Link>.
+        <p className="flex items-start gap-1.5 text-xs text-ink-faint pt-6 border-t border-line mt-6">
+          <TriangleAlert className="w-3.5 h-3.5 text-clay flex-shrink-0 mt-px" />
+          <span>
+            Document-șablon. Completează câmpurile [ ] și fă-l revizuit de un avocat înainte de lansare. Vezi și{' '}
+            <Link href="/terms" className="text-clay underline underline-offset-2">Termeni</Link> și{' '}
+            <Link href="/privacy" className="text-clay underline underline-offset-2">Confidențialitate</Link>.
+          </span>
         </p>
       </div>
     </div>

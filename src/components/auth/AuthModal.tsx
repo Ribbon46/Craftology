@@ -94,12 +94,12 @@ export function AuthModal() {
 
         <form onSubmit={handleSubmit} className="py-2">
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm dark:bg-red-950/40 dark:border-red-900/60 dark:text-red-300">
+            <div className="mb-4 p-3 rounded-xl bg-destructive/10 border border-destructive/25 text-destructive text-sm">
               {error}
             </div>
           )}
           {info && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md text-green-700 text-sm dark:bg-green-950/40 dark:border-green-900/60 dark:text-green-300">
+            <div className="mb-4 p-3 rounded-xl bg-sage/15 border border-sage/30 text-sage text-sm">
               {info}
             </div>
           )}
@@ -159,7 +159,7 @@ export function AuthModal() {
 
           <Button type="submit" className="w-full" disabled={loading}>
             {loading
-              ? 'Se procesează...'
+              ? 'Se procesează…'
               : isLogin
                 ? 'Autentificare'
                 : 'Creează cont'}
@@ -182,11 +182,25 @@ export function AuthModal() {
 
         <p className="text-center text-xs leading-relaxed text-ink-soft text-pretty px-1">
           Continuând, ești de acord cu{' '}
-          <Link href="/terms" className="text-ink underline underline-offset-2 hover:text-clay">
+          <Link
+            href="/terms"
+            onClick={() => {
+              setOpen(false);
+              reset();
+            }}
+            className="text-ink underline underline-offset-2 hover:text-clay"
+          >
             Termenii
           </Link>{' '}
           și{' '}
-          <Link href="/privacy" className="text-ink underline underline-offset-2 hover:text-clay">
+          <Link
+            href="/privacy"
+            onClick={() => {
+              setOpen(false);
+              reset();
+            }}
+            className="text-ink underline underline-offset-2 hover:text-clay"
+          >
             Politica de confidențialitate
           </Link>
           .

@@ -58,8 +58,9 @@ export function SiteHeader() {
               width: pill.width + 28,
               height: pill.height + 12,
               opacity: pill.ready ? 1 : 0,
-              transition:
-                'left .55s cubic-bezier(.22,1,.36,1), width .55s cubic-bezier(.22,1,.36,1), top .55s ease, height .55s ease, opacity .3s ease',
+              transition: pill.animate
+                ? 'left .55s cubic-bezier(.22,1,.36,1), width .55s cubic-bezier(.22,1,.36,1), top .55s ease, height .55s ease, opacity .3s ease'
+                : 'opacity .3s ease',
             }}
           />
           {NAV.map((link) => {

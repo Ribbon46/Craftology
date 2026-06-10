@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, ArrowLeft, Paperclip, MoreVertical, Check, CheckCheck } from 'lucide-react';
+import { Send, ArrowLeft, Check, CheckCheck, MessageSquare } from 'lucide-react';
 import { createMessage, getMessages, getConversations, markMessagesAsRead } from '@/actions/messages';
 import { useSession } from '@/lib/hooks';
+import { useAuthModal } from '@/lib/auth-modal';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { avatarFor } from '@/lib/mock';
 
@@ -45,6 +45,7 @@ const fmtTime = (iso: string) =>
 
 export default function MessagesPage() {
   const { user, loading: sessionLoading } = useSession();
+  const { setOpen } = useAuthModal();
   const live = isSupabaseConfigured();
 
   const [conversations, setConversations] = useState<UiConversation[]>([]);
@@ -185,11 +186,6 @@ export default function MessagesPage() {
               )}
             </div>
           </div>
-          <div className="ml-auto">
-            <button className="p-2 rounded-full hover:bg-cream text-ink-soft">
-              <MoreVertical className="w-5 h-5" />
-            </button>
-          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-4 bg-cream space-y-4">
@@ -237,12 +233,9 @@ export default function MessagesPage() {
 
         <div className="px-4 py-3 bg-surface border-t border-line">
           <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
-            <button type="button" className="p-2 text-ink-faint hover:text-ink-soft rounded-full hover:bg-cream">
-              <Paperclip className="w-5 h-5" />
-            </button>
             <Input
               type="text"
-              placeholder="Scrie un mesaj..."
+              placeholder="Scrie un mesaj…"
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               className="flex-1 bg-cream border-line focus:ring-2 focus:ring-ink"
@@ -256,57 +249,88 @@ export default function MessagesPage() {
     );
   }
 
+  // ---- Signed-out gate (live mode only — demo mode shows mock conversations) ----
+  if (live && !sessionLoading && !user) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] px-6 text-center">
+        <div className="w-16 h-16 rounded-full bg-clay-soft grid place-items-center mb-4">
+          <MessageSquare className="w-7 h-7 text-clay" />
+        </div>
+        <h1 className="font-display text-2xl text-ink mb-2">Mesajele tale</h1>
+        <p className="text-ink-soft mb-6 max-w-xs">Autentifică-te pentru a vedea conversațiile cu vânzătorii.</p>
+        <Button className="w-full max-w-xs rounded-full" onClick={() => setOpen(true)}>
+          Autentificare
+        </Button>
+      </div>
+    );
+  }
+
   // ---- Inbox view ----
   return (
     <div className="min-h-screen pb-20 pt-4 mx-auto w-full max-w-3xl">
-      <div className="px-4 mb-6">
-        <h1 className="text-2xl font-bold text-ink">Mesaje</h1>
-        <p className="text-ink-soft mt-1">Conversațiile tale cu cumpărătorii și vânzătorii</p>
+      <div className="px-4 mb-4">
+        <h1 className="font-display text-2xl text-ink">Mesaje</h1>
+        <p className="text-sm text-ink-soft mt-1">Conversațiile tale cu cumpărătorii și vânzătorii</p>
       </div>
 
-      {loadingConvs ? (
-        <div className="flex items-center justify-center h-48 text-ink-soft">Se încarcă...</div>
+      {loadingConvs || sessionLoading ? (
+        <div className="px-4 divide-y divide-line" aria-hidden>
+          {Array.from({ length: 4 }, (_, i) => (
+            <div key={i} className="flex items-center gap-3 py-4">
+              <div className="w-12 h-12 rounded-full bg-cream animate-pulse flex-shrink-0" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 w-1/3 rounded bg-cream animate-pulse" />
+                <div className="h-3 w-2/3 rounded bg-cream animate-pulse" />
+              </div>
+            </div>
+          ))}
+        </div>
       ) : conversations.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-48 text-center px-4 text-ink-soft">
-          <p className="mb-1">Nicio conversație încă.</p>
-          <p className="text-sm">Contactează un vânzător de pe pagina unui produs pentru a începe.</p>
+        <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+          <div className="w-16 h-16 rounded-full bg-clay-soft grid place-items-center mb-4">
+            <MessageSquare className="w-7 h-7 text-clay" />
+          </div>
+          <h3 className="font-display text-lg text-ink mb-1.5">Nicio conversație încă.</h3>
+          <p className="text-sm text-ink-soft max-w-xs">
+            Contactează un vânzător de pe pagina unui produs pentru a începe.
+          </p>
         </div>
       ) : (
-        <div className="px-4 space-y-3">
+        <div className="px-4 divide-y divide-line">
           {conversations.map((conv) => (
-            <button key={conv.id} onClick={() => handleConversationSelect(conv.id)} className="w-full text-left">
-              <Card className="overflow-hidden border-line transition-all hover:shadow-md active:scale-[0.98]">
-                <CardContent className="p-4">
-                  <div className="flex items-start">
-                    <img
-                      src={conv.otherAvatar ?? avatarFor(conv.otherName)}
-                      alt={conv.otherName}
-                      className="w-12 h-12 rounded-full mr-3 flex-shrink-0"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <h3 className="font-semibold text-ink truncate">{conv.otherName}</h3>
-                        <span className={`text-xs ${conv.unreadCount > 0 ? 'font-medium text-ink' : 'text-ink-soft'}`}>
-                          {conv.lastMessageTime}
-                        </span>
-                      </div>
-                      {conv.listingTitle && (
-                        <p className="text-sm text-ink-soft truncate mb-1">Despre: {conv.listingTitle}</p>
-                      )}
-                      <div className="flex items-center justify-between">
-                        <p className={`text-sm truncate ${conv.unreadCount > 0 ? 'font-medium text-ink' : 'text-ink-soft'}`}>
-                          {conv.lastMessage || 'Apasă pentru a deschide conversația'}
-                        </p>
-                        {conv.unreadCount > 0 && (
-                          <span className="flex items-center justify-center w-5 h-5 bg-ink text-paper text-xs rounded-full flex-shrink-0">
-                            {conv.unreadCount}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            <button
+              key={conv.id}
+              onClick={() => handleConversationSelect(conv.id)}
+              className="w-full text-left flex items-start gap-3 py-4 transition-colors hover:bg-surface/60 active:bg-surface rounded-lg px-2 -mx-2"
+            >
+              <img
+                src={conv.otherAvatar ?? avatarFor(conv.otherName)}
+                alt={conv.otherName}
+                className="w-12 h-12 rounded-full flex-shrink-0 ring-1 ring-line"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-baseline justify-between gap-2 mb-0.5">
+                  <h3 className={`truncate ${conv.unreadCount > 0 ? 'font-semibold text-ink' : 'font-medium text-ink'}`}>
+                    {conv.otherName}
+                  </h3>
+                  <span className={`text-xs flex-shrink-0 ${conv.unreadCount > 0 ? 'font-medium text-clay' : 'text-ink-faint'}`}>
+                    {conv.lastMessageTime}
+                  </span>
+                </div>
+                {conv.listingTitle && (
+                  <p className="text-xs text-ink-faint truncate mb-0.5">{conv.listingTitle}</p>
+                )}
+                <div className="flex items-center justify-between gap-2">
+                  <p className={`text-sm truncate ${conv.unreadCount > 0 ? 'text-ink' : 'text-ink-soft'}`}>
+                    {conv.lastMessage || 'Deschide conversația'}
+                  </p>
+                  {conv.unreadCount > 0 && (
+                    <span className="flex items-center justify-center min-w-5 h-5 px-1.5 bg-clay text-paper text-[11px] font-semibold rounded-full flex-shrink-0">
+                      {conv.unreadCount}
+                    </span>
+                  )}
+                </div>
+              </div>
             </button>
           ))}
         </div>

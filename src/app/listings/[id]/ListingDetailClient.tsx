@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Star, Share2, ArrowLeft, MessageCircle, ShoppingBag } from 'lucide-react';
+import { Star, Share2, ArrowLeft, MessageCircle, ShoppingBag, Mail, Phone, Link2, BadgeCheck } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Listing } from '@/lib/mock';
@@ -29,7 +29,6 @@ export function ListingDetailClient({ listing, sellerContact }: { listing: Listi
   const { setOpen } = useAuthModal();
 
   const [selectedImage, setSelectedImage] = useState(0);
-  const [following, setFollowing] = useState(false);
   const [messaging, setMessaging] = useState(false);
   const [buying, setBuying] = useState(false);
   const [buyError, setBuyError] = useState<string | null>(null);
@@ -70,7 +69,7 @@ export function ListingDetailClient({ listing, sellerContact }: { listing: Listi
       <div className="px-5 lg:px-8 pt-4 pb-3">
         <Link href="/" className="inline-flex items-center text-sm text-ink-soft hover:text-clay transition-colors">
           <ArrowLeft className="w-4 h-4 mr-1.5" />
-          Înapoi la feed
+          Înapoi acasă
         </Link>
       </div>
 
@@ -134,16 +133,15 @@ export function ListingDetailClient({ listing, sellerContact }: { listing: Listi
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-medium text-ink truncate">{seller?.full_name ?? seller?.username ?? 'Vânzător'}</h3>
-            <p className="text-xs text-ink-faint">Artizan Craftology</p>
+            {sellerContact ? (
+              <p className="flex items-center gap-1 text-xs text-sage">
+                <BadgeCheck className="w-3.5 h-3.5" />
+                Vânzător verificat
+              </p>
+            ) : (
+              seller?.username && <p className="text-xs text-ink-faint truncate">@{seller.username}</p>
+            )}
           </div>
-          <Button
-            variant={following ? 'default' : 'outline'}
-            size="sm"
-            className="rounded-full text-xs flex-shrink-0"
-            onClick={() => setFollowing((f) => !f)}
-          >
-            {following ? 'Urmărit' : 'Urmărește'}
-          </Button>
         </div>
 
         {/* Direct seller contact (shown for approved sellers) */}
@@ -152,14 +150,25 @@ export function ListingDetailClient({ listing, sellerContact }: { listing: Listi
             <p className="font-medium text-ink mb-1.5">
               Contact vânzător{sellerContact.company_name ? ` · ${sellerContact.company_name}` : ''}
             </p>
-            <div className="space-y-1 text-ink-soft">
+            <div className="space-y-1.5 text-ink-soft">
               {sellerContact.contact_email && (
-                <p>✉ <a href={`mailto:${sellerContact.contact_email}`} className="hover:text-clay underline underline-offset-2">{sellerContact.contact_email}</a></p>
+                <p className="flex items-center gap-2 min-w-0">
+                  <Mail className="w-4 h-4 text-ink-faint flex-shrink-0" />
+                  <a href={`mailto:${sellerContact.contact_email}`} className="hover:text-clay underline underline-offset-2 truncate">{sellerContact.contact_email}</a>
+                </p>
               )}
               {sellerContact.contact_phone && (
-                <p>☎ <a href={`tel:${sellerContact.contact_phone}`} className="hover:text-clay underline underline-offset-2">{sellerContact.contact_phone}</a></p>
+                <p className="flex items-center gap-2 min-w-0">
+                  <Phone className="w-4 h-4 text-ink-faint flex-shrink-0" />
+                  <a href={`tel:${sellerContact.contact_phone}`} className="hover:text-clay underline underline-offset-2 truncate">{sellerContact.contact_phone}</a>
+                </p>
               )}
-              {sellerContact.contact_other && <p>🔗 {sellerContact.contact_other}</p>}
+              {sellerContact.contact_other && (
+                <p className="flex items-center gap-2 min-w-0">
+                  <Link2 className="w-4 h-4 text-ink-faint flex-shrink-0" />
+                  <span className="truncate">{sellerContact.contact_other}</span>
+                </p>
+              )}
             </div>
           </div>
         )}

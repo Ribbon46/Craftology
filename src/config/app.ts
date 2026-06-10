@@ -35,8 +35,8 @@ export const PRICING = {
 };
 
 export const PLACEHOLDERS = {
-  avatar: 'https://ui-avatars.com/api/?name=Utilizator&background=e2e8f0&color=475569&size=128',
-  listing: 'https://placehold.co/600x600/e2e8f0/475569?text=Imagine+produs',
+  avatar: 'https://ui-avatars.com/api/?name=Utilizator&background=f0d9cc&color=984427&size=128',
+  listing: 'https://placehold.co/600x600/f0d9cc/984427?text=Imagine+produs',
 };
 
 export const MESSAGES = {
@@ -46,9 +46,9 @@ export const MESSAGES = {
   error: 'A apărut o eroare. Vă rugăm să încercați din nou.',
   noListings: 'Nu există produse în această categorie momentan.',
   loadMore: 'Încarcă mai mult',
-  endOfFeed: 'Ai ajuns la sfârșitul feedului',
+  endOfFeed: 'Ai văzut toate produsele',
   sellPrompt: 'Vinde un produs handmade',
-  chatPrompt: 'Scrie un mesaj...',
+  chatPrompt: 'Scrie un mesaj…',
 };
 
 export const STYLES = {

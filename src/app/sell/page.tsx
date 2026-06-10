@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -121,7 +122,7 @@ export default function SellPage() {
         router.push('/');
       }, 2000);
     } catch (err) {
-      setError('A apărut o erorie la publicarea produsului');
+      setError('A apărut o eroare la publicarea produsului');
       setIsSubmitting(false);
     }
   };
@@ -129,7 +130,7 @@ export default function SellPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="text-ink-soft">Se încarcă...</div>
+        <div className="w-6 h-6 border-2 border-clay border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -138,13 +139,13 @@ export default function SellPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen px-4">
         <div className="text-center py-8 max-w-xs">
-          <h2 className="text-2xl font-bold text-ink mb-4">Autentificare necesară</h2>
+          <h2 className="font-display text-2xl text-ink mb-4">Autentificare necesară</h2>
           <p className="text-ink-soft mb-6">Trebuie să fii autentificat pentru a vinde produse.</p>
           <Button className="w-full mb-3" onClick={() => setOpen(true)}>
             Autentificare
           </Button>
           <Link href="/" className="text-sm text-ink-soft hover:text-ink underline">
-            Înapoi la feed
+            Înapoi acasă
           </Link>
         </div>
       </div>
@@ -152,7 +153,11 @@ export default function SellPage() {
   }
 
   if (!eligibility) {
-    return <div className="flex items-center justify-center min-h-screen text-ink-soft">Se verifică…</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="w-6 h-6 border-2 border-clay border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
   }
   if (!eligibility.canSell) {
     return <SellGate reason={eligibility.reason} />;
@@ -161,13 +166,11 @@ export default function SellPage() {
   if (success) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen px-4 pb-20">
-        <div className="text-center py-12">
-          <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
+        <div className="text-center py-12 animate-float-in">
+          <div className="w-16 h-16 bg-sage/15 text-sage rounded-full grid place-items-center mx-auto mb-4">
+            <Check className="w-8 h-8" strokeWidth={2.5} />
           </div>
-          <h2 className="text-2xl font-bold text-ink mb-2">Produs adăugat!</h2>
+          <h2 className="font-display text-2xl text-ink mb-2">Produs adăugat!</h2>
           <p className="text-ink-soft">Produsul tău a fost publicat cu succes.</p>
         </div>
       </div>
@@ -177,8 +180,8 @@ export default function SellPage() {
   return (
     <div className="min-h-screen pb-20 pt-4 mx-auto w-full max-w-2xl">
       <div className="px-4 mb-6">
-        <h1 className="text-2xl font-bold text-ink">Vinde un produs</h1>
-        <p className="text-ink-soft mt-1">Completează informațiile produsului tău handmade</p>
+        <h1 className="font-display text-2xl text-ink">Vinde un produs</h1>
+        <p className="text-sm text-ink-soft mt-1">Completează informațiile produsului tău handmade</p>
       </div>
 
       <div className="px-4">
@@ -192,7 +195,7 @@ export default function SellPage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm dark:bg-red-950/40 dark:border-red-900/60 dark:text-red-300">
+                <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/25 text-destructive text-sm">
                   {error}
                 </div>
               )}
@@ -255,7 +258,7 @@ export default function SellPage() {
                 <label className="text-sm font-medium" htmlFor="description">Descriere *</label>
                 <Textarea
                   id="description"
-                  placeholder="Descrie materialul, dimensiunile, condițiile de întreținere..."
+                  placeholder="Descrie materialul, dimensiunile, condițiile de întreținere…"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={5}
@@ -277,8 +280,8 @@ export default function SellPage() {
               <Button type="submit" className="w-full h-12 text-lg" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <div className="flex items-center">
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                    Publică produsul...
+                    <div className="w-5 h-5 border-2 border-paper border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Se publică…
                   </div>
                 ) : (
                   'Publică produsul'
@@ -295,7 +298,7 @@ export default function SellPage() {
 function SellGate({ reason }: { reason: SellEligibility }) {
   const map: Record<SellEligibility, { title: string; body: string; cta: string }> = {
     ok: { title: '', body: '', cta: '' },
-    auth: { title: 'Autentificare necesară', body: 'Autentifică-te pentru a vinde.', cta: 'Înapoi la feed' },
+    auth: { title: 'Autentificare necesară', body: 'Autentifică-te pentru a vinde.', cta: 'Înapoi acasă' },
     not_seller: { title: 'Devino vânzător', body: 'Pentru a publica produse, trimite o cerere de vânzător.', cta: 'Trimite o cerere' },
     pending: { title: 'Cerere în verificare', body: 'Cererea ta de vânzător este în curs de verificare. Revino după aprobare.', cta: 'Vezi statusul' },
     rejected: { title: 'Cerere respinsă', body: 'Cererea ta de vânzător a fost respinsă.', cta: 'Vezi detalii' },
@@ -311,7 +314,7 @@ function SellGate({ reason }: { reason: SellEligibility }) {
         <Link href="/seller/apply">
           <Button className="w-full rounded-full mb-3">{m.cta}</Button>
         </Link>
-        <Link href="/" className="text-sm text-ink-soft hover:text-ink underline">Înapoi la feed</Link>
+        <Link href="/" className="text-sm text-ink-soft hover:text-ink underline">Înapoi acasă</Link>
       </div>
     </div>
   );

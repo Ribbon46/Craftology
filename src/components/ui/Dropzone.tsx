@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Upload, X } from 'lucide-react';
 
 interface DropzoneProps {
@@ -9,7 +9,13 @@ interface DropzoneProps {
   maxFiles?: number;
   maxFileSize?: number;
   acceptedFileTypes?: string[];
-  previewImages?: string[];
+}
+
+interface PreviewItem {
+  file: File;
+  // Object URL created once per file and revoked on remove/unmount, so
+  // re-renders don't leak blob URLs.
+  url: string;
 }
 
 export function Dropzone({
@@ -18,23 +24,23 @@ export function Dropzone({
   maxFiles = 5,
   maxFileSize = 5 * 1024 * 1024,
   acceptedFileTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
-  previewImages = [],
 }: DropzoneProps) {
   const [dragActive, setDragActive] = useState(false);
-  const [dragFiles, setDragFiles] = useState<File[]>([]);
+  const [items, setItems] = useState<PreviewItem[]>([]);
+  const [rejections, setRejections] = useState<string[]>([]);
 
+  const itemsRef = useRef<PreviewItem[]>([]);
   useEffect(() => {
-    if (previewImages.length > 0) {
-      // Previews are handled by the parent component
-    }
-  }, [previewImages]);
+    itemsRef.current = items;
+  }, [items]);
+  useEffect(() => () => itemsRef.current.forEach((i) => URL.revokeObjectURL(i.url)), []);
 
   const validateAndAddFiles = useCallback((files: File[]) => {
     const validFiles: File[] = [];
     const invalidFiles: string[] = [];
 
     for (const file of files) {
-      if (dragFiles.length + validFiles.length >= maxFiles) {
+      if (itemsRef.current.length + validFiles.length >= maxFiles) {
         invalidFiles.push(`Limita maximă de ${maxFiles} imagini atinsă`);
         break;
       }
@@ -54,21 +60,19 @@ export function Dropzone({
 
     if (validFiles.length > 0) {
       onFilesAdded(validFiles);
-      setDragFiles((prev) => [...prev, ...validFiles]);
+      setItems((prev) => [...prev, ...validFiles.map((file) => ({ file, url: URL.createObjectURL(file) }))]);
     }
 
-    if (invalidFiles.length > 0) {
-      console.error('Invalid files:', invalidFiles);
-    }
-  }, [dragFiles, maxFiles, maxFileSize, acceptedFileTypes, onFilesAdded]);
+    setRejections(invalidFiles);
+  }, [maxFiles, maxFileSize, acceptedFileTypes, onFilesAdded]);
 
   const removeFile = useCallback((index: number) => {
-    const removedFile = dragFiles[index];
-    const remainingFiles = [...dragFiles];
-    remainingFiles.splice(index, 1);
-    setDragFiles(remainingFiles);
-    onFilesRemoved?.([removedFile]);
-  }, [dragFiles, onFilesRemoved]);
+    const removed = itemsRef.current[index];
+    if (!removed) return;
+    URL.revokeObjectURL(removed.url);
+    setItems((prev) => prev.filter((_, i) => i !== index));
+    onFilesRemoved?.([removed.file]);
+  }, [onFilesRemoved]);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -96,22 +100,18 @@ export function Dropzone({
       const selectedFiles = Array.from(e.target.files);
       validateAndAddFiles(selectedFiles);
     }
+    // Allow re-selecting the same file after removing it.
+    e.target.value = '';
   }, [validateAndAddFiles]);
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-  };
 
   return (
     <div className="space-y-3">
       <label className="text-sm font-medium">Adaugă imagini (max {maxFiles})</label>
-      
+
       <div
         className={`
-          relative border-2 border-dashed rounded-lg p-6 text-center transition-all cursor-pointer
-          ${dragActive ? 'border-ink bg-cream' : 'border-line-strong hover:border-ink-faint'}
+          relative border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer
+          ${dragActive ? 'border-clay bg-cream' : 'border-line-strong hover:border-clay/50'}
         `}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
@@ -127,39 +127,50 @@ export function Dropzone({
           className="hidden"
           onChange={handleFileSelect}
         />
-        
+
         <div className="flex flex-col items-center space-y-2">
           <Upload className="w-10 h-10 text-ink-faint" />
           <p className="text-sm text-ink-soft">
             Trage și plasează imagini aici sau <span className="font-medium text-ink">apasă pentru a încărca</span>
           </p>
           <p className="text-xs text-ink-soft">
-            Formate suportate: JPG, PNG, GIF, WEBP | Max {maxFileSize / 1024 / 1024}MB fiecare
+            Formate suportate: JPG, PNG, GIF, WEBP · max {maxFileSize / 1024 / 1024}MB fiecare
           </p>
         </div>
       </div>
 
-      {dragFiles.length > 0 && (
+      {rejections.length > 0 && (
+        <div className="space-y-0.5">
+          {rejections.map((msg, i) => (
+            <p key={i} className="text-xs text-destructive">{msg}</p>
+          ))}
+        </div>
+      )}
+
+      {items.length > 0 && (
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-          {dragFiles.map((file, index) => (
-            <div key={index} className="relative group aspect-square rounded-md overflow-hidden border border-line">
+          {items.map((item, index) => (
+            <div key={item.url} className="relative group aspect-square rounded-xl overflow-hidden border border-line">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={URL.createObjectURL(file)}
-                alt="Preview"
+                src={item.url}
+                alt={item.file.name}
                 className="w-full h-full object-cover"
               />
+              {/* Always visible on touch screens (no hover); hover-revealed on desktop */}
               <button
                 type="button"
+                aria-label={`Elimină ${item.file.name}`}
                 onClick={(e) => {
                   e.stopPropagation();
                   removeFile(index);
                 }}
-                className="absolute top-1 right-1 bg-black/55 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                className="absolute top-1 right-1 bg-black/55 text-white rounded-full p-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity hover:bg-destructive"
               >
                 <X size={14} />
               </button>
               <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] p-1 text-center truncate">
-                {file.name}
+                {item.file.name}
               </div>
             </div>
           ))}

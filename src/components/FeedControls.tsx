@@ -1,14 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { SlidersHorizontal, ArrowDownUp, ChevronDown } from 'lucide-react';
+import { SlidersHorizontal } from 'lucide-react';
 import type { SortOption } from '@/lib/data/listings';
-
-const SORTS: { value: SortOption; label: string }[] = [
-  { value: 'newest', label: 'Cele mai noi' },
-  { value: 'price_asc', label: 'Preț: mic → mare' },
-  { value: 'price_desc', label: 'Preț: mare → mic' },
-];
+import { SortSelect } from '@/components/SortSelect';
 
 export function FeedControls({
   sort,
@@ -43,22 +38,7 @@ export function FeedControls({
     <div>
       <div className="flex items-center gap-2 flex-wrap">
         {/* Sort */}
-        <div className="relative">
-          <ArrowDownUp className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-soft" />
-          <select
-            aria-label="Sortează"
-            value={sort}
-            onChange={(e) => onSortChange(e.target.value as SortOption)}
-            className="appearance-none rounded-full border border-line bg-surface text-ink text-sm pl-9 pr-9 py-2 hover:border-clay/40 focus:outline-none focus:ring-2 focus:ring-clay/30 cursor-pointer"
-          >
-            {SORTS.map((s) => (
-              <option key={s.value} value={s.value}>
-                {s.label}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-soft" />
-        </div>
+        <SortSelect value={sort} onChange={onSortChange} />
 
         {/* Price filter toggle */}
         <button

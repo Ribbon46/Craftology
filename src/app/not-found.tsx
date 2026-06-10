@@ -10,7 +10,7 @@ export default function NotFound() {
         Produsul sau pagina pe care o cauți nu există sau a fost mutată.
       </p>
       <Link href="/">
-        <Button className="rounded-full">Înapoi la feed</Button>
+        <Button className="rounded-full">Înapoi acasă</Button>
       </Link>
     </div>
   );

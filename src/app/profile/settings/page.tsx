@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, LogOut, User, Bell, Shield, Moon, Store, LayoutGrid } from 'lucide-react';
+import { ArrowLeft, LogOut, User, Shield, Moon, Store, LayoutGrid } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useSession, signOut } from '@/lib/hooks';
@@ -26,7 +26,7 @@ export default function SettingsPage() {
         <ArrowLeft className="w-4 h-4 mr-1" />
         Înapoi la profil
       </Link>
-      <h1 className="text-2xl font-bold text-ink mb-6">Setări</h1>
+      <h1 className="font-display text-2xl text-ink mb-6">Setări</h1>
 
       <div className="space-y-3">
         <Card>
@@ -63,21 +63,17 @@ export default function SettingsPage() {
               <LayoutGrid className="w-5 h-5 text-ink-soft mr-3" />
               <span className="flex-1 text-ink">Panoul vânzătorului</span>
             </Link>
-            <button className="w-full flex items-center px-4 py-4 text-left hover:bg-cream transition-colors">
-              <Bell className="w-5 h-5 text-ink-soft mr-3" />
-              <span className="flex-1 text-ink">Notificări</span>
-            </button>
-            <button className="w-full flex items-center px-4 py-4 text-left hover:bg-cream transition-colors">
+            <Link href="/privacy" className="w-full flex items-center px-4 py-4 text-left hover:bg-cream transition-colors">
               <Shield className="w-5 h-5 text-ink-soft mr-3" />
               <span className="flex-1 text-ink">Confidențialitate și securitate</span>
-            </button>
+            </Link>
           </CardContent>
         </Card>
 
         {!loading && user ? (
           <Button
             variant="outline"
-            className="w-full text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-900/60 dark:hover:bg-red-950/40"
+            className="w-full rounded-full text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
             onClick={handleSignOut}
           >
             <LogOut className="w-4 h-4 mr-2" />

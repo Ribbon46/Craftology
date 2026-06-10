@@ -23,13 +23,14 @@ export interface Listing {
   profiles: SellerProfile | null;
 }
 
-/** A neutral, always-available avatar generated from the seller's name. */
+/** A neutral, always-available avatar generated from the seller's name —
+ *  tinted clay-soft/clay-deep so it sits in the Atelier palette. */
 export function avatarFor(name: string): string {
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=e2e8f0&color=475569&size=128`;
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=f0d9cc&color=984427&size=128`;
 }
 
 function img(text: string): string {
-  return `https://placehold.co/600x600/e2e8f0/475569?text=${encodeURIComponent(text)}`;
+  return `https://placehold.co/600x600/f0d9cc/984427?text=${encodeURIComponent(text)}`;
 }
 
 function seller(id: string, username: string, full_name: string, rating: number): SellerProfile {

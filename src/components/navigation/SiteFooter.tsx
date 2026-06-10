@@ -21,7 +21,7 @@ export function SiteFooter() {
       </div>
       <div className="border-t border-line">
         <div className="mx-auto w-full max-w-6xl px-8 py-5 flex items-center justify-between text-xs text-ink-faint">
-          <span>© 2026 Deco Kubik SRL</span>
+          <span>© {new Date().getFullYear()} Deco Kubik SRL</span>
           <span className="font-display italic">Lucrate manual în România</span>
         </div>
       </div>

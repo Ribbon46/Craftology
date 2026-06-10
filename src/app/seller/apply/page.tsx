@@ -82,13 +82,15 @@ export default function SellerApplyPage() {
       <p className="text-ink-soft mb-6">Vinde-ți produsele handmade pe Craftology, alături de creatori verificați.</p>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm dark:bg-red-950/40 dark:border-red-900/60 dark:text-red-300">
+        <div className="mb-4 p-3 rounded-xl bg-destructive/10 border border-destructive/25 text-destructive text-sm">
           {error}
         </div>
       )}
 
       {loading ? (
-        <p className="text-ink-soft py-8 text-center">Se încarcă…</p>
+        <div className="flex justify-center py-12">
+          <div className="w-6 h-6 border-2 border-clay border-t-transparent rounded-full animate-spin" />
+        </div>
       ) : !authed ? (
         <Card>
           <CardContent className="p-6 text-center">
@@ -157,7 +159,7 @@ function Field({ label, name, ...rest }: { label?: string; name: string } & Reac
 function StatusCard({ seller, onboarding, onOnboard }: { seller: SellerRow; onboarding: boolean; onOnboard: () => void }) {
   const map = {
     pending: { icon: Clock, color: 'text-gold', title: 'Cererea ta este în verificare', body: 'Îți mulțumim! Verificăm cererea și revenim cât de curând.' },
-    approved: { icon: CheckCircle2, color: 'text-sage', title: 'Ești vânzător aprobat 🎉', body: 'Felicitări! Mai e un singur pas: configurează plățile prin Stripe ca să poți încasa bani.' },
+    approved: { icon: CheckCircle2, color: 'text-sage', title: 'Ești vânzător aprobat', body: 'Felicitări! Mai e un singur pas: configurează plățile prin Stripe ca să poți încasa bani.' },
     rejected: { icon: XCircle, color: 'text-clay-deep', title: 'Cererea a fost respinsă', body: seller.rejection_reason || 'Din păcate, cererea nu a fost aprobată momentan.' },
     suspended: { icon: XCircle, color: 'text-clay-deep', title: 'Cont de vânzător suspendat', body: 'Contul tău de vânzător este suspendat. Contactează-ne pentru detalii.' },
   } as const;

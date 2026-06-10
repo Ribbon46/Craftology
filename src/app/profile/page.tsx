@@ -144,7 +144,18 @@ export default function ProfilePage() {
 
           <TabsContent value="listings" className="space-y-3 pt-4">
             {loading ? (
-              <p className="text-center text-ink-soft py-8">Se încarcă…</p>
+              <div className="space-y-3" aria-hidden>
+                {Array.from({ length: 3 }, (_, i) => (
+                  <div key={i} className="flex rounded-xl overflow-hidden border border-line bg-surface">
+                    <div className="w-24 h-24 bg-cream animate-pulse flex-shrink-0" />
+                    <div className="p-3 flex-1 space-y-2">
+                      <div className="h-3 w-1/4 rounded bg-cream animate-pulse" />
+                      <div className="h-4 w-2/3 rounded bg-cream animate-pulse" />
+                      <div className="h-4 w-1/4 rounded bg-cream animate-pulse" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : listings.length === 0 ? (
               <div className="flex flex-col items-center text-center py-10">
                 <PackageOpen className="w-10 h-10 text-ink-faint mb-3" />

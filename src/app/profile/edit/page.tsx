@@ -87,7 +87,7 @@ export default function EditProfilePage() {
         <CardContent className="p-6">
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm dark:bg-red-950/40 dark:border-red-900/60 dark:text-red-300">
+              <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/25 text-destructive text-sm">
                 {error}
               </div>
             )}

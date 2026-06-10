@@ -3,14 +3,13 @@
 import { useRef, useCallback, useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Star } from 'lucide-react';
-import Link from 'next/link';
-import Image from 'next/image';
 import { CATEGORIES, MESSAGES } from '@/config/app';
 import { fetchListingsPage, type ListingsPage, type SortOption } from '@/lib/data/listings';
 import { Listing } from '@/lib/mock';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { CategoryChips } from '@/components/CategoryChips';
 import { FeedControls } from '@/components/FeedControls';
+import { ListingCard, ListingGridSkeleton } from '@/components/ListingCard';
 
 // Client feed island. The first "all" page is fetched on the server (page.tsx)
 // and passed in as `initialPage`, so the grid is in the initial HTML (fast LCP +
@@ -53,18 +52,6 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
 
   const listings: Listing[] = data?.pages.flatMap((page) => page.data) ?? [];
 
-  const formatPrice = (price: number) =>
-    new Intl.NumberFormat('ro-RO', { style: 'currency', currency: 'RON', maximumFractionDigits: 0 }).format(price);
-
-  const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const days = Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24));
-    if (days <= 0) return 'Astăzi';
-    if (days === 1) return 'Ieri';
-    if (days < 7) return `${days} zile în urmă`;
-    return date.toLocaleDateString('ro-RO', { day: 'numeric', month: 'numeric' });
-  };
-
   if (status === 'error') {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] px-6 text-center">
@@ -75,11 +62,10 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
       </div>
     );
   }
-  // Pending with no cached data yet (e.g. switching to a fresh category). The
-  // default "all" view is seeded from the server, so this won't flash on load.
-  if (!data) {
-    return <div className="flex items-center justify-center h-[60vh] font-display italic text-ink-soft">Se încarcă produse…</div>;
-  }
+  // Pending with no cached data yet (e.g. switching to a fresh category) shows
+  // skeleton cards in place of the grid — chips + hero stay put, no flash. The
+  // default "all" view is seeded from the server, so this won't show on load.
+  const isInitialLoading = !data;
 
   return (
     <PullToRefresh onRefresh={() => refetch()}>
@@ -105,9 +91,11 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
           <p className="hidden lg:block text-lg text-ink-soft mt-4 max-w-xl leading-relaxed">
             Piese unicat de la creatori români verificați — fiecare produs, făcut cu mâna.
           </p>
-          <p className="text-sm text-ink-soft mt-1 lg:mt-5">
-            {listings.length} {listings.length === 1 ? 'produs disponibil' : 'produse disponibile'}
-          </p>
+          {!isInitialLoading && (
+            <p className="text-sm text-ink-soft mt-1 lg:mt-5">
+              {listings.length} {listings.length === 1 ? 'produs disponibil' : 'produse disponibile'}
+            </p>
+          )}
           <div className="hidden lg:block rule-craft w-24 mt-7" />
         </header>
 
@@ -124,7 +112,9 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
           />
         </div>
 
-        {listings.length === 0 ? (
+        {isInitialLoading ? (
+          <ListingGridSkeleton />
+        ) : listings.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
             <div className="w-16 h-16 rounded-full bg-clay-soft grid place-items-center mb-4">
               <Star className="w-7 h-7 text-clay" />
@@ -140,57 +130,7 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 lg:gap-6 pb-10">
               {listings.map((listing, i) => (
-                <Link
-                  key={listing.id}
-                  href={`/listings/${listing.id}`}
-                  className="atelier-card reveal block"
-                  style={{ animationDelay: `${Math.min(i, 12) * 45}ms` }}
-                >
-                  <div className="relative aspect-[4/5] overflow-hidden bg-cream group">
-                    {listing.image_urls?.[0] ? (
-                      <Image
-                        src={listing.image_urls[0]}
-                        alt={listing.title}
-                        fill
-                        priority={i < 4}
-                        sizes="(min-width:1280px) 20vw, (min-width:1024px) 25vw, (min-width:640px) 33vw, 50vw"
-                        className="object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="w-full h-full grid place-items-center text-ink-faint text-xs">Fără imagine</div>
-                    )}
-                    <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-paper/90 backdrop-blur-sm text-[9px] font-semibold uppercase tracking-wider text-clay">
-                      {listing.category}
-                    </span>
-                  </div>
-                  <div className="p-3 lg:p-4">
-                    <h3 className="font-display text-[15px] lg:text-base leading-snug text-ink line-clamp-2 min-h-[2.5em] mb-1">
-                      {listing.title}
-                    </h3>
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className="price text-lg lg:text-xl font-semibold text-ink">{formatPrice(listing.price)}</span>
-                      <span className="hidden lg:block text-xs text-ink-faint">{formatTimeAgo(listing.created_at)}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-2.5 pt-2.5 border-t border-line/70 min-w-0">
-                      <div className="w-5 h-5 rounded-full bg-cream overflow-hidden flex-shrink-0 ring-1 ring-line">
-                        {listing.profiles?.avatar_url ? (
-                          <img src={listing.profiles.avatar_url} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="grid place-items-center w-full h-full text-[9px] font-semibold text-ink-soft">
-                            {listing.profiles?.username?.charAt(0).toUpperCase() ?? 'V'}
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-[11px] text-ink-soft truncate min-w-0">{listing.profiles?.username ?? 'vânzător'}</span>
-                      {listing.profiles?.rating != null && (
-                        <span className="ml-auto flex items-center gap-0.5 text-[11px] font-medium text-gold flex-shrink-0">
-                          <Star className="w-3 h-3 fill-gold" />
-                          {listing.profiles.rating.toFixed(1)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </Link>
+                <ListingCard key={listing.id} listing={listing} index={i} />
               ))}
             </div>
 
