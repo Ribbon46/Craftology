@@ -4,7 +4,7 @@ import { APP_NAME } from '@/config/app';
 // Desktop-only footer. Phones use the bottom tab bar, so this is hidden there.
 export function SiteFooter() {
   return (
-    <footer className="hidden lg:block border-t border-line bg-paper mt-20">
+    <footer className="hidden lg:block border-t-2 border-dashed border-line-strong bg-paper mt-20">
       <div className="mx-auto w-full max-w-6xl px-8 py-14 grid grid-cols-[1.5fr_1fr_1fr_1fr] gap-10">
         <div className="max-w-xs">
           <p className="font-display text-2xl text-ink">{APP_NAME}</p>

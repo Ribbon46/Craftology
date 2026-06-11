@@ -65,6 +65,12 @@
   --radius-xl: calc(var(--radius) * 1.4);
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
+
+  /* Craft physics — hard cut-paper offsets + bouncy easing (see :root/.dark).
+     Call sites use arbitrary shadow-[..._var(--press)] values; the vars are
+     the single source of truth for the colors. */
+  --color-edge: var(--edge);
+  --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 :root {
@@ -86,6 +92,16 @@
   --line: #e7dcc8;
   --line-strong: #d8c9ad;
 
+  /* Craft physics — "cut paper" edges + hard offset shadows.
+     --edge inks the outline of tactile elements; --press is the punchy shadow
+     for actionable things (buttons); --press-soft is the muted relief under
+     resting surfaces (cards), so grids don't shout. */
+  --edge: #2a211a;
+  --press: #2a211a;
+  --press-soft: #ddcdb0;
+  /* Focus indicator shadow — must stay clearly visible on cream surfaces */
+  --focus-press: color-mix(in srgb, var(--clay) 30%, transparent);
+
   /* Map shadcn semantic tokens onto the Atelier palette */
   --background: #f6f0e4;
   --foreground: #2a211a;
@@ -103,7 +119,7 @@
   --accent-foreground: #2a211a;
   --destructive: #b03a2e;
   --border: #e7dcc8;
-  --input: #e1d4ba;
+  --input: #d8c9ad; /* rest border must read as an inked edge on cream */
   --ring: #b9572f;
   --chart-1: #b9572f;
   --chart-2: #6c7355;
@@ -141,6 +157,14 @@
   --gold: #d7a44f;
   --line: #362c22;
   --line-strong: #4b3d2e;
+
+  /* Craft physics, nocturne: a shadow darker than the page is invisible here,
+     so the offsets flip to warm umber slabs LIGHTER than the espresso bg —
+     the cut-paper relief stays legible in the dark. */
+  --edge: #6b5640;
+  --press: #6b5640;
+  --press-soft: #2e241c;
+  --focus-press: color-mix(in srgb, var(--clay) 45%, transparent);
 
   /* shadcn semantic tokens */
   --background: #17120f;
@@ -240,18 +264,21 @@
 /* =====================================================================
    Motion
    ===================================================================== */
+/* transform lives only in `from` — with fill-mode:forwards a transform in `to`
+   would be held forever and permanently override hover/active transforms
+   (.atelier-card's wiggle). The omitted property settles to the live value. */
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(14px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(14px) scale(0.97); }
+  to   { opacity: 1; }
 }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes floatIn {
   from { opacity: 0; transform: translateY(8px) scale(0.98); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 1; }
 }
 
 @layer utilities {
-  .reveal { opacity: 0; animation: fadeUp 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) forwards; }
+  .reveal { opacity: 0; animation: fadeUp 0.55s var(--ease-pop) forwards; }
   .animate-fade-in { animation: fadeIn 0.4s ease-out; }
   .animate-float-in { animation: floatIn 0.45s cubic-bezier(0.2, 0.7, 0.2, 1); }
   @media (prefers-reduced-motion: reduce) {
@@ -265,7 +292,7 @@
 /* Category chips — Vinted-style pill, Atelier dressed */
 .chip {
   @apply inline-flex items-center px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200;
-  border: 1px solid var(--color-line);
+  border: 1.5px solid var(--color-line);
 }
 .chip-active {
   background-color: var(--color-ink);
@@ -278,21 +305,62 @@
 }
 .chip-inactive:hover { border-color: var(--color-line-strong); color: var(--color-ink); }
 
-/* Product card */
+/* Product card — a paper cut-out: inked edge, hard offset relief, and a tiny
+   wiggle on hover instead of a generic floaty lift. */
 .atelier-card {
   background-color: var(--color-surface);
-  border: 1px solid var(--color-line);
+  border: 1.5px solid var(--line-strong);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  transition: transform 0.25s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.25s ease;
+  box-shadow: 4px 4px 0 0 var(--press-soft);
+  transition: transform 0.3s var(--ease-pop), box-shadow 0.3s var(--ease-pop);
 }
-.atelier-card:hover { transform: translateY(-3px); box-shadow: 0 2px 4px rgba(42,33,26,0.05), 0 20px 40px -22px rgba(42,33,26,0.3); }
-.atelier-card:active { transform: scale(0.985); }
+.atelier-card:hover {
+  transform: translate(-2px, -2px) rotate(-0.4deg);
+  box-shadow: 7px 7px 0 0 var(--press-soft);
+}
+.atelier-card:active {
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 0 var(--press-soft);
+}
 
-/* Decorative hand-drawn divider */
+/* Decorative hand-drawn divider — a real squiggle, theme-aware via mask.
+   `round` repetition stretches tiles to fit, so the last curve never clips. */
 .rule-craft {
-  height: 1px;
-  background: repeating-linear-gradient(90deg, var(--color-line-strong) 0 6px, transparent 6px 12px);
+  height: 6px;
+  background-color: var(--line-strong);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='6' viewBox='0 0 24 6'%3E%3Cpath d='M0 3 Q 6 0 12 3 T 24 3' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'/%3E%3C/svg%3E") left center / 24px 6px;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='6' viewBox='0 0 24 6'%3E%3Cpath d='M0 3 Q 6 0 12 3 T 24 3' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'/%3E%3C/svg%3E") left center / 24px 6px;
+  -webkit-mask-repeat: round;
+  mask-repeat: round;
+}
+
+/* Hand-drawn squiggle underline for a single emphasized word (clay stroke) */
+.squiggle-underline {
+  padding-bottom: 0.14em;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='8' viewBox='0 0 28 8'%3E%3Cpath d='M0 4.5 Q 7 1 14 4.5 T 28 4.5' fill='none' stroke='%23b9572f' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+  background-position: left bottom;
+  background-size: 28px 8px;
+}
+.dark .squiggle-underline {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='8' viewBox='0 0 28 8'%3E%3Cpath d='M0 4.5 Q 7 1 14 4.5 T 28 4.5' fill='none' stroke='%23db7d52' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+/* Dot-grid texture for decorative hero/section areas */
+.dot-grid {
+  background-image: radial-gradient(var(--line-strong) 1.2px, transparent 1.2px);
+  background-size: 20px 20px;
+}
+
+/* Craft press mechanics for buttons live in the cva variants in
+   src/components/ui/button.tsx — utility classes there compose with the
+   focus-visible ring and stay overridable per call site (unlayered CSS here
+   would beat every Tailwind utility and erase both). */
+
+@media (prefers-reduced-motion: reduce) {
+  .atelier-card { transition: none; }
+  .atelier-card:hover { transform: none; }
 }
 
 /* Price tag in display serif */

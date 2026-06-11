@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Star, PackageOpen } from 'lucide-react';
+import { Star, PackageOpen, UserRound } from 'lucide-react';
 import { useSession } from '@/lib/hooks';
 import { useAuthModal } from '@/lib/auth-modal';
 import { avatarFor, SellerProfile, Listing } from '@/lib/mock';
@@ -50,9 +50,9 @@ export default function ProfilePage() {
   if (!sessionLoading && !user) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] px-6 text-center">
-        <Avatar className="w-20 h-20 mb-4 ring-4 ring-cream">
-          <AvatarFallback className="bg-clay-soft text-clay">?</AvatarFallback>
-        </Avatar>
+        <div className="w-16 h-16 rounded-full bg-clay-soft grid place-items-center mb-4 -rotate-3 border-[1.5px] border-clay/35 shadow-[3px_3px_0_0_var(--press-soft)]">
+          <UserRound className="w-7 h-7 text-clay" strokeWidth={2.25} />
+        </div>
         <h1 className="font-display text-2xl text-ink mb-2">Profilul tău</h1>
         <p className="text-ink-soft mb-6 max-w-xs">Autentifică-te pentru a-ți vedea anunțurile, mesajele și setările.</p>
         <Button className="w-full max-w-xs rounded-full" onClick={() => setOpen(true)}>

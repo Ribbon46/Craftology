@@ -51,9 +51,9 @@ export function CategoryChips({
               ref={register(o.key)}
               onClick={() => onChange(o.key)}
               aria-pressed={isActive}
-              className={`relative z-10 inline-flex items-center px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap border transition-colors duration-300 ${
+              className={`relative z-10 inline-flex items-center px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap border-[1.5px] transition-colors duration-300 ${
                 isActive
-                  ? 'text-clay border-clay/30'
+                  ? 'text-clay border-clay/45'
                   : 'text-ink-soft border-line hover:text-ink hover:border-line-strong'
               }`}
             >

@@ -82,12 +82,30 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
       </div>
 
       <main className="mx-auto w-full max-w-6xl px-4 lg:px-8">
-        {/* Editorial hero — compact on phone, full headline on desktop */}
-        <header className="pt-5 lg:pt-14 mb-5 lg:mb-10">
+        {/* Editorial hero — compact on phone, full headline on desktop. The
+            decorations (dot grid + paper confetti) live behind the text and
+            only on lg+ so phones stay clean. */}
+        <header className="relative pt-5 lg:pt-14 mb-5 lg:mb-10">
           <p className="text-[11px] uppercase tracking-[0.25em] text-clay mb-1 lg:mb-3">Atelier · Deco Kubik</p>
-          <h1 className="font-display text-[26px] lg:text-[52px] leading-[1.05] text-ink text-balance max-w-3xl">
-            {activeCategory === 'all' ? 'Lucrate manual, cu suflet' : CATEGORIES[activeCategory as keyof typeof CATEGORIES]}
-          </h1>
+          <div className="relative max-w-3xl">
+            {/* Paper-confetti collage hugging the headline's right edge —
+                anchored to the heading box so it composes at any width */}
+            <div aria-hidden className="pointer-events-none absolute top-1 right-0 hidden lg:block">
+              <div className="dot-grid absolute -top-10 -right-24 w-64 h-40 opacity-80 [mask-image:radial-gradient(closest-side,black,transparent)]" />
+              <span className="absolute -top-7 right-8 w-10 h-10 rounded-full border-[2.5px] border-clay/60 rotate-6" />
+              <span className="absolute top-7 -right-1 w-6 h-6 bg-sage/50 border-[1.5px] border-edge/30 rounded-[5px] rotate-12 shadow-[2px_2px_0_0_var(--press-soft)]" />
+              <span className="absolute top-14 right-14 w-8 h-4 bg-gold/45 border-[1.5px] border-edge/30 rounded-full -rotate-12 shadow-[2px_2px_0_0_var(--press-soft)]" />
+            </div>
+            <h1 className="relative font-display text-[26px] lg:text-[52px] leading-[1.05] text-ink text-balance">
+              {activeCategory === 'all' ? (
+                <>
+                  Lucrate manual, <span className="squiggle-underline">cu suflet</span>
+                </>
+              ) : (
+                CATEGORIES[activeCategory as keyof typeof CATEGORIES]
+              )}
+            </h1>
+          </div>
           <p className="hidden lg:block text-lg text-ink-soft mt-4 max-w-xl leading-relaxed">
             Piese unicat de la creatori români verificați — fiecare produs, făcut cu mâna.
           </p>
@@ -116,8 +134,8 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
           <ListingGridSkeleton />
         ) : listings.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-            <div className="w-16 h-16 rounded-full bg-clay-soft grid place-items-center mb-4">
-              <Star className="w-7 h-7 text-clay" />
+            <div className="w-16 h-16 rounded-full bg-clay-soft grid place-items-center mb-4 -rotate-3 border-[1.5px] border-clay/35 shadow-[3px_3px_0_0_var(--press-soft)]">
+              <Star className="w-7 h-7 text-clay" strokeWidth={2.25} />
             </div>
             <h3 className="font-display text-lg text-ink mb-1.5 text-balance">{MESSAGES.noListings}</h3>
             {activeCategory !== 'all' && (

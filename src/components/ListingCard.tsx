@@ -40,7 +40,8 @@ export function ListingCard({ listing, index = 0 }: { listing: Listing; index?: 
         ) : (
           <div className="w-full h-full grid place-items-center text-ink-faint text-xs">Fără imagine</div>
         )}
-        <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-paper/90 backdrop-blur-sm text-[9px] font-semibold uppercase tracking-wider text-clay">
+        {/* Overlays a photo → fixed light "paper label" in both themes */}
+        <span className="absolute top-2 left-2 -rotate-2 px-2 py-0.5 rounded-full bg-[#fbf6ec] border border-[#d8c9ad] shadow-[2px_2px_0_0_rgba(42,33,26,0.3)] text-[9px] font-semibold uppercase tracking-wider text-[#984427]">
           {listing.category}
         </span>
       </div>

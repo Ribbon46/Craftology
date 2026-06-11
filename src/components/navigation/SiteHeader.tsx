@@ -127,7 +127,7 @@ export function SiteHeader() {
           {/* Vinde — desktop only */}
           <Link
             href="/sell"
-            className="hidden lg:inline-flex items-center gap-1.5 rounded-full bg-clay text-paper px-5 py-2.5 text-sm font-medium hover:bg-clay-deep transition-colors"
+            className="hidden lg:inline-flex items-center gap-1.5 rounded-full bg-clay text-paper px-5 py-2.5 text-sm font-medium border-[1.5px] border-edge shadow-[3px_3px_0_0_var(--press)] transition-all ease-pop duration-200 hover:bg-clay-deep hover:-translate-x-px hover:-translate-y-px hover:shadow-[4px_4px_0_0_var(--press)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0_0_var(--press)] motion-reduce:transition-none motion-reduce:hover:translate-x-0 motion-reduce:hover:translate-y-0"
           >
             <Plus className="w-4 h-4" />
             Vinde

@@ -56,7 +56,7 @@ export function BottomNav() {
           if (item.icon === 'plus') {
             return (
               <Link key={item.id} href={item.href} aria-label={item.label} className="relative z-10 flex flex-col items-center -mt-6">
-                <span className="grid place-items-center w-[52px] h-[52px] rounded-full bg-clay text-paper shadow-atelier ring-4 ring-paper transition-transform active:scale-95">
+                <span className="grid place-items-center w-[52px] h-[52px] rounded-full bg-clay text-paper border-[1.5px] border-edge shadow-[3px_3px_0_0_var(--press)] ring-4 ring-paper transition-transform active:scale-95 active:translate-x-px active:translate-y-px motion-reduce:transition-none">
                   <Icon size={24} strokeWidth={2.25} />
                 </span>
                 <span className="text-[10px] mt-1 font-medium text-clay">{item.label.replace('+ ', '')}</span>

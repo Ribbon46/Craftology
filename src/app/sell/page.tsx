@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { Check } from 'lucide-react';
+import { Check, Store } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -138,7 +138,10 @@ export default function SellPage() {
   if (!user) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen px-4">
-        <div className="text-center py-8 max-w-xs">
+        <div className="flex flex-col items-center text-center py-8 max-w-xs">
+          <div className="w-16 h-16 rounded-full bg-clay-soft grid place-items-center mb-4 -rotate-3 border-[1.5px] border-clay/35 shadow-[3px_3px_0_0_var(--press-soft)]">
+            <Store className="w-7 h-7 text-clay" strokeWidth={2.25} />
+          </div>
           <h2 className="font-display text-2xl text-ink mb-4">Autentificare necesară</h2>
           <p className="text-ink-soft mb-6">Trebuie să fii autentificat pentru a vinde produse.</p>
           <Button className="w-full mb-3" onClick={() => setOpen(true)}>
@@ -221,7 +224,7 @@ export default function SellPage() {
                   id="category"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-line-strong bg-surface px-3 py-2 text-sm placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex h-10 w-full rounded-lg border-[1.5px] border-input bg-surface px-3 py-2 text-sm placeholder:text-ink-faint transition-[border-color,box-shadow] focus:outline-none focus:border-clay focus:shadow-[3px_3px_0_0_var(--focus-press)] disabled:cursor-not-allowed disabled:opacity-50"
                   required
                 >
                   <option value="">Selectează o categorie</option>
@@ -308,7 +311,10 @@ function SellGate({ reason }: { reason: SellEligibility }) {
   const m = map[reason];
   return (
     <div className="flex flex-col items-center justify-center min-h-screen px-4 text-center">
-      <div className="max-w-xs">
+      <div className="flex flex-col items-center max-w-xs">
+        <div className="w-16 h-16 rounded-full bg-clay-soft grid place-items-center mb-4 -rotate-3 border-[1.5px] border-clay/35 shadow-[3px_3px_0_0_var(--press-soft)]">
+          <Store className="w-7 h-7 text-clay" strokeWidth={2.25} />
+        </div>
         <h2 className="font-display text-2xl text-ink mb-3">{m.title}</h2>
         <p className="text-ink-soft mb-6">{m.body}</p>
         <Link href="/seller/apply">

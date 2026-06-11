@@ -76,7 +76,7 @@ export function ListingDetailClient({ listing, sellerContact }: { listing: Listi
       <div className="px-5 lg:px-8 lg:grid lg:grid-cols-2 lg:gap-12 lg:items-start">
         {/* Image */}
         <div className="animate-float-in lg:sticky lg:top-28">
-          <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-cream border border-line mb-3">
+          <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-cream border-[1.5px] border-line-strong shadow-[5px_5px_0_0_var(--press-soft)] mb-3">
             <Image
               src={listing.image_urls[selectedImage] ?? listing.image_urls[0]}
               alt={listing.title}
@@ -106,7 +106,7 @@ export function ListingDetailClient({ listing, sellerContact }: { listing: Listi
         {/* Info column */}
         <div className="mt-6 lg:mt-0">
           <div className="flex items-center justify-between gap-3 mb-2">
-            <span className="px-3 py-1 rounded-full bg-clay-soft text-clay-deep text-[11px] font-semibold uppercase tracking-wider">
+            <span className="-rotate-2 px-3 py-1 rounded-full bg-clay-soft text-clay-deep dark:text-clay border border-clay/30 shadow-[2px_2px_0_0_var(--press-soft)] text-[11px] font-semibold uppercase tracking-wider">
               {listing.category}
             </span>
             {seller?.rating != null && (
@@ -123,7 +123,7 @@ export function ListingDetailClient({ listing, sellerContact }: { listing: Listi
           </div>
 
           {/* Seller */}
-        <div className="mt-6 flex items-center gap-3 p-4 rounded-2xl bg-surface border border-line">
+        <div className="mt-6 flex items-center gap-3 p-4 rounded-2xl bg-surface border-[1.5px] border-line-strong shadow-[4px_4px_0_0_var(--press-soft)]">
           <div className="relative w-11 h-11 rounded-full overflow-hidden bg-cream ring-1 ring-line grid place-items-center flex-shrink-0">
             {seller?.avatar_url ? (
               <Image src={seller.avatar_url} alt={seller.username} fill sizes="44px" className="object-cover" />
@@ -146,7 +146,7 @@ export function ListingDetailClient({ listing, sellerContact }: { listing: Listi
 
         {/* Direct seller contact (shown for approved sellers) */}
         {sellerContact && (sellerContact.contact_email || sellerContact.contact_phone || sellerContact.contact_other) && (
-          <div className="mt-3 p-4 rounded-2xl bg-surface border border-line text-sm">
+          <div className="mt-3 p-4 rounded-2xl bg-surface border-[1.5px] border-line-strong shadow-[4px_4px_0_0_var(--press-soft)] text-sm">
             <p className="font-medium text-ink mb-1.5">
               Contact vânzător{sellerContact.company_name ? ` · ${sellerContact.company_name}` : ''}
             </p>

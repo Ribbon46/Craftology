@@ -253,8 +253,8 @@ export default function MessagesPage() {
   if (live && !sessionLoading && !user) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] px-6 text-center">
-        <div className="w-16 h-16 rounded-full bg-clay-soft grid place-items-center mb-4">
-          <MessageSquare className="w-7 h-7 text-clay" />
+        <div className="w-16 h-16 rounded-full bg-clay-soft grid place-items-center mb-4 -rotate-3 border-[1.5px] border-clay/35 shadow-[3px_3px_0_0_var(--press-soft)]">
+          <MessageSquare className="w-7 h-7 text-clay" strokeWidth={2.25} />
         </div>
         <h1 className="font-display text-2xl text-ink mb-2">Mesajele tale</h1>
         <p className="text-ink-soft mb-6 max-w-xs">Autentifică-te pentru a vedea conversațiile cu vânzătorii.</p>
@@ -287,8 +287,8 @@ export default function MessagesPage() {
         </div>
       ) : conversations.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-          <div className="w-16 h-16 rounded-full bg-clay-soft grid place-items-center mb-4">
-            <MessageSquare className="w-7 h-7 text-clay" />
+          <div className="w-16 h-16 rounded-full bg-clay-soft grid place-items-center mb-4 -rotate-3 border-[1.5px] border-clay/35 shadow-[3px_3px_0_0_var(--press-soft)]">
+            <MessageSquare className="w-7 h-7 text-clay" strokeWidth={2.25} />
           </div>
           <h3 className="font-display text-lg text-ink mb-1.5">Nicio conversație încă.</h3>
           <p className="text-sm text-ink-soft max-w-xs">

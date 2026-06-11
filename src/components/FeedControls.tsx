@@ -45,7 +45,7 @@ export function FeedControls({
           type="button"
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
-          className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm transition-colors ${
+          className={`inline-flex items-center gap-1.5 rounded-full border-[1.5px] px-4 py-2 text-sm transition-colors ${
             priceActive
               ? 'border-clay/50 text-clay bg-clay/10'
               : 'border-line text-ink-soft hover:text-ink hover:border-clay/40'
@@ -67,7 +67,7 @@ export function FeedControls({
       </div>
 
       {open && (
-        <div className="mt-3 flex items-end gap-3 flex-wrap rounded-2xl border border-line bg-surface p-4 animate-fade-in">
+        <div className="mt-3 flex items-end gap-3 flex-wrap rounded-2xl border-[1.5px] border-line-strong bg-surface shadow-[4px_4px_0_0_var(--press-soft)] p-4 animate-fade-in">
           <label className="flex flex-col gap-1 text-xs text-ink-soft">
             Preț minim (lei)
             <input

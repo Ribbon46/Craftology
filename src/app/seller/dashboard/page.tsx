@@ -163,7 +163,7 @@ export default function SellerDashboardPage() {
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-2xl border border-line bg-surface p-4 text-center">
+    <div className="rounded-2xl border-[1.5px] border-line-strong bg-surface shadow-[3px_3px_0_0_var(--press-soft)] p-4 text-center">
       <div className="font-display text-2xl text-ink">{value}</div>
       <div className="text-xs text-ink-soft">{label}</div>
     </div>

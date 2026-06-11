@@ -77,8 +77,8 @@ export default function SearchPage() {
           <ListingGridSkeleton count={8} />
         ) : results.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-            <div className="w-16 h-16 rounded-full bg-clay-soft grid place-items-center mb-4">
-              <SearchX className="w-7 h-7 text-clay" />
+            <div className="w-16 h-16 rounded-full bg-clay-soft grid place-items-center mb-4 -rotate-3 border-[1.5px] border-clay/35 shadow-[3px_3px_0_0_var(--press-soft)]">
+              <SearchX className="w-7 h-7 text-clay" strokeWidth={2.25} />
             </div>
             <h3 className="font-display text-lg text-ink mb-1.5">Nu am găsit produse.</h3>
             <p className="text-sm text-ink-soft">Încearcă să cauți după alt termen.</p>
