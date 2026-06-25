@@ -37,7 +37,8 @@ CREATE TABLE listings (
   subcategory TEXT,
   image_urls TEXT[] DEFAULT '{}',
   seller_id UUID REFERENCES profiles (id) ON DELETE CASCADE NOT NULL,
-  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'sold')),
+  -- 'inactive' = hidden from the public feed (e.g. seller closed their shop).
+  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'sold', 'inactive')),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS listings_category_idx ON listings (category, subcategory);
@@ -454,3 +455,51 @@ CREATE POLICY "Reports insertable by reporter" ON reports
 
 REVOKE ALL ON reports FROM anon, authenticated;
 GRANT INSERT (reporter_id, target_type, listing_id, seller_id, reason, details) ON reports TO authenticated;
+
+-- =====================================================================
+-- Orders — one row per PAID checkout (recorded by the Stripe webhook).
+-- Source of truth for money + inventory. Buyers may be GUESTS (no account),
+-- so identity is captured from the Stripe session, not an FK to profiles.
+-- Cancellation = full refund (+ reverse the 15% fee on the connected account)
+-- and the listing returns to 'active'. All writes are service-role-only; the
+-- raw Stripe ids (session/PI/refund) are withheld from authenticated SELECT
+-- because they act as refund capabilities (esp. the guest-cancel session id).
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS orders (
+  id                     UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  listing_id             UUID NOT NULL REFERENCES listings (id) ON DELETE RESTRICT,
+  seller_id              UUID NOT NULL REFERENCES profiles (id) ON DELETE RESTRICT,
+  buyer_id               UUID REFERENCES profiles (id) ON DELETE SET NULL,
+  buyer_email            TEXT,
+  stripe_session_id      TEXT NOT NULL UNIQUE,
+  payment_intent_id      TEXT NOT NULL,
+  stripe_account_id      TEXT,
+  amount_total           INTEGER NOT NULL,
+  application_fee_amount INTEGER NOT NULL DEFAULT 0,
+  currency               TEXT NOT NULL DEFAULT 'ron',
+  status                 TEXT NOT NULL DEFAULT 'paid' CHECK (status IN ('paid','cancelled','refunded')),
+  amount_refunded        INTEGER NOT NULL DEFAULT 0,
+  cancelled_by           TEXT CHECK (cancelled_by IN ('buyer','seller','admin')),
+  cancel_reason          TEXT,
+  stripe_refund_id       TEXT,
+  created_at             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  refunded_at            TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS orders_seller_id_idx  ON orders (seller_id);
+CREATE INDEX IF NOT EXISTS orders_listing_id_idx ON orders (listing_id);
+CREATE INDEX IF NOT EXISTS orders_buyer_id_idx   ON orders (buyer_id);
+CREATE INDEX IF NOT EXISTS orders_status_idx     ON orders (status);
+CREATE UNIQUE INDEX IF NOT EXISTS orders_payment_intent_idx ON orders (payment_intent_id);
+
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Orders readable by seller or buyer" ON orders;
+CREATE POLICY "Orders readable by seller or buyer" ON orders
+  FOR SELECT TO authenticated
+  USING (auth.uid() = seller_id OR auth.uid() = buyer_id);
+
+REVOKE ALL ON orders FROM anon, authenticated;
+GRANT SELECT (id, listing_id, seller_id, buyer_id, buyer_email, amount_total,
+              application_fee_amount, currency, status, amount_refunded,
+              cancelled_by, cancel_reason, created_at, refunded_at)
+  ON orders TO authenticated;

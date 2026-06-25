@@ -13,6 +13,7 @@ import { useAuthModal } from '@/lib/auth-modal';
 import { avatarFor, SellerProfile, Listing } from '@/lib/mock';
 import { fetchProfile, fetchSellerListings } from '@/lib/data/listings';
 import { getSellerReviews, type PublicReview } from '@/actions/reviews';
+import { BuyerOrders } from '@/components/BuyerOrders';
 
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState('listings');
@@ -246,10 +247,7 @@ export default function ProfilePage() {
           </TabsContent>
 
           <TabsContent value="transactions" className="pt-4">
-            <div className="flex flex-col items-center text-center py-10">
-              <PackageOpen className="w-10 h-10 text-ink-faint mb-3" />
-              <p className="text-ink-soft">Nicio tranzacție încă.</p>
-            </div>
+            <BuyerOrders />
           </TabsContent>
         </Tabs>
       </div>

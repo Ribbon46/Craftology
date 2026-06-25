@@ -30,6 +30,13 @@ export async function createCheckoutSession(listingId: string) {
   if (error || !listing) return { error: 'Produsul nu a fost găsit.' };
   if (listing.status === 'sold') return { error: 'Acest produs a fost deja vândut.' };
 
+  // Capture the buyer id when they're logged in (buying doesn't require it) so
+  // an order can later be tied to their account + cancelled from their profile.
+  const {
+    data: { user: buyer },
+  } = await supabase.auth.getUser();
+  const orderMeta = { listing_id: listing.id, seller_id: listing.seller_id, buyer_id: buyer?.id ?? '' };
+
   const h = await headers();
   const base = h.get('origin') ?? (h.get('host') ? `https://${h.get('host')}` : 'https://craftology-peach.vercel.app');
   const unitAmount = Math.round(Number(listing.price) * 100);
@@ -59,7 +66,7 @@ export async function createCheckoutSession(listingId: string) {
         mode: 'payment',
         line_items,
         ...fulfilment,
-        metadata: { listing_id: listing.id },
+        metadata: orderMeta,
         success_url,
         cancel_url,
       });
@@ -85,7 +92,7 @@ export async function createCheckoutSession(listingId: string) {
         line_items,
         ...fulfilment,
         payment_intent_data: { application_fee_amount: Math.round(unitAmount * COMMISSION_RATE) },
-        metadata: { listing_id: listing.id },
+        metadata: orderMeta,
         success_url,
         cancel_url,
       },

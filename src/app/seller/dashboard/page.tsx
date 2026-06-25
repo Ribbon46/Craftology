@@ -12,6 +12,8 @@ import { useAuthModal } from '@/lib/auth-modal';
 import { getMySeller, type SellerRow } from '@/actions/seller';
 import { createStripeLoginLink } from '@/actions/connect';
 import { fetchSellerListings } from '@/lib/data/listings';
+import { SellerOrders } from '@/components/SellerOrders';
+import { CloseShopButton } from '@/components/CloseShopButton';
 import { Listing } from '@/lib/mock';
 
 export default function SellerDashboardPage() {
@@ -119,6 +121,8 @@ export default function SellerDashboardPage() {
         </div>
       </div>
 
+      <SellerOrders />
+
       <div className="flex items-center justify-between mb-3">
         <h2 className="font-display text-lg text-ink">Produsele tale</h2>
         <Link href="/sell">
@@ -157,6 +161,8 @@ export default function SellerDashboardPage() {
           ))}
         </div>
       )}
+
+      <CloseShopButton />
     </div>
   );
 }

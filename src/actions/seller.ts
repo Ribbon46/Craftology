@@ -1,6 +1,7 @@
 'use server';
 
 import { createServerClient } from '@/lib/supabase/server';
+import { createServiceClient, isServiceConfigured } from '@/lib/supabase/admin';
 import { isPlatformOwner } from '@/lib/owner';
 import { revalidatePath } from 'next/cache';
 
@@ -103,5 +104,37 @@ export async function applyAsSeller(formData: FormData) {
   }
 
   revalidatePath('/seller/apply');
+  return { success: true };
+}
+
+/**
+ * A seller closes their own shop. Blocked while any order is still in progress
+ * (status 'paid' = money collected, fulfilment/refund window open) so a buyer is
+ * never orphaned. On close we suspend the seller (blocks new listings) and hide
+ * their active listings (→ 'inactive', so they leave the public feed).
+ */
+export async function closeMyShop(): Promise<{ success: true } | { error: string }> {
+  const supabase = await createServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'Autentificare necesară' };
+  if (!isServiceConfigured()) return { error: 'Indisponibil momentan.' };
+
+  const svc = createServiceClient();
+  const { count } = await svc
+    .from('orders')
+    .select('id', { count: 'exact', head: true })
+    .eq('seller_id', user.id)
+    .eq('status', 'paid');
+  if ((count ?? 0) > 0) {
+    return { error: 'Ai comenzi în curs. Finalizează sau anulează-le înainte de a închide magazinul.' };
+  }
+
+  await svc.from('sellers').update({ status: 'suspended', updated_at: new Date().toISOString() }).eq('id', user.id);
+  await svc.from('listings').update({ status: 'inactive' }).eq('seller_id', user.id).eq('status', 'active');
+  revalidatePath('/');
+  revalidatePath('/seller/dashboard');
+  revalidatePath('/profile');
   return { success: true };
 }

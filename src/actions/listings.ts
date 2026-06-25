@@ -179,6 +179,14 @@ export async function deleteListing(listingId: string) {
     return { error: 'Nu aveți permisiunea să ștergeți acest anunț' };
   }
 
+  // A money-bearing order references this listing (FK is ON DELETE RESTRICT) —
+  // block deletion with a friendly message instead of a raw FK error. The seller
+  // can read their own orders via RLS.
+  const { data: orderRows } = await supabase.from('orders').select('id').eq('listing_id', listingId).limit(1);
+  if (orderRows && orderRows.length > 0) {
+    return { error: 'Acest anunț are comenzi asociate și nu poate fi șters.' };
+  }
+
   // Delete images from storage. image_urls stores full public URLs of the form
   // `.../object/public/listings_images/listings/<userId>/<file>`, so the
   // bucket-relative key is everything after the bucket segment.
