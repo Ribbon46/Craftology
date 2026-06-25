@@ -348,3 +348,109 @@ CREATE POLICY "Users insert own follow" ON follows
 DROP POLICY IF EXISTS "Users delete own follow" ON follows;
 CREATE POLICY "Users delete own follow" ON follows
   FOR DELETE TO authenticated USING (auth.uid() = follower_id);
+
+-- =====================================================================
+-- Reviews — a buyer rates a seller (listing_id NULL) and/or a product
+-- (listing_id set). World-readable. Insert only by a buyer who actually
+-- interacted (a conversation as buyer with that seller / about that listing).
+-- A DB trigger recomputes profiles.rating (the public aggregate) on any change,
+-- so rating stays service-controlled (users can't write it directly).
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS reviews (
+  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  reviewer_id UUID NOT NULL REFERENCES profiles (id) ON DELETE CASCADE,
+  seller_id   UUID NOT NULL REFERENCES profiles (id) ON DELETE CASCADE,
+  listing_id  UUID REFERENCES listings (id) ON DELETE CASCADE,
+  rating      SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  comment     TEXT CHECK (comment IS NULL OR char_length(comment) <= 1000),
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT reviews_no_self CHECK (reviewer_id <> seller_id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS reviews_one_seller_per_reviewer
+  ON reviews (reviewer_id, seller_id) WHERE listing_id IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS reviews_one_per_listing_per_reviewer
+  ON reviews (reviewer_id, listing_id) WHERE listing_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS reviews_seller_idx  ON reviews (seller_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS reviews_listing_idx ON reviews (listing_id, created_at DESC) WHERE listing_id IS NOT NULL;
+
+ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Reviews are readable by everyone" ON reviews;
+CREATE POLICY "Reviews are readable by everyone" ON reviews FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Reviews insertable by interacting buyer" ON reviews;
+CREATE POLICY "Reviews insertable by interacting buyer" ON reviews
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    auth.uid() = reviewer_id
+    AND reviewer_id <> seller_id
+    AND EXISTS (
+      SELECT 1 FROM conversations c
+      WHERE c.buyer_id = auth.uid()
+        AND c.seller_id = reviews.seller_id
+        AND (reviews.listing_id IS NULL OR c.listing_id = reviews.listing_id)
+    )
+  );
+
+DROP POLICY IF EXISTS "Reviews updatable by author" ON reviews;
+CREATE POLICY "Reviews updatable by author" ON reviews
+  FOR UPDATE TO authenticated USING (auth.uid() = reviewer_id);
+DROP POLICY IF EXISTS "Reviews deletable by author" ON reviews;
+CREATE POLICY "Reviews deletable by author" ON reviews
+  FOR DELETE TO authenticated USING (auth.uid() = reviewer_id);
+
+REVOKE ALL ON reviews FROM anon, authenticated;
+GRANT SELECT ON reviews TO anon, authenticated;
+GRANT INSERT (reviewer_id, seller_id, listing_id, rating, comment) ON reviews TO authenticated;
+GRANT UPDATE (rating, comment) ON reviews TO authenticated;
+GRANT DELETE ON reviews TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.recompute_seller_rating()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE sid UUID;
+BEGIN
+  sid := COALESCE(NEW.seller_id, OLD.seller_id);
+  UPDATE profiles
+     SET rating = COALESCE((SELECT ROUND(AVG(rating)::numeric, 2) FROM reviews WHERE seller_id = sid), 0)
+   WHERE id = sid;
+  RETURN NULL;
+END; $$;
+REVOKE EXECUTE ON FUNCTION public.recompute_seller_rating() FROM anon, authenticated;
+
+DROP TRIGGER IF EXISTS reviews_recompute_rating ON reviews;
+CREATE TRIGGER reviews_recompute_rating
+  AFTER INSERT OR UPDATE OR DELETE ON reviews
+  FOR EACH ROW EXECUTE FUNCTION public.recompute_seller_rating();
+
+-- =====================================================================
+-- Reports — a buyer flags a product or seller (non-handmade, not-an-artisan,
+-- prohibited, other). PRIVATE: no SELECT/UPDATE grants to users; only the
+-- service-role (admin panel) reads + triages them. A user may only file as self.
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS reports (
+  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  reporter_id UUID NOT NULL REFERENCES profiles (id) ON DELETE CASCADE,
+  target_type TEXT NOT NULL CHECK (target_type IN ('listing', 'seller')),
+  listing_id  UUID REFERENCES listings (id) ON DELETE CASCADE,
+  seller_id   UUID NOT NULL REFERENCES profiles (id) ON DELETE CASCADE,
+  reason      TEXT NOT NULL CHECK (reason IN ('not_handmade', 'not_artisan', 'prohibited', 'other')),
+  details     TEXT CHECK (details IS NULL OR char_length(details) <= 1000),
+  status      TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'reviewed', 'dismissed')),
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS reports_one_per_listing_per_reporter
+  ON reports (reporter_id, listing_id) WHERE listing_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS reports_one_per_seller_per_reporter
+  ON reports (reporter_id, seller_id) WHERE listing_id IS NULL;
+CREATE INDEX IF NOT EXISTS reports_status_idx ON reports (status, created_at DESC);
+
+ALTER TABLE reports ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Reports insertable by reporter" ON reports;
+CREATE POLICY "Reports insertable by reporter" ON reports
+  FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = reporter_id);
+
+REVOKE ALL ON reports FROM anon, authenticated;
+GRANT INSERT (reporter_id, target_type, listing_id, seller_id, reason, details) ON reports TO authenticated;

@@ -12,6 +12,8 @@ import { useAuthModal } from '@/lib/auth-modal';
 import { createConversation } from '@/actions/messages';
 import { createCheckoutSession } from '@/actions/checkout';
 import { FollowButton } from '@/components/FollowButton';
+import { ReviewSection } from '@/components/ReviewSection';
+import { ReportButton } from '@/components/ReportButton';
 
 // Interactive island for the listing detail page. The listing is fetched +
 // rendered on the server (see page.tsx) and passed in as a prop, so the static
@@ -186,6 +188,9 @@ export function ListingDetailClient({ listing, sellerContact }: { listing: Listi
           </p>
         </div>
 
+        {/* Reviews */}
+        {seller?.id && <ReviewSection listingId={listing.id} sellerId={seller.id} />}
+
         {/* Actions */}
         <div className="mt-7 space-y-3">
           {buyError && (
@@ -203,6 +208,9 @@ export function ListingDetailClient({ listing, sellerContact }: { listing: Listi
             <Share2 className="w-4 h-4 mr-2" />
             Partajează
           </Button>
+          <div className="pt-1 text-center">
+            <ReportButton listingId={listing.id} />
+          </div>
         </div>
         </div>
       </div>

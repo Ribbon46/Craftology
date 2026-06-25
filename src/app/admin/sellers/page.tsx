@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { isAdminUser, listSellerApplications, reviewSeller } from '@/actions/admin';
+import { ReportsPanel } from '@/components/ReportsPanel';
 
 interface Seller {
   id: string;
@@ -125,6 +126,8 @@ export default function AdminSellersPage() {
           {error}
         </div>
       )}
+
+      <ReportsPanel />
 
       {sellers.length === 0 ? (
         <p className="text-ink-soft text-center py-10">Nicio cerere încă.</p>

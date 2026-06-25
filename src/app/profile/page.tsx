@@ -12,6 +12,7 @@ import { useSession } from '@/lib/hooks';
 import { useAuthModal } from '@/lib/auth-modal';
 import { avatarFor, SellerProfile, Listing } from '@/lib/mock';
 import { fetchProfile, fetchSellerListings } from '@/lib/data/listings';
+import { getSellerReviews, type PublicReview } from '@/actions/reviews';
 
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState('listings');
@@ -21,6 +22,7 @@ export default function ProfilePage() {
 
   const [profile, setProfile] = useState<SellerProfile | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
+  const [reviews, setReviews] = useState<PublicReview[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -31,11 +33,12 @@ export default function ProfilePage() {
       return;
     }
     setLoading(true);
-    Promise.all([fetchProfile(user.id), fetchSellerListings(user.id)])
-      .then(([p, l]) => {
+    Promise.all([fetchProfile(user.id), fetchSellerListings(user.id), getSellerReviews(user.id)])
+      .then(([p, l, r]) => {
         if (active) {
           setProfile(p);
           setListings(l);
+          setReviews(r);
         }
       })
       .finally(() => {
@@ -211,12 +214,35 @@ export default function ProfilePage() {
             )}
           </TabsContent>
 
-          <TabsContent value="reviews" className="pt-4">
-            <div className="flex flex-col items-center text-center py-10">
-              <Star className="w-10 h-10 text-ink-faint mb-3" />
-              <p className="text-ink-soft">Nu ai recenzii încă.</p>
-              <p className="text-xs text-ink-faint mt-1">Recenziile apar după primele vânzări.</p>
-            </div>
+          <TabsContent value="reviews" className="space-y-3 pt-4">
+            {reviews.length === 0 ? (
+              <div className="flex flex-col items-center text-center py-10">
+                <Star className="w-10 h-10 text-ink-faint mb-3" />
+                <p className="text-ink-soft">Nu ai recenzii încă.</p>
+                <p className="text-xs text-ink-faint mt-1">Recenziile apar după ce clienții te contactează.</p>
+              </div>
+            ) : (
+              reviews.map((r) => {
+                const name = r.reviewer?.full_name || r.reviewer?.username || 'Cumpărător';
+                return (
+                  <Card key={r.id} className="border-line">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="text-sm font-medium text-ink truncate">{name}</span>
+                        <span className="flex items-center gap-0.5 text-gold text-sm">
+                          <Star className="w-4 h-4 fill-gold" />
+                          {r.rating}
+                        </span>
+                      </div>
+                      {r.comment && <p className="text-sm text-ink-soft leading-relaxed">{r.comment}</p>}
+                      <p className="text-[11px] text-ink-faint mt-1">
+                        {new Date(r.created_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      </p>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
           </TabsContent>
 
           <TabsContent value="transactions" className="pt-4">

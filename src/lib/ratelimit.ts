@@ -22,10 +22,12 @@ const limiters = redis
       message: new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(20, '1 m'), prefix: 'rl:msg', analytics: false }),
       conversation: new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(10, '1 m'), prefix: 'rl:conv', analytics: false }),
       listing: new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(10, '1 h'), prefix: 'rl:listing', analytics: false }),
+      review: new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(10, '1 h'), prefix: 'rl:review', analytics: false }),
+      report: new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(10, '1 h'), prefix: 'rl:report', analytics: false }),
     }
   : null;
 
-export type RateLimitAction = 'message' | 'conversation' | 'listing';
+export type RateLimitAction = 'message' | 'conversation' | 'listing' | 'review' | 'report';
 
 /**
  * Returns { ok: false } when the identifier has exceeded the action's limit.

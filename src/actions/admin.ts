@@ -69,3 +69,30 @@ export async function reviewSeller(
   revalidatePath('/admin/sellers');
   return { success: true };
 }
+
+// ---- Reports triage (admin-only; reports table is otherwise private) ----
+
+export async function listReports() {
+  if (!(await isAdminUser())) return { error: 'Acces interzis' };
+  if (!serviceConfigured()) return { error: 'Indisponibil: lipsește SUPABASE_SERVICE_ROLE_KEY.' };
+  const { data, error } = await adminClient()
+    .from('reports')
+    .select(
+      'id, target_type, reason, details, status, created_at, listing_id, seller_id, ' +
+        'listings ( title ), seller:profiles!reports_seller_id_fkey ( username, full_name )',
+    )
+    .order('created_at', { ascending: false })
+    .limit(200);
+  if (error) return { error: error.message };
+  return { reports: data ?? [] };
+}
+
+export async function setReportStatus(reportId: string, status: 'reviewed' | 'dismissed' | 'open') {
+  if (!(await isAdminUser())) return { error: 'Acces interzis' };
+  if (!serviceConfigured()) return { error: 'Indisponibil: lipsește SUPABASE_SERVICE_ROLE_KEY.' };
+  if (!['reviewed', 'dismissed', 'open'].includes(status)) return { error: 'Status invalid' };
+  const { error } = await adminClient().from('reports').update({ status }).eq('id', reportId);
+  if (error) return { error: error.message };
+  revalidatePath('/admin/sellers');
+  return { success: true };
+}

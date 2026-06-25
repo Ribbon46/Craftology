@@ -69,6 +69,18 @@ export const SUBCATEGORY_PARENT: Record<string, CategoryKey> = Object.fromEntrie
 
 export const CATEGORY_LABELS = CATEGORIES;
 
+// Report reasons (buyer flags a product/seller). Kept here (not in the
+// 'use server' action file, which may only export async functions) so both the
+// action and the UI can import the labels.
+export const REPORT_REASONS = [
+  { value: 'not_handmade', label: 'Nu pare handmade (ex: din import)' },
+  { value: 'not_artisan', label: 'Vânzătorul nu pare artizan' },
+  { value: 'prohibited', label: 'Produs interzis / neconform' },
+  { value: 'other', label: 'Altceva' },
+] as const;
+
+export type ReportReason = (typeof REPORT_REASONS)[number]['value'];
+
 export const BOTTOM_NAV_ITEMS = [
   { id: 'home', label: 'Acasă', icon: 'home', href: '/' },
   { id: 'search', label: 'Căutare', icon: 'search', href: '/search' },
