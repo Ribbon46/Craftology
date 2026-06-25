@@ -30,12 +30,17 @@ CREATE TABLE listings (
   title TEXT NOT NULL,
   description TEXT NOT NULL,
   price NUMERIC(10, 2) NOT NULL,
+  -- category = top-level (Accesorii / Haine / Home); subcategory = the specific
+  -- one within it (see src/config/app.ts SUBCATEGORIES). Both are free text at
+  -- the DB layer; the server action validates them against the taxonomy.
   category TEXT NOT NULL,
+  subcategory TEXT,
   image_urls TEXT[] DEFAULT '{}',
   seller_id UUID REFERENCES profiles (id) ON DELETE CASCADE NOT NULL,
   status TEXT DEFAULT 'active' CHECK (status IN ('active', 'sold')),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+CREATE INDEX IF NOT EXISTS listings_category_idx ON listings (category, subcategory);
 
 -- Conversations table
 CREATE TABLE conversations (

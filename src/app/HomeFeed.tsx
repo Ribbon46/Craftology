@@ -3,7 +3,7 @@
 import { useRef, useCallback, useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Star } from 'lucide-react';
-import { CATEGORIES, MESSAGES } from '@/config/app';
+import { CATEGORIES, SUBCATEGORIES, MESSAGES, type CategoryKey } from '@/config/app';
 import { fetchListingsPage, type ListingsPage, type SortOption } from '@/lib/data/listings';
 import { Listing } from '@/lib/mock';
 import { PullToRefresh } from '@/components/PullToRefresh';
@@ -17,21 +17,29 @@ import { ListingCard, ListingGridSkeleton } from '@/components/ListingCard';
 // client-side. React Query is seeded so the default view doesn't refetch on mount.
 export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
   const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [activeSub, setActiveSub] = useState<string>('all');
   const [sort, setSort] = useState<SortOption>('newest');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
 
   const min = minPrice !== '' ? Number(minPrice) : undefined;
   const max = maxPrice !== '' ? Number(maxPrice) : undefined;
+  const subFilter = activeSub !== 'all' ? activeSub : undefined;
   // initialData (server-rendered first page) only applies to the exact default
   // view — otherwise a sort/filter change would briefly show stale default data.
-  const isDefaultView = activeCategory === 'all' && sort === 'newest' && minPrice === '' && maxPrice === '';
+  const isDefaultView =
+    activeCategory === 'all' && activeSub === 'all' && sort === 'newest' && minPrice === '' && maxPrice === '';
+
+  const onCategoryChange = (cat: string) => {
+    setActiveCategory(cat);
+    setActiveSub('all'); // subcategories belong to a category — reset on switch
+  };
 
   const { data, error, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage, status, refetch } =
     useInfiniteQuery({
-      queryKey: ['listings', activeCategory, sort, min ?? null, max ?? null],
+      queryKey: ['listings', activeCategory, activeSub, sort, min ?? null, max ?? null],
       queryFn: ({ pageParam }) =>
-        fetchListingsPage({ cursor: pageParam, category: activeCategory, sort, minPrice: min, maxPrice: max }),
+        fetchListingsPage({ cursor: pageParam, category: activeCategory, subcategory: subFilter, sort, minPrice: min, maxPrice: max }),
       getNextPageParam: (lastPage) => lastPage.nextCursor,
       initialPageParam: 0 as number | null,
       initialData: isDefaultView ? { pages: [initialPage], pageParams: [0 as number | null] } : undefined,
@@ -70,14 +78,25 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
   return (
     <PullToRefresh onRefresh={() => refetch()}>
       <div className="min-h-screen">
-      {/* Category filter — sticks under the header (offset adapts to header height) */}
+      {/* Category filter — sticks under the header (offset adapts to header height).
+          A second row of subcategory chips appears once a top-level category is picked. */}
       <div className="sticky top-16 lg:top-[72px] z-30 bg-paper/90 backdrop-blur-md border-b border-line">
-        <div className="mx-auto w-full max-w-6xl px-4 lg:px-8 py-3">
+        <div className="mx-auto w-full max-w-6xl px-4 lg:px-8 py-3 space-y-2">
           <CategoryChips
             options={[{ key: 'all', label: 'Toate' }, ...Object.entries(CATEGORIES).map(([key, label]) => ({ key, label }))]}
             active={activeCategory}
-            onChange={setActiveCategory}
+            onChange={onCategoryChange}
           />
+          {activeCategory !== 'all' && (
+            <CategoryChips
+              options={[
+                { key: 'all', label: 'Toate' },
+                ...SUBCATEGORIES[activeCategory as CategoryKey].map((sub) => ({ key: sub, label: sub })),
+              ]}
+              active={activeSub}
+              onChange={setActiveSub}
+            />
+          )}
         </div>
       </div>
 
@@ -139,7 +158,7 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
             </div>
             <h3 className="font-display text-lg text-ink mb-1.5 text-balance">{MESSAGES.noListings}</h3>
             {activeCategory !== 'all' && (
-              <button onClick={() => setActiveCategory('all')} className="text-clay text-sm underline underline-offset-4 mt-1">
+              <button onClick={() => onCategoryChange('all')} className="text-clay text-sm underline underline-offset-4 mt-1">
                 Vezi toate categoriile
               </button>
             )}

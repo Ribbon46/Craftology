@@ -13,7 +13,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Dropzone } from '@/components/ui/Dropzone';
-import { CATEGORIES } from '@/config/app';
+import { CATEGORIES, SUBCATEGORIES, type CategoryKey } from '@/config/app';
 import { createListing } from '@/actions/listings';
 import { canSell, type SellEligibility } from '@/actions/seller';
 import { useSession } from '@/lib/hooks';
@@ -36,6 +36,7 @@ export default function SellPage() {
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState('');
+  const [subcategory, setSubcategory] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -62,6 +63,11 @@ export default function SellPage() {
     }
     if (!category) {
       setError('Vă rugăm să selectați o categorie');
+      setIsSubmitting(false);
+      return;
+    }
+    if (!subcategory) {
+      setError('Vă rugăm să selectați o subcategorie');
       setIsSubmitting(false);
       return;
     }
@@ -97,7 +103,8 @@ export default function SellPage() {
       formData.append('description', description);
       formData.append('price', price);
       formData.append('category', category);
-      
+      formData.append('subcategory', subcategory);
+
       files.forEach((file) => {
         formData.append('images', file);
       });
@@ -115,6 +122,7 @@ export default function SellPage() {
       setDescription('');
       setPrice('');
       setCategory('');
+      setSubcategory('');
       setFiles([]);
       
       setTimeout(() => {
@@ -217,23 +225,48 @@ export default function SellPage() {
                 <p className="text-xs text-ink-soft">Titlul trebuie să aibă cel puțin 3 caractere</p>
               </div>
 
-              {/* Category */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium" htmlFor="category">Categorie *</label>
-                <select
-                  id="category"
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="flex h-10 w-full rounded-lg border-[1.5px] border-input bg-surface px-3 py-2 text-sm placeholder:text-ink-faint transition-[border-color,box-shadow] focus:outline-none focus:border-clay focus:shadow-[3px_3px_0_0_var(--focus-press)] disabled:cursor-not-allowed disabled:opacity-50"
-                  required
-                >
-                  <option value="">Selectează o categorie</option>
-                  {Object.entries(CATEGORIES).map(([key, label]) => (
-                    <option key={key} value={key}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
+              {/* Category + dependent subcategory */}
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium" htmlFor="category">Categorie *</label>
+                  <select
+                    id="category"
+                    value={category}
+                    onChange={(e) => {
+                      setCategory(e.target.value);
+                      setSubcategory(''); // reset — subcategories depend on the category
+                    }}
+                    className="flex h-10 w-full rounded-lg border-[1.5px] border-input bg-surface px-3 py-2 text-sm placeholder:text-ink-faint transition-[border-color,box-shadow] focus:outline-none focus:border-clay focus:shadow-[3px_3px_0_0_var(--focus-press)] disabled:cursor-not-allowed disabled:opacity-50"
+                    required
+                  >
+                    <option value="">Selectează o categorie</option>
+                    {Object.entries(CATEGORIES).map(([key, label]) => (
+                      <option key={key} value={key}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium" htmlFor="subcategory">Subcategorie *</label>
+                  <select
+                    id="subcategory"
+                    value={subcategory}
+                    onChange={(e) => setSubcategory(e.target.value)}
+                    disabled={!category}
+                    className="flex h-10 w-full rounded-lg border-[1.5px] border-input bg-surface px-3 py-2 text-sm placeholder:text-ink-faint transition-[border-color,box-shadow] focus:outline-none focus:border-clay focus:shadow-[3px_3px_0_0_var(--focus-press)] disabled:cursor-not-allowed disabled:opacity-50"
+                    required
+                  >
+                    <option value="">{category ? 'Selectează o subcategorie' : 'Alege întâi categoria'}</option>
+                    {category &&
+                      SUBCATEGORIES[category as CategoryKey].map((sub) => (
+                        <option key={sub} value={sub}>
+                          {sub}
+                        </option>
+                      ))}
+                  </select>
+                </div>
               </div>
 
               {/* Price */}

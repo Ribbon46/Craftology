@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Search, SearchX } from 'lucide-react';
-import { CATEGORIES } from '@/config/app';
+import { CATEGORIES, SUBCATEGORIES, type CategoryKey } from '@/config/app';
 import { searchListings, type SortOption } from '@/lib/data/listings';
 import { Listing } from '@/lib/mock';
 import { CategoryChips } from '@/components/CategoryChips';
@@ -17,14 +17,21 @@ const CATEGORY_OPTIONS = [{ id: 'all', label: 'Toate' }].concat(
 export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedSub, setSelectedSub] = useState('all');
   const [sort, setSort] = useState<SortOption>('newest');
   const [results, setResults] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const onCategoryChange = (cat: string) => {
+    setSelectedCategory(cat);
+    setSelectedSub('all');
+  };
+
   useEffect(() => {
     let active = true;
     setLoading(true);
-    searchListings(searchQuery, selectedCategory, sort)
+    const sub = selectedSub !== 'all' ? selectedSub : undefined;
+    searchListings(searchQuery, selectedCategory, sort, sub)
       .then((r) => {
         if (active) setResults(r);
       })
@@ -34,7 +41,7 @@ export default function SearchPage() {
     return () => {
       active = false;
     };
-  }, [searchQuery, selectedCategory, sort]);
+  }, [searchQuery, selectedCategory, selectedSub, sort]);
 
   return (
     <div className="min-h-screen pb-20 pt-4 mx-auto w-full max-w-6xl">
@@ -53,9 +60,20 @@ export default function SearchPage() {
         <CategoryChips
           options={CATEGORY_OPTIONS.map((c) => ({ key: c.id, label: c.label }))}
           active={selectedCategory}
-          onChange={setSelectedCategory}
+          onChange={onCategoryChange}
           className="pb-2"
         />
+        {selectedCategory !== 'all' && (
+          <CategoryChips
+            options={[
+              { key: 'all', label: 'Toate' },
+              ...SUBCATEGORIES[selectedCategory as CategoryKey].map((sub) => ({ key: sub, label: sub })),
+            ]}
+            active={selectedSub}
+            onChange={setSelectedSub}
+            className="pb-2"
+          />
+        )}
       </div>
 
       <div className="px-4 lg:px-8">

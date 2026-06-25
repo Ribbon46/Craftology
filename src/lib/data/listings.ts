@@ -10,7 +10,7 @@ const PAGE_SIZE = 20;
 
 // Embeds the seller profile via the explicit FK so the join is unambiguous.
 const SELECT =
-  'id, title, description, price, category, image_urls, seller_id, status, created_at, ' +
+  'id, title, description, price, category, subcategory, image_urls, seller_id, status, created_at, ' +
   'profiles:profiles!listings_seller_id_fkey ( id, username, full_name, avatar_url, rating )';
 
 export interface ListingsPage {
@@ -32,7 +32,14 @@ function sortListings(list: Listing[], sort: SortOption): Listing[] {
 }
 
 export async function fetchListingsPage(
-  opts: { cursor?: number | null; category?: string; sort?: SortOption; minPrice?: number; maxPrice?: number } = {},
+  opts: {
+    cursor?: number | null;
+    category?: string;
+    subcategory?: string;
+    sort?: SortOption;
+    minPrice?: number;
+    maxPrice?: number;
+  } = {},
 ): Promise<ListingsPage> {
   const offset = opts.cursor ?? 0;
   const sort = opts.sort ?? 'newest';
@@ -43,6 +50,7 @@ export async function fetchListingsPage(
       // Filters first (FilterBuilder), then ordering (TransformBuilder), then range.
       let fq = supabase.from('listings').select(SELECT).eq('status', 'active');
       if (isRealCategory(opts.category)) fq = fq.eq('category', opts.category);
+      if (opts.subcategory) fq = fq.eq('subcategory', opts.subcategory);
       if (opts.minPrice != null) fq = fq.gte('price', opts.minPrice);
       if (opts.maxPrice != null) fq = fq.lte('price', opts.maxPrice);
       const ordered =
@@ -65,6 +73,7 @@ export async function fetchListingsPage(
   let filtered = isRealCategory(opts.category)
     ? MOCK_LISTINGS.filter((l) => l.category === opts.category)
     : [...MOCK_LISTINGS];
+  if (opts.subcategory) filtered = filtered.filter((l) => l.subcategory === opts.subcategory);
   if (opts.minPrice != null) filtered = filtered.filter((l) => l.price >= opts.minPrice!);
   if (opts.maxPrice != null) filtered = filtered.filter((l) => l.price <= opts.maxPrice!);
   filtered = sortListings(filtered, sort);
@@ -89,6 +98,7 @@ export async function searchListings(
   query: string,
   category?: string,
   sort: SortOption = 'newest',
+  subcategory?: string,
 ): Promise<Listing[]> {
   const term = query.trim();
 
@@ -97,6 +107,7 @@ export async function searchListings(
       const supabase = createClient();
       let q = supabase.from('listings').select(SELECT).eq('status', 'active');
       if (isRealCategory(category)) q = q.eq('category', category);
+      if (subcategory) q = q.eq('subcategory', subcategory);
       if (term) q = q.ilike('title', `%${term}%`);
       const ordered =
         sort === 'price_asc'
@@ -113,6 +124,7 @@ export async function searchListings(
   }
 
   let list = isRealCategory(category) ? MOCK_LISTINGS.filter((l) => l.category === category) : [...MOCK_LISTINGS];
+  if (subcategory) list = list.filter((l) => l.subcategory === subcategory);
   if (term) {
     const lower = term.toLowerCase();
     list = list.filter((l) => l.title.toLowerCase().includes(lower));

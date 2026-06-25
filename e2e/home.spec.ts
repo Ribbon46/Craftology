@@ -12,9 +12,11 @@ test('home renders the feed (server-rendered) and shows products', async ({ page
 
 test('category chips filter the feed', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Bijuterii' }).click();
+  await page.getByRole('button', { name: 'Accesorii', exact: true }).click();
   // The hero headline switches to the chosen category.
-  await expect(page.getByRole('heading', { name: 'Bijuterii' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Accesorii' })).toBeVisible();
+  // Picking a category reveals its subcategory chips (e.g. Bijuterii).
+  await expect(page.getByRole('button', { name: 'Bijuterii', exact: true })).toBeVisible();
 });
 
 test('sorting by price orders the feed ascending', async ({ page }) => {

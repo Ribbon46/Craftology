@@ -16,6 +16,7 @@ export interface Listing {
   description: string;
   price: number;
   category: string;
+  subcategory?: string | null;
   image_urls: string[];
   seller_id: string;
   status: 'active' | 'sold';
@@ -54,7 +55,8 @@ export const MOCK_LISTINGS: Listing[] = [
     description:
       'Un colier unic, lucrat manual din mărgele colorate de sticlă. Fiecare piesă este realizată cu atenție și pasiune. Ideal ca un cadou special sau pentru a-ți completa ținuta cu un accent handmade autentic.',
     price: 85,
-    category: 'Bijuterii',
+    category: 'Accesorii',
+    subcategory: 'Bijuterii',
     image_urls: [img('Colier margele'), img('Colier margele lateral'), img('Colier margele detaliu')],
     seller_id: SELLERS.maria.id,
     status: 'active',
@@ -67,7 +69,8 @@ export const MOCK_LISTINGS: Listing[] = [
     description:
       'Pantofi din piele naturală, cusuți manual de un meșter român. Confortabili, durabili și eleganți, potriviți pentru orice ocazie.',
     price: 250,
-    category: 'Haine',
+    category: 'Accesorii',
+    subcategory: 'Încălțăminte',
     image_urls: [img('Pantofi piele'), img('Pantofi piele talpa')],
     seller_id: SELLERS.andrei.id,
     status: 'active',
@@ -80,7 +83,8 @@ export const MOCK_LISTINGS: Listing[] = [
     description:
       'Lumânare din ceară naturală de soia, parfumată cu uleiuri esențiale pure. Ardere lungă și o aromă fină care relaxează atmosfera oricărei camere.',
     price: 45,
-    category: 'Lumânări',
+    category: 'Home',
+    subcategory: 'Lumânări',
     image_urls: [img('Lumanare'), img('Lumanare aprinsa')],
     seller_id: SELLERS.elena.id,
     status: 'active',
@@ -93,7 +97,8 @@ export const MOCK_LISTINGS: Listing[] = [
     description:
       'Brățară delicată din mărgele tăiate și lustruite manual. Se potrivește perfect cu colierul asortat din colecția noastră handmade.',
     price: 65,
-    category: 'Bijuterii',
+    category: 'Accesorii',
+    subcategory: 'Bijuterii',
     image_urls: [img('Bratara margele'), img('Bratara detaliu')],
     seller_id: SELLERS.maria.id,
     status: 'active',
@@ -107,6 +112,7 @@ export const MOCK_LISTINGS: Listing[] = [
       'Cămașă din bumbac 100% natural, cu broderie tradițională cusută manual. O piesă vestimentară unică, inspirată din motivele populare românești.',
     price: 180,
     category: 'Haine',
+    subcategory: 'Bluze & tricouri',
     image_urls: [img('Camasa bumbac'), img('Camasa broderie')],
     seller_id: SELLERS.roxana.id,
     status: 'active',
@@ -119,7 +125,8 @@ export const MOCK_LISTINGS: Listing[] = [
     description:
       'Set de trei lumânări parfumate, perfecte pentru a crea o ambianță caldă. Realizate din ceară naturală, fără aditivi sintetici.',
     price: 120,
-    category: 'Lumânări',
+    category: 'Home',
+    subcategory: 'Lumânări',
     image_urls: [img('Set lumanari'), img('Set lumanari cutie')],
     seller_id: SELLERS.cristi.id,
     status: 'active',
@@ -133,6 +140,7 @@ export const MOCK_LISTINGS: Listing[] = [
       'Plic (clutch) din piele naturală, lucrat manual. Compartiment spațios și finisaje atente — accesoriul ideal pentru o ținută elegantă.',
     price: 150,
     category: 'Accesorii',
+    subcategory: 'Genți & posete',
     image_urls: [img('Plic piele'), img('Plic piele interior')],
     seller_id: SELLERS.dana.id,
     status: 'active',
@@ -141,12 +149,13 @@ export const MOCK_LISTINGS: Listing[] = [
   },
   {
     id: '8',
-    title: 'Cremă hidratantă artizanală',
+    title: 'Cană ceramică smălțuită manual',
     description:
-      'Cremă hidratantă naturală, preparată în loturi mici din ingrediente bio. Hrănește pielea fără parfumuri sau conservanți sintetici.',
+      'Cană din lut ars, modelată și smălțuită manual la roata olarului. Fiecare piesă are forma și nuanța ei unică — perfectă pentru cafeaua de dimineață.',
     price: 55,
-    category: 'Frumusețe',
-    image_urls: [img('Crema'), img('Crema textura')],
+    category: 'Home',
+    subcategory: 'Ceramică',
+    image_urls: [img('Cana ceramica'), img('Cana ceramica detaliu')],
     seller_id: SELLERS.ioana.id,
     status: 'active',
     created_at: '2026-05-25T14:05:00.000Z',

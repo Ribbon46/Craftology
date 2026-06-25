@@ -15,21 +15,59 @@ export const COMPANY = {
   legalUpdated: "25 iunie 2026",
 } as const;
 
+// Top-level categories (the home/search chips). Kept deliberately small —
+// this is a curated artisan marketplace, not Temu. Each has subcategories
+// below for the sell form + secondary filtering. No food/cosmetics category
+// by design (handmade goods only).
 export const CATEGORIES = {
-  Bijuterii: "Bijuterii",
-  Haine: "Haine",
-  Lumânări: "Lumânări",
   Accesorii: "Accesorii",
-  Frumusețe: "Frumusețe"
+  Haine: "Haine",
+  Home: "Home",
 } as const;
 
-export const CATEGORY_LABELS = {
-  Bijuterii: "Bijuterii",
-  Haine: "Haine",
-  Lumânări: "Lumânări",
-  Accesorii: "Accesorii",
-  Frumusețe: "Frumusețe"
-};
+export type CategoryKey = keyof typeof CATEGORIES;
+
+// Subcategories per top-level category. Order = display order in the form +
+// the secondary filter row. Expand freely; the first item is not special.
+export const SUBCATEGORIES: Record<CategoryKey, readonly string[]> = {
+  Accesorii: [
+    "Bijuterii",
+    "Genți & posete",
+    "Căciuli & pălării",
+    "Mănuși",
+    "Șosete",
+    "Ochelari",
+    "Încălțăminte",
+    "Eșarfe & fulare",
+  ],
+  Haine: [
+    "Rochii",
+    "Bluze & tricouri",
+    "Pulovere & cardigane",
+    "Jachete & paltoane",
+    "Fuste",
+    "Pantaloni",
+    "Pentru copii",
+  ],
+  Home: [
+    "Lumânări",
+    "Ceramică",
+    "Decorațiuni",
+    "Textile (perne, pături)",
+    "Bucătărie",
+    "Artă de perete",
+  ],
+} as const;
+
+// Flat lookup: subcategory label → its parent category (for validation +
+// showing the right parent on a listing).
+export const SUBCATEGORY_PARENT: Record<string, CategoryKey> = Object.fromEntries(
+  (Object.keys(SUBCATEGORIES) as CategoryKey[]).flatMap((cat) =>
+    SUBCATEGORIES[cat].map((sub) => [sub, cat]),
+  ),
+);
+
+export const CATEGORY_LABELS = CATEGORIES;
 
 export const BOTTOM_NAV_ITEMS = [
   { id: 'home', label: 'Acasă', icon: 'home', href: '/' },

@@ -53,6 +53,7 @@ export async function createListing(formData: FormData) {
     description: formData.get('description'),
     price: Number(formData.get('price')),
     category: formData.get('category'),
+    subcategory: formData.get('subcategory'),
   });
 
   if (!validatedData.success) {
@@ -140,6 +141,7 @@ export async function createListing(formData: FormData) {
       description: validatedData.data.description,
       price: validatedData.data.price,
       category: validatedData.data.category,
+      subcategory: validatedData.data.subcategory,
       image_urls: imageUrls,
       seller_id: user.id,
       status: 'active',

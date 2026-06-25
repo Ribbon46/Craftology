@@ -108,6 +108,7 @@ export function ListingDetailClient({ listing, sellerContact }: { listing: Listi
           <div className="flex items-center justify-between gap-3 mb-2">
             <span className="-rotate-2 px-3 py-1 rounded-full bg-clay-soft text-clay-deep dark:text-clay border border-clay/30 shadow-[2px_2px_0_0_var(--press-soft)] text-[11px] font-semibold uppercase tracking-wider">
               {listing.category}
+              {listing.subcategory ? ` · ${listing.subcategory}` : ''}
             </span>
             {seller?.rating != null && (
               <span className="flex items-center gap-1 text-gold text-sm font-medium">
