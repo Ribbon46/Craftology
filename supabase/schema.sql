@@ -321,3 +321,30 @@ GRANT SELECT (id, status, company_name, contact_email, contact_phone, contact_ot
 GRANT SELECT (id, status, company_name, cui, contact_email, contact_phone, contact_other, workshop_description, stripe_onboarded, reviewed_at, rejection_reason, created_at) ON sellers TO authenticated;
 GRANT INSERT (id, company_name, cui, contact_email, contact_phone, contact_other, workshop_description, terms_accepted_at) ON sellers TO authenticated;
 GRANT UPDATE (company_name, cui, contact_email, contact_phone, contact_other, workshop_description) ON sellers TO authenticated;
+
+-- =====================================================================
+-- Follow an artisan — buyers can follow a seller. Follower counts are a
+-- public signal (world-readable); a user manages only their own follows.
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS follows (
+  follower_id UUID NOT NULL REFERENCES profiles (id) ON DELETE CASCADE,
+  seller_id   UUID NOT NULL REFERENCES profiles (id) ON DELETE CASCADE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (follower_id, seller_id),
+  CONSTRAINT follows_no_self CHECK (follower_id <> seller_id)
+);
+CREATE INDEX IF NOT EXISTS follows_seller_idx ON follows (seller_id);
+
+ALTER TABLE follows ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Follows are readable by everyone" ON follows;
+CREATE POLICY "Follows are readable by everyone" ON follows FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Users insert own follow" ON follows;
+CREATE POLICY "Users insert own follow" ON follows
+  FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = follower_id AND follower_id <> seller_id);
+
+DROP POLICY IF EXISTS "Users delete own follow" ON follows;
+CREATE POLICY "Users delete own follow" ON follows
+  FOR DELETE TO authenticated USING (auth.uid() = follower_id);

@@ -11,6 +11,7 @@ import { useSession } from '@/lib/hooks';
 import { useAuthModal } from '@/lib/auth-modal';
 import { createConversation } from '@/actions/messages';
 import { createCheckoutSession } from '@/actions/checkout';
+import { FollowButton } from '@/components/FollowButton';
 
 // Interactive island for the listing detail page. The listing is fetched +
 // rendered on the server (see page.tsx) and passed in as a prop, so the static
@@ -143,6 +144,7 @@ export function ListingDetailClient({ listing, sellerContact }: { listing: Listi
               seller?.username && <p className="text-xs text-ink-faint truncate">@{seller.username}</p>
             )}
           </div>
+          {seller?.id && <FollowButton sellerId={seller.id} className="flex-shrink-0" />}
         </div>
 
         {/* Direct seller contact (shown for approved sellers) */}
