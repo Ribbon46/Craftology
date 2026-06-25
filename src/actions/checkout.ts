@@ -44,11 +44,21 @@ export async function createCheckoutSession(listingId: string) {
   const cancel_url = `${base}/listings/${listing.id}`;
 
   try {
+    // Collect the buyer's delivery address + phone at checkout so the seller
+    // can ship the order. Stripe gathers these on its hosted page and exposes
+    // them to the seller (on their connected account); the platform doesn't
+    // store them. Restricted to Romania — the marketplace's audience.
+    const fulfilment = {
+      shipping_address_collection: { allowed_countries: ['RO' as const] },
+      phone_number_collection: { enabled: true },
+    };
+
     // Platform's own product (Deco Kubik) → money to the platform, no split.
     if (isPlatformOwner(listing.seller_id)) {
       const session = await stripe.checkout.sessions.create({
         mode: 'payment',
         line_items,
+        ...fulfilment,
         metadata: { listing_id: listing.id },
         success_url,
         cancel_url,
@@ -73,6 +83,7 @@ export async function createCheckoutSession(listingId: string) {
       {
         mode: 'payment',
         line_items,
+        ...fulfilment,
         payment_intent_data: { application_fee_amount: Math.round(unitAmount * COMMISSION_RATE) },
         metadata: { listing_id: listing.id },
         success_url,

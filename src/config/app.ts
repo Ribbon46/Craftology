@@ -4,6 +4,17 @@
 export const APP_NAME = "Craftology";
 export const APP_NAME_FULL = "Craftology by Deco Kubik";
 
+// Single source of truth for the legal/company identity shown on the
+// Terms / Privacy / Returns pages. Update here → all three stay in sync.
+export const COMPANY = {
+  legalName: "Deco Kubik SRL",
+  address: "Odobești 13, București",
+  cui: "RO24386414",
+  regCom: "J40/64417/2008",
+  email: "l.decokubik@gmail.com",
+  legalUpdated: "25 iunie 2026",
+} as const;
+
 export const CATEGORIES = {
   Bijuterii: "Bijuterii",
   Haine: "Haine",

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ArrowLeft, TriangleAlert } from 'lucide-react';
+import { COMPANY } from '@/config/app';
 
 export const metadata = { title: 'Politica de Confidențialitate · Craftology' };
 
@@ -10,13 +11,13 @@ export default function PrivacyPage() {
         <ArrowLeft className="w-4 h-4 mr-1.5" /> Înapoi
       </Link>
       <h1 className="font-display text-3xl text-ink mb-1">Politica de Confidențialitate</h1>
-      <p className="text-xs text-ink-faint mb-6">Conformă cu GDPR (Regulamentul UE 2016/679). Ultima actualizare: [DATĂ]</p>
+      <p className="text-xs text-ink-faint mb-6">Conformă cu GDPR (Regulamentul UE 2016/679). Ultima actualizare: {COMPANY.legalUpdated}</p>
 
       <div className="space-y-5 text-sm text-ink-soft leading-relaxed [&_h2]:font-display [&_h2]:text-lg [&_h2]:text-ink [&_h2]:mt-6 [&_h2]:mb-1">
         <h2>1. Operatorul de date</h2>
         <p>
-          <strong>Deco Kubik SRL</strong>, [ADRESĂ], CUI [CUI]. Pentru orice solicitare privind datele tale:
-          <strong> [EMAIL]</strong>.
+          <strong>{COMPANY.legalName}</strong>, {COMPANY.address}, CUI {COMPANY.cui}. Pentru orice solicitare privind datele tale:
+          <strong> {COMPANY.email}</strong>.
         </p>
 
         <h2>2. Ce date colectăm</h2>
@@ -50,7 +51,7 @@ export default function PrivacyPage() {
         <h2>6. Drepturile tale</h2>
         <p>
           Ai dreptul de acces, rectificare, ștergere („dreptul de a fi uitat”), restricționare, portabilitate și
-          opoziție, precum și dreptul de a-ți retrage consimțământul. Le poți exercita scriind la [EMAIL]. Ai
+          opoziție, precum și dreptul de a-ți retrage consimțământul. Le poți exercita scriind la {COMPANY.email}. Ai
           dreptul de a depune o plângere la <strong>ANSPDCP</strong> (Autoritatea Națională de Supraveghere a
           Prelucrării Datelor cu Caracter Personal, dataprotection.ro).
         </p>
@@ -69,8 +70,7 @@ export default function PrivacyPage() {
         <p className="flex items-start gap-1.5 text-xs text-ink-faint pt-6 border-t border-line mt-6">
           <TriangleAlert className="w-3.5 h-3.5 text-clay flex-shrink-0 mt-px" />
           <span>
-            Document-șablon. Completează câmpurile [ ] și obține revizuirea unui avocat / specialist GDPR înainte
-            de lansare. Vezi și{' '}
+            Acest document este în curs de revizuire de către un specialist GDPR înainte de lansare. Vezi și{' '}
             <Link href="/terms" className="text-clay underline underline-offset-2">Termenii și Condițiile</Link>.
           </span>
         </p>

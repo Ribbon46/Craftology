@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ArrowLeft, TriangleAlert } from 'lucide-react';
+import { COMPANY } from '@/config/app';
 
 export const metadata = { title: 'Termeni și Condiții · Craftology' };
 
@@ -10,13 +11,13 @@ export default function TermsPage() {
         <ArrowLeft className="w-4 h-4 mr-1.5" /> Înapoi
       </Link>
       <h1 className="font-display text-3xl text-ink mb-1">Termeni și Condiții</h1>
-      <p className="text-xs text-ink-faint mb-6">Ultima actualizare: [DATĂ]</p>
+      <p className="text-xs text-ink-faint mb-6">Ultima actualizare: {COMPANY.legalUpdated}</p>
 
       <div className="space-y-5 text-sm text-ink-soft leading-relaxed [&_h2]:font-display [&_h2]:text-lg [&_h2]:text-ink [&_h2]:mt-6 [&_h2]:mb-1">
         <p>
           Acești Termeni reglementează utilizarea platformei <strong>Craftology</strong> („Platforma”),
-          operată de <strong>Deco Kubik SRL</strong>, cu sediul în [ADRESĂ], CUI [CUI], înregistrată la
-          Registrul Comerțului sub nr. [J__/____/____] („Operatorul”, „noi”). Prin crearea unui cont sau
+          operată de <strong>{COMPANY.legalName}</strong>, cu sediul în {COMPANY.address}, CUI {COMPANY.cui},
+          înregistrată la Registrul Comerțului sub nr. {COMPANY.regCom} („Operatorul”, „noi”). Prin crearea unui cont sau
           utilizarea Platformei, ești de acord cu acești Termeni.
         </p>
 
@@ -98,7 +99,7 @@ export default function TermsPage() {
 
         <h2>11. Soluționarea litigiilor</h2>
         <p>
-          Reclamațiile pot fi adresate la [EMAIL]. Consumatorii se pot adresa ANPC (anpc.ro) și platformei
+          Reclamațiile pot fi adresate la {COMPANY.email}. Consumatorii se pot adresa ANPC (anpc.ro) și platformei
           europene SOL (ec.europa.eu/consumers/odr). Acești Termeni sunt guvernați de legea română; litigiile
           se soluționează de instanțele competente din România.
         </p>
@@ -109,8 +110,8 @@ export default function TermsPage() {
         <p className="flex items-start gap-1.5 text-xs text-ink-faint pt-6 border-t border-line mt-6">
           <TriangleAlert className="w-3.5 h-3.5 text-clay flex-shrink-0 mt-px" />
           <span>
-            Document-șablon. Înainte de lansarea publică, completează câmpurile [ ] și fă-l revizuit de un avocat
-            (drept comercial / protecția consumatorului / GDPR în România).
+            Acest document este în curs de revizuire juridică (drept comercial / protecția consumatorului /
+            GDPR în România) înainte de lansarea publică.
           </span>
         </p>
       </div>
