@@ -1,18 +1,24 @@
 'use server';
 
 import { createServerClient } from '@/lib/supabase/server';
+import { createServiceClient, isServiceConfigured } from '@/lib/supabase/admin';
 
 /**
  * Follow state for a seller: whether the current user follows them + the public
- * follower count. Reads only (no auth required for the count).
+ * follower count. The follows table is row-restricted (a user sees only their
+ * own follows), so the public count is read with the service-role client.
  */
 export async function getFollowState(sellerId: string): Promise<{ following: boolean; count: number }> {
   const supabase = await createServerClient();
 
-  const { count } = await supabase
-    .from('follows')
-    .select('*', { count: 'exact', head: true })
-    .eq('seller_id', sellerId);
+  let count = 0;
+  if (isServiceConfigured()) {
+    const { count: c } = await createServiceClient()
+      .from('follows')
+      .select('*', { count: 'exact', head: true })
+      .eq('seller_id', sellerId);
+    count = c ?? 0;
+  }
 
   const {
     data: { user },
@@ -29,7 +35,7 @@ export async function getFollowState(sellerId: string): Promise<{ following: boo
     following = !!data;
   }
 
-  return { following, count: count ?? 0 };
+  return { following, count };
 }
 
 /**

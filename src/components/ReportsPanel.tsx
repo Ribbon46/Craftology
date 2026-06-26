@@ -52,15 +52,26 @@ export function ReportsPanel() {
     }
   };
 
-  if (!loaded || reports.length === 0) return null; // hide entirely when there's nothing to triage
-  const open = reports.filter((r) => r.status === 'open');
+  if (!loaded) {
+    return (
+      <div className="flex justify-center py-12">
+        <div className="w-6 h-6 border-2 border-clay border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+  if (reports.length === 0) {
+    return (
+      <div className="flex flex-col items-center text-center py-12">
+        <div className="w-14 h-14 rounded-full bg-clay-soft grid place-items-center mb-3 -rotate-3 border-[1.5px] border-clay/35 shadow-[3px_3px_0_0_var(--press-soft)]">
+          <Flag className="w-6 h-6 text-clay" strokeWidth={2.25} />
+        </div>
+        <p className="text-ink-soft">Nicio sesizare.</p>
+      </div>
+    );
+  }
 
   return (
-    <section className="space-y-3 mb-8">
-      <h2 className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-ink-faint">
-        <Flag className="w-3.5 h-3.5 text-clay" />
-        Raportări {open.length > 0 && `(${open.length} noi)`}
-      </h2>
+    <section className="space-y-3">
       {reports.map((r) => {
         const badge = STATUS_LABEL[r.status];
         const sellerName = r.seller?.full_name || r.seller?.username || 'vânzător';

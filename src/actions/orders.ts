@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { createServerClient } from '@/lib/supabase/server';
 import { createServiceClient, isServiceConfigured } from '@/lib/supabase/admin';
 import { stripe, isStripeConfigured } from '@/lib/stripe';
+import { isAdminUser } from '@/actions/admin';
 
 export interface OrderRow {
   id: string;
@@ -54,7 +55,10 @@ async function refundOrder(
           payment_intent: order.payment_intent_id,
           // Marketplace (connected account): return the platform's 15% too.
           ...(order.stripe_account_id ? { refund_application_fee: true } : {}),
-          metadata: { order_id: order.id, cancelled_by: cancelledBy },
+          // Only order_id in the refund body — cancelled_by is recorded in our
+          // DB, not here, so concurrent seller+buyer cancels share an identical
+          // idempotent request body (differing metadata would 400 the replay).
+          metadata: { order_id: order.id },
         },
         {
           ...(order.stripe_account_id ? { stripeAccount: order.stripe_account_id } : {}),
@@ -129,6 +133,13 @@ export async function cancelOrderByBuyer(
   if (input.sessionId) {
     const { data } = await svc.from('orders').select('*').eq('stripe_session_id', input.sessionId).maybeSingle();
     order = (data as FullOrder) ?? null;
+    // The session id is a bearer capability (it travels in the success URL). It
+    // only authorizes GUEST orders (no account). A logged-in buyer's order can't
+    // be refunded by a leaked session id — they must cancel from their profile
+    // (the orderId branch, which verifies ownership).
+    if (order && order.buyer_id !== null) {
+      return { error: 'Această comandă poate fi anulată doar din contul tău.' };
+    }
   } else if (input.orderId) {
     const supabase = await createServerClient();
     const {
@@ -148,6 +159,16 @@ export async function cancelOrderByBuyer(
 
   if (!order) return { error: 'Comanda nu a fost găsită.' };
   return refundOrder(order, 'buyer', reason);
+}
+
+/** Admin force-cancel (refund) any order. */
+export async function cancelOrderAsAdmin(orderId: string, reason?: string) {
+  if (!(await isAdminUser())) return { error: 'Acces interzis' };
+  if (!isServiceConfigured()) return { error: 'Indisponibil momentan.' };
+  const svc = createServiceClient();
+  const { data: order } = await svc.from('orders').select('*').eq('id', orderId).maybeSingle();
+  if (!order) return { error: 'Comanda nu a fost găsită.' };
+  return refundOrder(order as FullOrder, 'admin', reason);
 }
 
 /** The seller's own orders (RLS lets a seller read theirs). */

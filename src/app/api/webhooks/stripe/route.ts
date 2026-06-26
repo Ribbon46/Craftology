@@ -80,9 +80,19 @@ export async function POST(req: NextRequest) {
       );
       if (insErr) console.error('order upsert error:', insErr.message);
 
-      await db.from('listings').update({ status: 'sold' }).eq('id', listingId);
-      revalidatePath('/');
-      revalidatePath(`/listings/${listingId}`);
+      // Only mark sold if this order is still 'paid'. A late/duplicate retry of
+      // checkout.session.completed arriving AFTER a refund (which re-listed the
+      // item) must NOT flip it back to 'sold'.
+      const { data: ord } = await db
+        .from('orders')
+        .select('status')
+        .eq('stripe_session_id', session.id)
+        .maybeSingle();
+      if (ord?.status === 'paid') {
+        await db.from('listings').update({ status: 'sold' }).eq('id', listingId).eq('status', 'active');
+        revalidatePath('/');
+        revalidatePath(`/listings/${listingId}`);
+      }
     }
   }
 

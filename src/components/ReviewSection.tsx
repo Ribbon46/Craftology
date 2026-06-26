@@ -135,13 +135,13 @@ export function ReviewSection({ listingId, sellerId }: { listingId: string; sell
       {loaded && !eligible && !done && reviews.length === 0 && (
         <p className="text-sm text-ink-soft mb-2">
           {user ? (
-            'Poți lăsa o recenzie după ce contactezi vânzătorul.'
+            'Poți lăsa o recenzie după ce cumperi acest produs.'
           ) : (
             <>
               <button onClick={() => setOpen(true)} className="text-clay underline underline-offset-2">
                 Autentifică-te
               </button>{' '}
-              și contactează vânzătorul pentru a lăsa o recenzie.
+              pentru a lăsa o recenzie după o achiziție.
             </>
           )}
         </p>

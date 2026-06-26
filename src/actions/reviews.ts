@@ -16,9 +16,11 @@ export interface PublicReview {
 const REVIEW_SELECT =
   'id, rating, comment, created_at, reviewer:profiles!reviews_reviewer_id_fkey ( username, full_name, avatar_url )';
 
-/** Has this buyer interacted with the seller (a conversation as buyer), so they
- *  may review? For a product review the conversation must be about that listing.
- *  (TODO: once orders exist, OR-in an order lookup here.) */
+/** May this buyer review the seller? Requires a real paid/refunded ORDER from
+ *  them with that seller (for a product review, an order for that listing) —
+ *  not merely a conversation, which anyone can open (review-bomb vector). The
+ *  RLS WITH CHECK re-verifies this (incl. an email match for guest-then-member
+ *  buyers); here we check the buyer_id orders the cookie client can read. */
 async function hasInteracted(
   supabase: Awaited<ReturnType<typeof createServerClient>>,
   userId: string,
@@ -26,10 +28,11 @@ async function hasInteracted(
   listingId?: string,
 ): Promise<boolean> {
   let q = supabase
-    .from('conversations')
+    .from('orders')
     .select('id')
-    .eq('buyer_id', userId)
     .eq('seller_id', sellerId)
+    .eq('buyer_id', userId)
+    .in('status', ['paid', 'refunded'])
     .limit(1);
   if (listingId) q = q.eq('listing_id', listingId);
   const { data } = await q;
@@ -105,7 +108,7 @@ export async function submitReview(input: ReviewInput): Promise<{ success: true 
   if (sellerId === user.id) return { error: 'Nu îți poți lăsa o recenzie ție însuți.' };
 
   const eligible = await hasInteracted(supabase, user.id, sellerId, listingId);
-  if (!eligible) return { error: 'Poți lăsa o recenzie doar după ce ai contactat vânzătorul.' };
+  if (!eligible) return { error: 'Poți lăsa o recenzie doar după ce ai cumpărat de la acest vânzător.' };
 
   const { error } = await supabase.from('reviews').insert({
     reviewer_id: user.id,

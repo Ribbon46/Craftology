@@ -338,8 +338,14 @@ CREATE INDEX IF NOT EXISTS follows_seller_idx ON follows (seller_id);
 
 ALTER TABLE follows ENABLE ROW LEVEL SECURITY;
 
+-- Privacy: a user sees only their OWN follows (the raw graph — who follows whom
+-- — is not public). The public follower COUNT is read via the service-role
+-- client in getFollowState (src/actions/follow.ts).
 DROP POLICY IF EXISTS "Follows are readable by everyone" ON follows;
-CREATE POLICY "Follows are readable by everyone" ON follows FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Follows readable by the follower" ON follows;
+CREATE POLICY "Follows readable by the follower" ON follows
+  FOR SELECT TO authenticated USING (auth.uid() = follower_id);
+REVOKE SELECT ON follows FROM anon;
 
 DROP POLICY IF EXISTS "Users insert own follow" ON follows;
 CREATE POLICY "Users insert own follow" ON follows
@@ -380,17 +386,22 @@ ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Reviews are readable by everyone" ON reviews;
 CREATE POLICY "Reviews are readable by everyone" ON reviews FOR SELECT USING (true);
 
+-- Insert only by a buyer who actually PURCHASED from the seller (a paid/refunded
+-- order; for a product review, an order for that listing). A conversation is NOT
+-- enough — anyone can open a chat, which would allow review-bombing.
 DROP POLICY IF EXISTS "Reviews insertable by interacting buyer" ON reviews;
-CREATE POLICY "Reviews insertable by interacting buyer" ON reviews
+DROP POLICY IF EXISTS "Reviews insertable by purchaser" ON reviews;
+CREATE POLICY "Reviews insertable by purchaser" ON reviews
   FOR INSERT TO authenticated
   WITH CHECK (
     auth.uid() = reviewer_id
     AND reviewer_id <> seller_id
     AND EXISTS (
-      SELECT 1 FROM conversations c
-      WHERE c.buyer_id = auth.uid()
-        AND c.seller_id = reviews.seller_id
-        AND (reviews.listing_id IS NULL OR c.listing_id = reviews.listing_id)
+      SELECT 1 FROM orders o
+      WHERE o.seller_id = reviews.seller_id
+        AND o.status IN ('paid', 'refunded')
+        AND (o.buyer_id = auth.uid() OR lower(o.buyer_email) = lower(auth.jwt() ->> 'email'))
+        AND (reviews.listing_id IS NULL OR o.listing_id = reviews.listing_id)
     )
   );
 
@@ -417,7 +428,10 @@ BEGIN
    WHERE id = sid;
   RETURN NULL;
 END; $$;
-REVOKE EXECUTE ON FUNCTION public.recompute_seller_rating() FROM anon, authenticated;
+-- Lock the trigger fn: EXECUTE is granted to PUBLIC by default, and anon/
+-- authenticated inherit it, so revoking from PUBLIC is what actually removes
+-- RPC access (revoking from anon/authenticated alone is a no-op).
+REVOKE EXECUTE ON FUNCTION public.recompute_seller_rating() FROM PUBLIC, anon, authenticated;
 
 DROP TRIGGER IF EXISTS reviews_recompute_rating ON reviews;
 CREATE TRIGGER reviews_recompute_rating
@@ -448,10 +462,22 @@ CREATE INDEX IF NOT EXISTS reports_status_idx ON reports (status, created_at DES
 
 ALTER TABLE reports ENABLE ROW LEVEL SECURITY;
 
+-- File as self, never against yourself, and the named seller must actually own
+-- the reported listing (a forged seller_id would misattribute the report).
 DROP POLICY IF EXISTS "Reports insertable by reporter" ON reports;
 CREATE POLICY "Reports insertable by reporter" ON reports
   FOR INSERT TO authenticated
-  WITH CHECK (auth.uid() = reporter_id);
+  WITH CHECK (
+    auth.uid() = reporter_id
+    AND reporter_id <> seller_id
+    AND (
+      (target_type = 'seller' AND listing_id IS NULL)
+      OR (
+        target_type = 'listing' AND listing_id IS NOT NULL
+        AND EXISTS (SELECT 1 FROM listings l WHERE l.id = reports.listing_id AND l.seller_id = reports.seller_id)
+      )
+    )
+  );
 
 REVOKE ALL ON reports FROM anon, authenticated;
 GRANT INSERT (reporter_id, target_type, listing_id, seller_id, reason, details) ON reports TO authenticated;

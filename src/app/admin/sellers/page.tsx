@@ -1,8 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import Link from 'next/link';
-import { ArrowLeft, ShieldCheck, Mail, Phone, Link2 } from 'lucide-react';
+import { Mail, Phone, Link2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,8 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { isAdminUser, listSellerApplications, reviewSeller } from '@/actions/admin';
-import { ReportsPanel } from '@/components/ReportsPanel';
+import { listSellerApplications, reviewSeller } from '@/actions/admin';
 
 interface Seller {
   id: string;
@@ -36,9 +34,11 @@ const STATUS_LABEL: Record<Seller['status'], { text: string; cls: string }> = {
   suspended: { text: 'Suspendat', cls: 'bg-ink/10 text-ink-soft' },
 };
 
+// Access is gated by the /admin layout (server-side isAdminUser) + the actions
+// re-check, so this page only loads + renders its content.
 export default function AdminSellersPage() {
-  const [allowed, setAllowed] = useState<boolean | null>(null);
   const [sellers, setSellers] = useState<Seller[]>([]);
+  const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   // Reject flow goes through a themed dialog (a native prompt() would be
@@ -49,13 +49,11 @@ export default function AdminSellersPage() {
   const load = useCallback(async () => {
     const res = await listSellerApplications();
     if ('sellers' in res) setSellers(res.sellers as Seller[]);
+    setLoaded(true);
   }, []);
 
   useEffect(() => {
-    isAdminUser().then(async (ok) => {
-      setAllowed(ok);
-      if (ok) await load();
-    });
+    load();
   }, [load]);
 
   const act = async (id: string, action: 'approve' | 'reject' | 'suspend', rejectionReason?: string) => {
@@ -90,36 +88,12 @@ export default function AdminSellersPage() {
     await act(id, 'reject', trimmed);
   };
 
-  if (allowed === null) {
-    return (
-      <div className="flex items-center justify-center h-[60vh]">
-        <div className="w-6 h-6 border-2 border-clay border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-  if (!allowed) {
-    return (
-      <div className="flex flex-col items-center justify-center h-[70vh] px-6 text-center">
-        <h1 className="font-display text-2xl text-ink mb-2">Acces interzis</h1>
-        <p className="text-ink-soft mb-6">Această pagină e disponibilă doar administratorilor.</p>
-        <Link href="/"><Button className="rounded-full">Înapoi acasă</Button></Link>
-      </div>
-    );
-  }
-
   const pending = sellers.filter((s) => s.status === 'pending');
   const others = sellers.filter((s) => s.status !== 'pending');
 
   return (
-    <div className="min-h-screen px-4 py-6 pb-24 mx-auto w-full max-w-3xl">
-      <Link href="/profile" className="inline-flex items-center text-ink-soft hover:text-ink mb-4">
-        <ArrowLeft className="w-4 h-4 mr-1" />
-        Înapoi
-      </Link>
-      <div className="flex items-center gap-2 mb-6">
-        <ShieldCheck className="w-6 h-6 text-clay" />
-        <h1 className="font-display text-2xl text-ink">Cereri vânzători</h1>
-      </div>
+    <div>
+      <h1 className="font-display text-2xl text-ink mb-5">Cereri vânzători</h1>
 
       {error && (
         <div className="mb-4 p-3 rounded-xl bg-destructive/10 border border-destructive/25 text-destructive text-sm">
@@ -127,9 +101,11 @@ export default function AdminSellersPage() {
         </div>
       )}
 
-      <ReportsPanel />
-
-      {sellers.length === 0 ? (
+      {!loaded ? (
+        <div className="flex justify-center py-12">
+          <div className="w-6 h-6 border-2 border-clay border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : sellers.length === 0 ? (
         <p className="text-ink-soft text-center py-10">Nicio cerere încă.</p>
       ) : (
         <div className="space-y-6">

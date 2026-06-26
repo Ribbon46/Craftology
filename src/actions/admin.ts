@@ -93,6 +93,46 @@ export async function setReportStatus(reportId: string, status: 'reviewed' | 'di
   if (!['reviewed', 'dismissed', 'open'].includes(status)) return { error: 'Status invalid' };
   const { error } = await adminClient().from('reports').update({ status }).eq('id', reportId);
   if (error) return { error: error.message };
-  revalidatePath('/admin/sellers');
+  revalidatePath('/admin/reports');
   return { success: true };
+}
+
+// ---- Admin dashboard data ----
+
+export async function getAdminStats() {
+  if (!(await isAdminUser())) return { error: 'Acces interzis' };
+  if (!serviceConfigured()) return { error: 'Indisponibil: lipsește SUPABASE_SERVICE_ROLE_KEY.' };
+  const a = adminClient();
+  const [pendingSellers, approvedSellers, openReports, paidOrders, gmvRows] = await Promise.all([
+    a.from('sellers').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+    a.from('sellers').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
+    a.from('reports').select('id', { count: 'exact', head: true }).eq('status', 'open'),
+    a.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'paid'),
+    a.from('orders').select('amount_total').eq('status', 'paid'),
+  ]);
+  const gmvBani = ((gmvRows.data ?? []) as Array<{ amount_total: number }>).reduce((s, o) => s + (o.amount_total ?? 0), 0);
+  return {
+    stats: {
+      pendingSellers: pendingSellers.count ?? 0,
+      approvedSellers: approvedSellers.count ?? 0,
+      openReports: openReports.count ?? 0,
+      paidOrders: paidOrders.count ?? 0,
+      gmvBani,
+    },
+  };
+}
+
+export async function listAllOrders() {
+  if (!(await isAdminUser())) return { error: 'Acces interzis' };
+  if (!serviceConfigured()) return { error: 'Indisponibil: lipsește SUPABASE_SERVICE_ROLE_KEY.' };
+  const { data, error } = await adminClient()
+    .from('orders')
+    .select(
+      'id, listing_id, buyer_email, amount_total, status, cancelled_by, created_at, seller_id, ' +
+        'listings ( title ), seller:profiles!orders_seller_id_fkey ( username, full_name )',
+    )
+    .order('created_at', { ascending: false })
+    .limit(200);
+  if (error) return { error: error.message };
+  return { orders: data ?? [] };
 }

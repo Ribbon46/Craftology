@@ -30,7 +30,10 @@ export async function submitReport(input: {
 
   const listingId = input.targetType === 'listing' ? input.listingId : undefined;
   let sellerId = input.sellerId ?? null;
-  if (listingId) {
+  if (input.targetType === 'listing') {
+    // A listing report MUST name the listing; the seller is derived from it
+    // (never trusted from the client). Otherwise it could be misattributed.
+    if (!listingId) return { error: 'Țintă invalidă.' };
     const { data: listing } = await supabase.from('listings').select('seller_id').eq('id', listingId).maybeSingle();
     if (!listing) return { error: 'Produsul nu a fost găsit.' };
     sellerId = listing.seller_id as string;

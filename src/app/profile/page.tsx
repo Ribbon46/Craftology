@@ -220,7 +220,7 @@ export default function ProfilePage() {
               <div className="flex flex-col items-center text-center py-10">
                 <Star className="w-10 h-10 text-ink-faint mb-3" />
                 <p className="text-ink-soft">Nu ai recenzii încă.</p>
-                <p className="text-xs text-ink-faint mt-1">Recenziile apar după ce clienții te contactează.</p>
+                <p className="text-xs text-ink-faint mt-1">Recenziile apar după ce clienții cumpără de la tine.</p>
               </div>
             ) : (
               reviews.map((r) => {
