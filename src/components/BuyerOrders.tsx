@@ -77,7 +77,7 @@ export function BuyerOrders() {
               </p>
               {o.status === 'paid' && (
                 <Button size="sm" variant="outline" className="rounded-full mt-2.5" onClick={() => { setCancelling(o); setError(null); }}>
-                  Anulează comanda
+                  Cere retur / rambursare
                 </Button>
               )}
             </CardContent>
@@ -88,8 +88,10 @@ export function BuyerOrders() {
       <Dialog open={cancelling !== null} onOpenChange={(o) => !o && setCancelling(null)}>
         <DialogContent className="sm:max-w-md p-6">
           <DialogHeader className="pr-6">
-            <DialogTitle className="font-display text-xl">Anulează comanda</DialogTitle>
-            <DialogDescription>Primești rambursarea completă în 5-10 zile lucrătoare.</DialogDescription>
+            <DialogTitle className="font-display text-xl">Retur și rambursare</DialogTitle>
+            <DialogDescription>
+              Ai dreptul de retragere în 14 zile de la primire. Primești rambursarea completă, în 5–10 zile lucrătoare.
+            </DialogDescription>
           </DialogHeader>
           <Textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2} placeholder="Motiv (opțional)" className="resize-none" />
           {error && <p className="text-xs text-destructive">{error}</p>}

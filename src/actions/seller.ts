@@ -3,6 +3,7 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { createServiceClient, isServiceConfigured } from '@/lib/supabase/admin';
 import { isPlatformOwner } from '@/lib/owner';
+import { sendEmail, escapeHtml, ADMIN_NOTIFY_EMAIL } from '@/lib/email';
 import { revalidatePath } from 'next/cache';
 
 export type SellEligibility =
@@ -102,6 +103,24 @@ export async function applyAsSeller(formData: FormData) {
     if (insErr.code === '23505') return { error: 'Ai deja o cerere înregistrată.' };
     return { error: `Eroare la trimiterea cererii: ${insErr.message}` };
   }
+
+  // Notify the admin inbox that a new seller applied (non-blocking; inert until
+  // SMTP is configured). Values are user input → escape before embedding.
+  await sendEmail({
+    to: ADMIN_NOTIFY_EMAIL,
+    subject: `Cerere vânzător nouă: ${companyName}`,
+    html: `<h2>Cerere vânzător nouă pe Craft'zaar</h2>
+      <ul>
+        <li><b>Firmă:</b> ${escapeHtml(companyName)}</li>
+        <li><b>CUI:</b> ${escapeHtml(cui)}</li>
+        <li><b>Email contact:</b> ${escapeHtml(contactEmail || '—')}</li>
+        <li><b>Telefon:</b> ${escapeHtml(contactPhone || '—')}</li>
+        <li><b>Alt contact:</b> ${escapeHtml(contactOther || '—')}</li>
+        <li><b>Atelier:</b> ${escapeHtml(workshop || '—')}</li>
+      </ul>
+      <p>Aprobă sau respinge din panoul de administrare:
+        <a href="https://craftology-peach.vercel.app/admin/sellers">craftology-peach.vercel.app/admin/sellers</a></p>`,
+  }).catch(() => {});
 
   revalidatePath('/seller/apply');
   return { success: true };

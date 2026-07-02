@@ -3,8 +3,7 @@ import { Fraunces, Hanken_Grotesk } from 'next/font/google';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { SiteHeader } from '@/components/navigation/SiteHeader';
 import { SiteFooter } from '@/components/navigation/SiteFooter';
-import { Analytics } from '@vercel/analytics/next';
-import { SpeedInsights } from '@vercel/speed-insights/next';
+import { CookieConsent } from '@/components/CookieConsent';
 import { Providers } from './providers';
 import { APP_NAME_FULL } from '@/config/app';
 import './globals.css';
@@ -80,9 +79,8 @@ export default function RootLayout({
             <BottomNav />
           </div>
         </Providers>
-        {/* Production traffic + Core Web Vitals (no-op off Vercel) */}
-        <Analytics />
-        <SpeedInsights />
+        {/* Cookie consent + gated analytics (loads Vercel Analytics/Speed Insights only after Accept) */}
+        <CookieConsent />
       </body>
     </html>
   );

@@ -126,7 +126,7 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
             </h1>
           </div>
           <p className="hidden lg:block text-lg text-ink-soft mt-4 max-w-xl leading-relaxed">
-            Piese unicat de la creatori români verificați — fiecare produs, făcut cu mâna.
+            Produse unicat de la creatori români verificați — fiecare produs, lucrat manual.
           </p>
           {!isInitialLoading && (
             <p className="text-sm text-ink-soft mt-1 lg:mt-5">

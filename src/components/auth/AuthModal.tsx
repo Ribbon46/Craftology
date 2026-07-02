@@ -67,7 +67,7 @@ export function AuthModal() {
       router.refresh();
     } else {
       // Supabase sends a confirmation email by default.
-      setInfo('Cont creat! Verifică-ți emailul pentru confirmare, apoi autentifică-te.');
+      setInfo('Cont creat! Ți-am trimis un email de confirmare — verifică inbox-ul (și folderul Spam), apoi autentifică-te.');
       setIsLogin(true);
     }
   };
