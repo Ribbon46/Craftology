@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og';
 
-export const alt = 'Craftology by Deco Kubik — produse handmade românești';
+export const alt = "Craft'zaar by Deco Kubik — produse handmade românești";
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -26,11 +26,11 @@ export default function OpengraphImage() {
           Atelier · Deco Kubik
         </div>
         <div style={{ display: 'flex', fontSize: 104, fontWeight: 700, marginTop: 20, color: '#984427' }}>
-          Craftology
+          Craft&apos;zaar
         </div>
         <div style={{ display: 'flex', fontSize: 44, marginTop: 14 }}>Lucrate manual, cu suflet.</div>
         <div style={{ display: 'flex', fontSize: 27, marginTop: 28, color: '#6f6153' }}>
-          Bijuterii · Haine · Lumânări · Accesorii · Frumusețe
+          Accesorii · Haine · Home
         </div>
         <div style={{ display: 'flex', width: 150, height: 7, marginTop: 44, background: '#b9572f', borderRadius: 4 }} />
       </div>

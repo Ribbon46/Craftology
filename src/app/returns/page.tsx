@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { ArrowLeft, TriangleAlert } from 'lucide-react';
 import { COMPANY } from '@/config/app';
 
-export const metadata = { title: 'Politica de Retur · Craftology' };
+export const metadata = { title: "Politica de Retur · Craft'zaar" };
 
 export default function ReturnsPage() {
   return (

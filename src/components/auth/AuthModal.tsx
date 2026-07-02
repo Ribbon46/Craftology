@@ -83,7 +83,7 @@ export function AuthModal() {
       <DialogContent className="sm:max-w-md p-6">
         <DialogHeader className="pr-6">
           <DialogTitle className="font-display text-xl">
-            {isLogin ? 'Bine ai venit la Craftology' : 'Creează un cont'}
+            {isLogin ? "Bine ai venit la Craft'zaar" : 'Creează un cont'}
           </DialogTitle>
           <DialogDescription className="text-pretty">
             {isLogin

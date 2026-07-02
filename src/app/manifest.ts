@@ -1,11 +1,11 @@
 import type { MetadataRoute } from 'next';
 
-// PWA manifest — makes Craftology installable on iOS (Add to Home Screen) and
+// PWA manifest — makes Craft'zaar installable on iOS (Add to Home Screen) and
 // Android home screens as a full-screen, app-like experience.
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Craftology by Deco Kubik',
-    short_name: 'Craftology',
+    name: "Craft'zaar by Deco Kubik",
+    short_name: "Craft'zaar",
     description: 'Marketplace de produse handmade românești — bijuterii, haine, lumânări, accesorii, frumusețe.',
     start_url: '/',
     display: 'standalone',

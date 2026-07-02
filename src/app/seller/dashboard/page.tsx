@@ -72,7 +72,7 @@ export default function SellerDashboardPage() {
         <Store className="w-10 h-10 text-clay mb-3" />
         <h1 className="font-display text-2xl text-ink mb-2">Panoul vânzătorului</h1>
         <p className="text-ink-soft mb-6 max-w-xs">
-          {seller ? 'Contul tău de vânzător nu este încă activ.' : 'Nu ești încă vânzător pe Craftology.'}
+          {seller ? 'Contul tău de vânzător nu este încă activ.' : "Nu ești încă vânzător pe Craft'zaar."}
         </p>
         <Link href="/seller/apply"><Button className="rounded-full">Devino vânzător</Button></Link>
       </div>

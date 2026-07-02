@@ -30,14 +30,14 @@ const DESCRIPTION =
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://craftology-peach.vercel.app'),
-  title: { default: APP_NAME_FULL, template: '%s · Craftology' },
+  title: { default: APP_NAME_FULL, template: "%s · Craft'zaar" },
   description: DESCRIPTION,
-  applicationName: 'Craftology',
-  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'Craftology' },
+  applicationName: "Craft'zaar",
+  appleWebApp: { capable: true, statusBarStyle: 'default', title: "Craft'zaar" },
   openGraph: {
     title: APP_NAME_FULL,
     description: DESCRIPTION,
-    siteName: 'Craftology',
+    siteName: "Craft'zaar",
     locale: 'ro_RO',
     type: 'website',
   },

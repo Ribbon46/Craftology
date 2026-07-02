@@ -79,7 +79,7 @@ export default function SellerApplyPage() {
         <Store className="w-6 h-6 text-clay" />
         <h1 className="font-display text-2xl text-ink">Devino vânzător</h1>
       </div>
-      <p className="text-ink-soft mb-6">Vinde-ți produsele handmade pe Craftology, alături de creatori verificați.</p>
+      <p className="text-ink-soft mb-6">Vinde-ți produsele handmade pe Craft&apos;zaar, alături de creatori verificați.</p>
 
       {error && (
         <div className="mb-4 p-3 rounded-xl bg-destructive/10 border border-destructive/25 text-destructive text-sm">

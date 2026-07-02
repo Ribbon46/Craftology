@@ -1,8 +1,8 @@
-// Craftology Application Configuration
+// Craft'zaar Application Configuration
 // Romanian language constants and branding settings
 
-export const APP_NAME = "Craftology";
-export const APP_NAME_FULL = "Craftology by Deco Kubik";
+export const APP_NAME = "Craft'zaar";
+export const APP_NAME_FULL = "Craft'zaar by Deco Kubik";
 
 // Single source of truth for the legal/company identity shown on the
 // Terms / Privacy / Returns pages. Update here → all three stay in sync.
