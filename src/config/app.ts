@@ -11,8 +11,9 @@ export const COMPANY = {
   address: "Odobești 13, București",
   cui: "RO24386414",
   regCom: "J40/64417/2008",
-  email: "l.decokubik@gmail.com",
-  legalUpdated: "25 iunie 2026",
+  // Official contact from the lawyer's finalised Privacy Policy.
+  email: "info.craftology.shop@gmail.com",
+  legalUpdated: "2 iulie 2026",
 } as const;
 
 // Top-level categories (the home/search chips). Kept deliberately small —

@@ -127,7 +127,8 @@ export default function SellerApplyPage() {
                 <input type="checkbox" name="accept_terms" className="mt-1 w-4 h-4 accent-clay" />
                 <span>
                   Accept{' '}
-                  <Link href="/terms" target="_blank" className="text-ink underline underline-offset-2 hover:text-clay">Termenii și Condițiile</Link>{' '}
+                  <Link href="/terms" target="_blank" className="text-ink underline underline-offset-2 hover:text-clay">Termenii și Condițiile</Link>,{' '}
+                  <Link href="/seller-agreement" target="_blank" className="text-ink underline underline-offset-2 hover:text-clay">Acordul Vânzătorului</Link>{' '}
                   și{' '}
                   <Link href="/privacy" target="_blank" className="text-ink underline underline-offset-2 hover:text-clay">Politica de confidențialitate</Link>.
                 </span>
