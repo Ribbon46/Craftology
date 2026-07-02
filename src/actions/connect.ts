@@ -34,29 +34,40 @@ export async function createSellerOnboardingLink() {
   if (!seller) return { error: 'Nu ești înregistrat ca vânzător.' };
   if (seller.status !== 'approved') return { error: 'Contul de vânzător nu este aprobat încă.' };
 
-  let accountId: string | null = seller.stripe_account_id;
-  if (!accountId) {
-    const account = await stripe.accounts.create({
-      type: 'express',
-      country: 'RO',
-      email: seller.contact_email ?? user.email ?? undefined,
-      business_type: 'company', // persoană juridică — required to invoice
-      capabilities: { card_payments: { requested: true }, transfers: { requested: true } },
-      metadata: { seller_id: seller.id, company: seller.company_name ?? '' },
-    });
-    accountId = account.id;
-    await svc.from('sellers').update({ stripe_account_id: accountId, updated_at: new Date().toISOString() }).eq('id', seller.id);
-  }
+  try {
+    let accountId: string | null = seller.stripe_account_id;
+    if (!accountId) {
+      const account = await stripe.accounts.create({
+        type: 'express',
+        country: 'RO',
+        email: seller.contact_email ?? user.email ?? undefined,
+        business_type: 'company', // persoană juridică — required to invoice
+        capabilities: { card_payments: { requested: true }, transfers: { requested: true } },
+        metadata: { seller_id: seller.id, company: seller.company_name ?? '' },
+      });
+      accountId = account.id;
+      await svc.from('sellers').update({ stripe_account_id: accountId, updated_at: new Date().toISOString() }).eq('id', seller.id);
+    }
 
-  const h = await headers();
-  const base = origin(h);
-  const link = await stripe.accountLinks.create({
-    account: accountId,
-    refresh_url: `${base}/seller/apply?stripe=refresh`,
-    return_url: `${base}/seller/apply?stripe=return`,
-    type: 'account_onboarding',
-  });
-  return { url: link.url };
+    const h = await headers();
+    const base = origin(h);
+    const link = await stripe.accountLinks.create({
+      account: accountId,
+      refresh_url: `${base}/seller/apply?stripe=refresh`,
+      return_url: `${base}/seller/apply?stripe=return`,
+      type: 'account_onboarding',
+    });
+    return { url: link.url };
+  } catch (e: unknown) {
+    const msg = (e as { message?: string })?.message ?? '';
+    console.error('stripe onboarding error:', msg);
+    // The platform's Connect profile must be completed before creating accounts:
+    // https://dashboard.stripe.com/settings/connect/platform-profile
+    if (/platform-profile|managing losses|responsibilities/i.test(msg)) {
+      return { error: 'Configurarea Connect a platformei nu este finalizată încă. Revenim în curând.' };
+    }
+    return { error: 'Nu am putut deschide configurarea plăților Stripe. Încearcă din nou.' };
+  }
 }
 
 /** Re-checks the seller's Stripe account and persists whether payouts are live

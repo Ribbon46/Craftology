@@ -2,6 +2,7 @@
 
 import { createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
+import { sendEmail, escapeHtml } from '@/lib/email';
 import { revalidatePath } from 'next/cache';
 
 // Admins are configured via ADMIN_USER_IDS (comma-separated profile ids).
@@ -55,7 +56,8 @@ export async function reviewSeller(
   if (!serviceConfigured()) return { error: 'Indisponibil: lipsește SUPABASE_SERVICE_ROLE_KEY.' };
 
   const status = action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'suspended';
-  const { error } = await adminClient()
+  const a = adminClient();
+  const { error } = await a
     .from('sellers')
     .update({
       status,
@@ -66,6 +68,31 @@ export async function reviewSeller(
     .eq('id', sellerId);
 
   if (error) return { error: error.message };
+
+  // Notify the seller by email when approved (non-blocking; inert until SMTP set).
+  if (action === 'approve') {
+    const { data: seller } = await a.from('sellers').select('contact_email, company_name').eq('id', sellerId).maybeSingle();
+    let email = seller?.contact_email ?? null;
+    if (!email) {
+      const { data: u } = await a.auth.admin.getUserById(sellerId);
+      email = u?.user?.email ?? null;
+    }
+    if (email) {
+      await sendEmail({
+        to: email,
+        subject: "Ai fost aprobat ca vânzător pe Craft'zaar!",
+        html: `<h2>Felicitări${seller?.company_name ? ', ' + escapeHtml(seller.company_name) : ''}!</h2>
+          <p>Cererea ta de vânzător pe <b>Craft'zaar</b> a fost aprobată. 🎉</p>
+          <p>Mai e un singur pas: intră în cont, deschide pagina <b>Devino vânzător</b> și
+          <b>configurează plățile prin Stripe</b> ca să poți încasa banii și publica produse.</p>
+          <p><a href="https://craftology-peach.vercel.app/seller/apply">Deschide pagina de vânzător</a></p>
+          <hr>
+          <p style="color:#8a7a66;font-size:13px">Congratulations — your seller application on Craft'zaar was approved.
+          Log in, open the seller page, and set up Stripe payments to start selling.</p>`,
+      }).catch(() => {});
+    }
+  }
+
   revalidatePath('/admin/sellers');
   return { success: true };
 }

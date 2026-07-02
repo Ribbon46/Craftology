@@ -10,6 +10,7 @@ import { PullToRefresh } from '@/components/PullToRefresh';
 import { CategoryChips } from '@/components/CategoryChips';
 import { FeedControls } from '@/components/FeedControls';
 import { ListingCard, ListingGridSkeleton } from '@/components/ListingCard';
+import { QRShare } from '@/components/QRShare';
 
 // Client feed island. The first "all" page is fetched on the server (page.tsx)
 // and passed in as `initialPage`, so the grid is in the initial HTML (fast LCP +
@@ -135,6 +136,8 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
           )}
           <div className="hidden lg:block rule-craft w-24 mt-7" />
         </header>
+
+        {activeCategory === 'all' && activeSub === 'all' && <QRShare />}
 
         <div className="mb-5 lg:mb-7">
           <FeedControls

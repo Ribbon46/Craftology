@@ -60,13 +60,17 @@ export default function SellerApplyPage() {
   const handleOnboard = async () => {
     setError(null);
     setOnboarding(true);
-    const res = await createSellerOnboardingLink();
-    if ('url' in res && res.url) {
-      window.location.href = res.url;
-    } else {
+    try {
+      const res = await createSellerOnboardingLink();
+      if ('url' in res && res.url) {
+        window.location.href = res.url;
+        return; // navigating to Stripe — keep the loading state
+      }
       setError(('error' in res && res.error) || 'Nu am putut deschide configurarea plăților.');
-      setOnboarding(false);
+    } catch {
+      setError('Configurarea plăților nu este disponibilă momentan. Reîncearcă în câteva momente.');
     }
+    setOnboarding(false); // reached only on error (a successful link returns above)
   };
 
   return (

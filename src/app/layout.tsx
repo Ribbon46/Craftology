@@ -4,6 +4,7 @@ import { BottomNav } from '@/components/navigation/BottomNav';
 import { SiteHeader } from '@/components/navigation/SiteHeader';
 import { SiteFooter } from '@/components/navigation/SiteFooter';
 import { CookieConsent } from '@/components/CookieConsent';
+import { InstallPrompt } from '@/components/InstallPrompt';
 import { Providers } from './providers';
 import { APP_NAME_FULL } from '@/config/app';
 import './globals.css';
@@ -81,6 +82,8 @@ export default function RootLayout({
         </Providers>
         {/* Cookie consent + gated analytics (loads Vercel Analytics/Speed Insights only after Accept) */}
         <CookieConsent />
+        {/* Android "add to home screen" install prompt */}
+        <InstallPrompt />
       </body>
     </html>
   );

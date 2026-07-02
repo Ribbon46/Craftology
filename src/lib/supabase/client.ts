@@ -14,9 +14,19 @@ import { createMockClient } from '@/lib/supabase/mock-client';
  * Typed as a real client so call sites stay type-safe; the mock satisfies the
  * subset of the API the app actually uses.
  */
+// Memoized singleton: every caller shares ONE browser client. Creating a new
+// client per call (per useSession mount, per fetch) spins up multiple auth
+// listeners + token-refresh timers that race on refresh-token rotation and can
+// intermittently sign the user out on navigation. One instance avoids that and
+// makes a second sign-in propagate to every consumer via onAuthStateChange.
+let browserClient: SupabaseClient<Database> | null = null;
+
 export const createClient = (): SupabaseClient<Database> => {
-  if (isSupabaseConfigured()) {
-    return createBrowserClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
+  if (!isSupabaseConfigured()) {
+    return createMockClient() as unknown as SupabaseClient<Database>;
   }
-  return createMockClient() as unknown as SupabaseClient<Database>;
+  if (!browserClient) {
+    browserClient = createBrowserClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+  return browserClient;
 };
