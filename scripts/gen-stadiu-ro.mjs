@@ -27,17 +27,13 @@ const HTML = `<!doctype html><html lang="ro"><head><meta charset="utf-8"><style>
   <h1>Stadiul platformei</h1>
   <p class="sub">Pregătit ${today}</p>
   <div class="rule"></div>
-  <p class="lead">Platforma este funcțională și publicată (găzduită în Uniunea Europeană). Aplicația a fost redenumită în <b>Craft'zaar</b>, iar documentele legale primite de la avocată au fost integrate complet. Mai jos: ce este gata, o problemă importantă de rezolvat și ce mai rămâne.</p>
-
-  <div class="alert">
-    <b>⚠ De rezolvat urgent — comisionul.</b> Acordul Vânzătorului primit de la avocată prevede un comision de <b>10%</b>, dar aplicația reține în prezent <b>15%</b>. Cele două trebuie corelate. Spune-mi care este corect (10% sau 15%) și aliniez codul; dacă rămâne 15%, avocata trebuie să corecteze Acordul.
-  </div>
+  <p class="lead">Platforma este funcțională și publicată (găzduită în Uniunea Europeană). Aplicația a fost redenumită complet în <b>Craft'zaar</b>, iar documentele legale de la avocată au fost integrate și standardizate. Comisionul a fost setat la <b>10%</b> (conform Acordului Vânzătorului). Mai jos: ce este gata și ce mai rămâne.</p>
 
   <h2>Ce este gata (funcțional)</h2>
   <div class="card"><ul>
     <li><b>Catalog</b> cu categoriile Accesorii / Haine / Home și subcategorii (fără cosmetice sau alimente — doar handmade).</li>
     <li><b>Cont de vânzător:</b> cerere → aprobare manuală → configurare Stripe → publicare produse. Vânzătorii noi: maximum 20 de produse până la prima vânzare.</li>
-    <li><b>Plăți prin Stripe:</b> vânzătorul este comerciantul; banii ajung în contul lui, comisionul platformei se reține automat; adresa de livrare se colectează la plată și ajunge la vânzător.</li>
+    <li><b>Plăți prin Stripe:</b> vânzătorul este comerciantul; banii ajung în contul lui, comisionul platformei (10%) se reține automat; adresa de livrare se colectează la plată și ajunge la vânzător.</li>
     <li><b>Comenzi + anulare/rambursare:</b> pot anula cumpărătorul, vânzătorul și administratorul → rambursare integrală prin Stripe, iar produsul revine la vânzare.</li>
     <li><b>Recenzii</b> (doar după o achiziție reală), <b>raportare</b> produse/vânzători, <b>urmărește artizan</b>.</li>
     <li><b>Închiderea contului de vânzător</b> — blocată dacă are comenzi în curs.</li>
@@ -48,6 +44,7 @@ const HTML = `<!doctype html><html lang="ro"><head><meta charset="utf-8"><style>
   <h2>Documente legale (de la avocată)</h2>
   <div class="card"><ul>
     <li>Integrate în aplicație, text complet și exact: <b>Politica de Confidențialitate</b>, <b>Termeni și Condiții</b>, <b>Acordul Vânzătorului</b>.</li>
+    <li>Standardizate: brand Craft'zaar peste tot, email info.craftology.shop@gmail.com, adresă „str Odobești 13, blv 35/60", data „2 iulie 2026".</li>
     <li>Vizibile la /privacy, /terms, /seller-agreement; legate din formularul de înscriere vânzător și din subsolul paginii.</li>
   </ul></div>
 
@@ -55,10 +52,7 @@ const HTML = `<!doctype html><html lang="ro"><head><meta charset="utf-8"><style>
   <p class="good">Cod verificat (audit intern adversarial), reguli de acces (RLS) întărite pe toate tabelele, funcții de bază de date securizate. Baza de date este în UE (Irlanda).</p>
 
   <h2>Ce mai rămâne — pentru avocată</h2>
-  <div class="todo"><b>1 · Comisionul (vezi mai sus):</b> Acordul spune 10%, aplicația 15% — de corelat.</div>
-  <div class="todo"><b>2 · Numele:</b> documentele mai amestecă „Craft'zaar" și „Craftology" (ex. titlul Termenilor, câteva clauze) — de standardizat pe Craft'zaar.</div>
-  <div class="todo"><b>3 · Datele firmei diferă între documente:</b> Termenii au l.decokubik@gmail.com și „str Odobești 13/ apart 60"; Confidențialitatea are info.craftology.shop@gmail.com și „blv 35/60". De uniformizat.</div>
-  <div class="todo"><b>4 · Lipsesc două documente</b> menționate în Termeni/Confidențialitate, dar netrimise: <b>Politica de Retururi și Rambursări</b> și <b>Politica de Cookie-uri</b>.</div>
+  <div class="todo"><b>Lipsesc două documente</b> menționate în Termeni și în Politica de Confidențialitate, dar netrimise încă: <b>Politica de Retururi și Rambursări</b> și <b>Politica de Cookie-uri</b>. (Numele, emailul, adresa și comisionul de 10% sunt deja corelate în aplicație.)</div>
 
   <h2>Ce mai rămâne — pentru tine (setări)</h2>
   <div class="todo"><b>Stripe (înainte de vânzări reale):</b> pe webhook, activează evenimentele pentru conturile conectate și evenimentul <b>charge.refunded</b> — fără acestea, comenzile de la vânzători și rambursările nu se înregistrează automat.</div>
