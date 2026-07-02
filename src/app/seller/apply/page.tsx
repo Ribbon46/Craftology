@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useAuthModal } from '@/lib/auth-modal';
-import { getMySeller, applyAsSeller, type SellerRow } from '@/actions/seller';
+import { getMySeller, applyAsSeller, resendSellerApplication, type SellerRow } from '@/actions/seller';
 import { createSellerOnboardingLink, syncSellerStripeStatus } from '@/actions/connect';
 
 export default function SellerApplyPage() {
@@ -158,6 +158,19 @@ function Field({ label, name, ...rest }: { label?: string; name: string } & Reac
 }
 
 function StatusCard({ seller, onboarding, onOnboard }: { seller: SellerRow; onboarding: boolean; onOnboard: () => void }) {
+  const [resending, setResending] = useState(false);
+  const [resent, setResent] = useState(false);
+  const [resendErr, setResendErr] = useState<string | null>(null);
+
+  const resend = async () => {
+    setResending(true);
+    setResendErr(null);
+    const r = await resendSellerApplication();
+    setResending(false);
+    if ('error' in r) setResendErr(r.error);
+    else setResent(true);
+  };
+
   const map = {
     pending: { icon: Clock, color: 'text-gold', title: 'Cererea ta este în verificare', body: 'Îți mulțumim! Verificăm cererea și revenim cât de curând.' },
     approved: { icon: CheckCircle2, color: 'text-sage', title: 'Ești vânzător aprobat', body: 'Felicitări! Mai e un singur pas: configurează plățile prin Stripe ca să poți încasa bani.' },
@@ -173,6 +186,21 @@ function StatusCard({ seller, onboarding, onOnboard }: { seller: SellerRow; onbo
         <Icon className={`w-12 h-12 mx-auto mb-3 ${s.color}`} />
         <h2 className="font-display text-xl text-ink mb-2">{s.title}</h2>
         <p className="text-ink-soft mb-4 max-w-sm mx-auto">{s.body}</p>
+
+        {seller.status === 'pending' && (
+          <div className="space-y-2">
+            {resent ? (
+              <p className="inline-flex items-center gap-1.5 text-sage text-sm font-medium">
+                <CheckCircle2 className="w-4 h-4" /> Cererea a fost retrimisă
+              </p>
+            ) : (
+              <Button variant="outline" className="rounded-full" onClick={resend} disabled={resending}>
+                {resending ? 'Se retrimite…' : 'Retrimite cererea'}
+              </Button>
+            )}
+            {resendErr && <p className="text-xs text-destructive">{resendErr}</p>}
+          </div>
+        )}
 
         {seller.status === 'approved' && (
           seller.stripe_onboarded ? (

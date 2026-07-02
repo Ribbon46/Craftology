@@ -7,12 +7,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Star, PackageOpen, UserRound } from 'lucide-react';
+import { Star, PackageOpen, UserRound, ShieldCheck } from 'lucide-react';
 import { useSession } from '@/lib/hooks';
 import { useAuthModal } from '@/lib/auth-modal';
 import { avatarFor, SellerProfile, Listing } from '@/lib/mock';
 import { fetchProfile, fetchSellerListings } from '@/lib/data/listings';
 import { getSellerReviews, type PublicReview } from '@/actions/reviews';
+import { isAdminUser } from '@/actions/admin';
 import { BuyerOrders } from '@/components/BuyerOrders';
 
 export default function ProfilePage() {
@@ -25,6 +26,7 @@ export default function ProfilePage() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [reviews, setReviews] = useState<PublicReview[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -45,6 +47,11 @@ export default function ProfilePage() {
       .finally(() => {
         if (active) setLoading(false);
       });
+    isAdminUser()
+      .then((admin) => {
+        if (active) setIsAdmin(admin);
+      })
+      .catch(() => {});
     return () => {
       active = false;
     };
@@ -124,13 +131,24 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              <div className="flex gap-2 w-full">
-                <Button variant="outline" className="flex-1 rounded-full" onClick={() => router.push('/sell')}>
-                  + Vinde
-                </Button>
-                <Button variant="outline" className="flex-1 rounded-full" onClick={() => router.push('/profile/settings')}>
-                  Setări
-                </Button>
+              <div className="w-full space-y-2">
+                <div className="flex gap-2 w-full">
+                  <Button variant="outline" className="flex-1 rounded-full" onClick={() => router.push('/sell')}>
+                    + Vinde
+                  </Button>
+                  <Button variant="outline" className="flex-1 rounded-full" onClick={() => router.push('/profile/settings')}>
+                    Setări
+                  </Button>
+                </div>
+                {isAdmin && (
+                  <Button
+                    variant="outline"
+                    className="w-full rounded-full border-clay/45 text-clay hover:bg-clay hover:text-paper"
+                    onClick={() => router.push('/admin')}
+                  >
+                    <ShieldCheck className="w-4 h-4 mr-1.5" /> Panou administrare
+                  </Button>
+                )}
               </div>
             </div>
           </CardContent>

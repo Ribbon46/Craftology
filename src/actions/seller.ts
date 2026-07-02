@@ -126,6 +126,37 @@ export async function applyAsSeller(formData: FormData) {
   return { success: true };
 }
 
+/** Re-send the admin notification for the current user's pending application
+ *  (useful if the first email failed / SMTP wasn't configured at apply time). */
+export async function resendSellerApplication(): Promise<{ success: true } | { error: string }> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'Autentificare necesară' };
+
+  const { data } = await supabase.from('sellers').select(SELLER_COLS).eq('id', user.id).maybeSingle();
+  const seller = data as SellerRow | null;
+  if (!seller) return { error: 'Nu ai o cerere înregistrată.' };
+  if (seller.status !== 'pending') return { error: 'Cererea nu mai este în așteptare.' };
+
+  const res = await sendEmail({
+    to: ADMIN_NOTIFY_EMAIL,
+    subject: `Cerere vânzător (retrimisă): ${seller.company_name}`,
+    html: `<h2>Cerere vânzător retrimisă — Craft'zaar</h2>
+      <ul>
+        <li><b>Firmă:</b> ${escapeHtml(seller.company_name)}</li>
+        <li><b>CUI:</b> ${escapeHtml(seller.cui ?? '—')}</li>
+        <li><b>Email contact:</b> ${escapeHtml(seller.contact_email ?? '—')}</li>
+        <li><b>Telefon:</b> ${escapeHtml(seller.contact_phone ?? '—')}</li>
+        <li><b>Atelier:</b> ${escapeHtml(seller.workshop_description ?? '—')}</li>
+      </ul>
+      <p>Aprobă sau respinge din panoul de administrare:
+        <a href="https://craftology-peach.vercel.app/admin/sellers">craftology-peach.vercel.app/admin/sellers</a></p>`,
+  });
+  if ('skipped' in res) return { error: 'Notificările pe email nu sunt configurate momentan.' };
+  if ('error' in res) return { error: 'Nu am putut retrimite cererea. Încearcă din nou.' };
+  return { success: true };
+}
+
 /**
  * A seller closes their own shop. Blocked while any order is still in progress
  * (status 'paid' = money collected, fulfilment/refund window open) so a buyer is
