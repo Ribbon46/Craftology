@@ -17,7 +17,7 @@ export function SiteFooter() {
 
         <FooterCol title="Explorează" links={[['Acasă', '/'], ['Caută', '/search'], ['Vinde', '/sell']]} />
         <FooterCol title="Cont" links={[['Profil', '/profile'], ['Mesaje', '/messages'], ['Setări', '/profile/settings']]} />
-        <FooterCol title="Legal" links={[['Termeni', '/terms'], ['Confidențialitate', '/privacy'], ['Acord vânzător', '/seller-agreement'], ['Retururi', '/returns']]} />
+        <FooterCol title="Legal" links={[['Termeni', '/terms'], ['Confidențialitate', '/privacy'], ['Cookie-uri', '/cookies'], ['Acord vânzător', '/seller-agreement'], ['Retururi', '/returns']]} />
       </div>
       <div className="border-t border-line">
         <div className="mx-auto w-full max-w-6xl px-8 py-5 flex items-center justify-between text-xs text-ink-faint">

@@ -47,8 +47,8 @@ export function CookieConsent() {
           <div className="mx-auto max-w-2xl rounded-2xl border-[1.5px] border-line-strong bg-surface/95 backdrop-blur-md shadow-[4px_4px_0_0_var(--press-soft)] p-4 sm:flex sm:items-center sm:gap-4">
             <p className="text-sm text-ink-soft flex-1 mb-3 sm:mb-0">
               Folosim cookie-uri necesare funcționării site-ului și, cu acordul tău, statistici anonime de trafic. Detalii în{' '}
-              <Link href="/privacy" className="text-clay underline underline-offset-2">
-                Politica de confidențialitate
+              <Link href="/cookies" className="text-clay underline underline-offset-2">
+                Politica de Cookie-uri
               </Link>
               .
             </p>

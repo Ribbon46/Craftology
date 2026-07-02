@@ -951,7 +951,7 @@ export const TERMS: LegalDocContent = {
     },
     {
       "t": "p",
-      "s": "Persoana care pretinde încălcarea unui drept de proprietate intelectuală va transmite Operatorului informații suficiente pentru identificarea conținutului reclamat, a dreptului pretins încălcat și a titularului acestuia.  Operatorul poate solicita documente justificative suplimentare și poate suspenda ori elimina conținutul reclamat până la clarificarea situației."
+      "s": "Persoana care pretinde încălcarea unui drept de proprietate intelectuală va transmite Operatorului informații suficiente pentru identificarea conținutului reclamat, a dreptului pretins încălcat și a titularului acestuia. Operatorul poate solicita documente justificative suplimentare și poate suspenda ori elimina conținutul reclamat până la clarificarea situației."
     },
     {
       "t": "h",
@@ -1659,6 +1659,408 @@ export const SELLER_AGREEMENT: LegalDocContent = {
     {
       "t": "p",
       "s": "Prezentul Acord se consideră acceptat de Vânzător la data finalizării procesului de înscriere și a acceptării acestuia prin intermediul Platformei."
+    }
+  ],
+};
+
+export const COOKIES: LegalDocContent = {
+  title: "Politica de Cookie-uri",
+  updated: "2 iulie 2026",
+  blocks: [
+    {
+      "t": "p",
+      "s": "Versiunea în vigoare la data de 2 07.2026."
+    },
+    {
+      "t": "h",
+      "s": "1. Informații generale"
+    },
+    {
+      "t": "p",
+      "s": "Prezenta Politică de Cookie-uri reglementează utilizarea cookie-urilor și a tehnologiilor similare folosite în cadrul Platformei Craft'zaar, operată de SOCIETATEA deco kubik srl S.R.L., cu sediul în Bucuresti , sect 3, str Odobesti 13, blv 35/60, înregistrată la Oficiul Registrului Comerțului sub nr. J40/64417/2008, având CUI RO24386414 (denumită în continuare „Operatorul”)."
+    },
+    {
+      "t": "p",
+      "s": "Platforma utilizează cookie-uri și tehnologii similare pentru asigurarea funcționării corespunzătoare a serviciilor oferite, administrarea autentificării utilizatorilor, memorarea anumitor preferințe de utilizare și, după caz, analizarea modului de utilizare și a performanței Platformei."
+    },
+    {
+      "t": "p",
+      "s": "Prezenta Politică de Cookie-uri completează Politica de Confidențialitate și Termenii și Condițiile Platformei Craft'zaar și se interpretează împreună cu acestea. În măsura în care, prin utilizarea cookie-urilor sau a tehnologiilor similare, sunt prelucrate date cu caracter personal, se aplică și prevederile Politicii de Confidențialitate."
+    },
+    {
+      "t": "p",
+      "s": "Pentru orice întrebări privind utilizarea cookie-urilor sau exercitarea drepturilor referitoare la prelucrarea datelor cu caracter personal, ne puteți contacta la adresa de e-mail: info.craftology.shop@gmail.com"
+    },
+    {
+      "t": "h",
+      "s": "2. Ce sunt cookie-urile și tehnologiile similare"
+    },
+    {
+      "t": "p",
+      "s": "Cookie-urile sunt fișiere de mici dimensiuni care sunt stocate pe dispozitivul utilizatorului (de exemplu, computer, telefon mobil sau tabletă) atunci când acesta accesează Platforma Craft'zaar."
+    },
+    {
+      "t": "p",
+      "s": "Platforma poate utiliza și alte tehnologii similare, precum mecanisme de stocare locală (de exemplu localStorage), care permit memorarea anumitor informații necesare funcționării serviciilor oferite și îmbunătățirii experienței de utilizare."
+    },
+    {
+      "t": "p",
+      "s": "Cookie-urile și tehnologiile similare pot fi utilizate pentru asigurarea funcționării corespunzătoare a Platformei, autentificarea utilizatorilor, memorarea preferințelor de utilizare, asigurarea securității Platformei, precum și, după caz, pentru analizarea modului de utilizare și a performanței acesteia."
+    },
+    {
+      "t": "p",
+      "s": "Utilizarea cookie-urilor și a tehnologiilor similare se realizează cu respectarea dispozițiilor Regulamentului (UE) 2016/679 (GDPR), ale legislației naționale aplicabile și ale reglementărilor privind confidențialitatea în comunicațiile electronice."
+    },
+    {
+      "t": "h",
+      "s": "3. Tipurile de cookie-uri și tehnologiile similare utilizate"
+    },
+    {
+      "t": "p",
+      "s": "Platforma utilizează cookie-uri și alte tehnologii similare în funcție de scopul pentru care acestea sunt necesare, respectiv pentru funcționarea serviciilor oferite, memorarea preferințelor utilizatorilor, procesarea plăților și, după caz, analizarea utilizării și performanței Platformei."
+    },
+    {
+      "t": "p",
+      "s": "În prezent, Platforma poate utiliza următoarele categorii de cookie-uri și tehnologii similare:"
+    },
+    {
+      "t": "p",
+      "s": "a) Cookie-uri și tehnologii similare necesare autentificării utilizatorilor (strict necesare)"
+    },
+    {
+      "t": "p",
+      "s": "Acestea permit crearea și administrarea sesiunii de utilizare, autentificarea utilizatorilor, menținerea conectării la contul de utilizator și utilizarea în condiții de securitate a funcționalităților Platformei. Fără aceste cookie-uri sau tehnologii similare, Platforma nu poate funcționa în mod corespunzător și nu poate furniza serviciile solicitate de utilizator."
+    },
+    {
+      "t": "h",
+      "s": "b) Cookie-uri și tehnologii similare funcționale"
+    },
+    {
+      "t": "p",
+      "s": "Acestea permit memorarea anumitor preferințe ale utilizatorului, precum setările de afișare sau alte opțiuni de utilizare, în scopul oferirii unei experiențe personalizate și facilitării utilizării Platformei."
+    },
+    {
+      "t": "p",
+      "s": "c) Cookie-uri și tehnologii similare aferente procesării plăților (strict necesare)"
+    },
+    {
+      "t": "p",
+      "s": "Acestea sunt utilizate exclusiv în măsura necesară procesării securizate a plăților efectuate prin intermediul Platformei și funcționării serviciilor de plată integrate. Lipsa acestora poate împiedica finalizarea procesului de plată."
+    },
+    {
+      "t": "h",
+      "s": "d) Cookie-uri și tehnologii similare de analiză"
+    },
+    {
+      "t": "p",
+      "s": "Acestea permit colectarea unor informații statistice agregate privind utilizarea și performanța Platformei, în scopul identificării eventualelor disfuncționalități, îmbunătățirii funcționalităților existente și dezvoltării serviciilor oferite utilizatorilor."
+    },
+    {
+      "t": "p",
+      "s": "Platforma utilizează, printre altele, servicii tehnice furnizate de terți, inclusiv Supabase, Stripe și Vercel, precum și mecanisme de stocare locală, precum localStorage, în măsura în care acestea sunt necesare funcționării Platformei și furnizării serviciilor oferite."
+    },
+    {
+      "t": "p",
+      "s": "Cookie-urile și tehnologiile similare utilizate pentru autentificare și procesarea plăților sunt considerate strict necesare și nu necesită consimțământul utilizatorului."
+    },
+    {
+      "t": "p",
+      "s": "Cookie-urile și tehnologiile similare funcționale și de analiză vor fi utilizate în condițiile prevăzute de legislația aplicabilă. În măsura în care utilizarea acestora necesită consimțământul utilizatorului, acestea vor fi activate numai după exprimarea consimțământului, prin intermediul mecanismelor puse la dispoziție de Platformă."
+    },
+    {
+      "t": "p",
+      "s": "Operatorul poate modifica, înlocui sau utiliza și alți furnizori de servicii ori tehnologii similare, în funcție de evoluția tehnică a Platformei și de necesitățile funcționării acesteia. În cazul în care astfel de modificări afectează informațiile furnizate utilizatorilor prin prezenta Politică de Cookie-uri, aceasta va fi actualizată în mod corespunzător."
+    },
+    {
+      "t": "h",
+      "s": "4. Consimțământul privind utilizarea cookie-urilor"
+    },
+    {
+      "t": "p",
+      "s": "Cookie-urile și tehnologiile similare strict necesare funcționării Platformei sunt utilizate fără a fi necesar consimțământul utilizatorului, întrucât acestea sunt indispensabile pentru furnizarea serviciilor solicitate și funcționarea corespunzătoare a Platformei."
+    },
+    {
+      "t": "p",
+      "s": "În măsura în care Platforma utilizează cookie-uri sau tehnologii similare care, potrivit legislației aplicabile, necesită consimțământul utilizatorului, acestea vor fi activate numai după exprimarea consimțământului acestuia, prin intermediul mecanismelor puse la dispoziție la accesarea Platformei."
+    },
+    {
+      "t": "p",
+      "s": "Utilizatorul are posibilitatea de a accepta, refuza sau modifica opțiunile privind utilizarea cookie-urilor care necesită consimțământ, în condițiile și prin modalitățile puse la dispoziție de Platformă, fără a afecta legalitatea prelucrărilor efectuate anterior retragerii consimțământului."
+    },
+    {
+      "t": "p",
+      "s": "Retragerea sau modificarea consimțământului produce efecte numai pentru viitor și nu afectează utilizarea cookie-urilor și a tehnologiilor similare strict necesare funcționării Platformei."
+    },
+    {
+      "t": "h",
+      "s": "5. Gestionarea cookie-urilor și a tehnologiilor similare"
+    },
+    {
+      "t": "p",
+      "s": "Utilizatorul poate gestiona sau șterge cookie-urile și alte tehnologii similare utilizate de Platformă prin intermediul setărilor browserului de internet utilizat."
+    },
+    {
+      "t": "p",
+      "s": "În măsura în care Platforma pune la dispoziția utilizatorilor mecanisme proprii pentru administrarea preferințelor privind cookie-urile, acestea vor putea fi utilizate pentru acceptarea, refuzarea sau modificarea opțiunilor privind categoriile de cookie-uri care necesită consimțământ."
+    },
+    {
+      "t": "p",
+      "s": "Dezactivarea sau restricționarea utilizării anumitor categorii de cookie-uri poate afecta funcționarea unor servicii sau funcționalități ale Platformei. În special, dezactivarea cookie-urilor și a tehnologiilor similare strict necesare poate împiedica autentificarea utilizatorilor, utilizarea contului de utilizator, procesarea plăților sau accesarea altor funcționalități esențiale ale Platformei."
+    },
+    {
+      "t": "p",
+      "s": "Utilizatorul poate modifica în orice moment opțiunile privind utilizarea cookie-urilor pentru care și-a exprimat consimțământul, fără a afecta legalitatea utilizării acestora anterior modificării sau retragerii consimțământului."
+    },
+    {
+      "t": "h",
+      "s": "6. Legătura cu Politica de Confidențialitate"
+    },
+    {
+      "t": "p",
+      "s": "În măsura în care, prin utilizarea cookie-urilor și a tehnologiilor similare, sunt prelucrate date cu caracter personal, această prelucrare se realizează în conformitate cu Politica de Confidențialitate a Platformei Craft'zaar."
+    },
+    {
+      "t": "p",
+      "s": "Pentru informații suplimentare privind categoriile de date cu caracter personal prelucrate, scopurile și temeiurile prelucrării, destinatarii datelor, perioada de stocare și drepturile persoanelor vizate, utilizatorii sunt invitați să consulte Politica de Confidențialitate disponibilă pe Platformă."
+    },
+    {
+      "t": "h",
+      "s": "7. Modificări ale Politicii de Cookie-uri"
+    },
+    {
+      "t": "p",
+      "s": "Operatorul își rezervă dreptul de a modifica sau actualiza prezenta Politică de Cookie-uri ori de câte ori este necesar, inclusiv ca urmare a modificărilor legislative, a schimbărilor intervenite în funcționarea Platformei sau în utilizarea cookie-urilor și a tehnologiilor similare."
+    },
+    {
+      "t": "p",
+      "s": "Versiunea în vigoare este cea publicată pe Platformă, iar data ultimei actualizări este indicată la începutul prezentei Politici de Cookie-uri."
+    }
+  ],
+};
+
+export const RETURNS: LegalDocContent = {
+  title: "Politica de Retururi și Rambursări",
+  updated: "2 iulie 2026",
+  blocks: [
+    {
+      "t": "p",
+      "s": "Prezenta Politică de Retururi și Rambursări stabilește condițiile în care cumpărătorii pot exercita dreptul legal de retragere din contract, precum și procedura aplicabilă retururilor, rambursărilor și reclamațiilor privind produsele comercializate prin intermediul Platformei Craft'zaar."
+    },
+    {
+      "t": "p",
+      "s": "Cumpărătorii pot solicita returnarea produselor în condițiile prevăzute de legislația aplicabilă și de prezenta Politică, inclusiv atunci când exercită dreptul legal de retragere din contract sau atunci când produsul primit este neconform, prezintă defecte, a fost deteriorat în timpul transportului ori nu corespunde comenzii efectuate."
+    },
+    {
+      "t": "p",
+      "s": "Pentru produsele comercializate prin intermediul Platformei, responsabilitatea privind acceptarea retururilor, rambursarea sumelor, acordarea garanției legale și soluționarea reclamațiilor aparține exclusiv Vânzătorului produsului respectiv."
+    },
+    {
+      "t": "p",
+      "s": "Operatorul Platformei facilitează comunicarea dintre cumpărător și Vânzător și poate interveni pentru sprijinirea unei soluționări amiabile, fără a deveni parte a raportului contractual dintre aceștia."
+    },
+    {
+      "t": "p",
+      "s": "În cazul în care Cumpărătorul dorește să își exercite dreptul de retragere din contract, acesta trebuie să comunice în mod clar și neechivoc intenția sa de retragere și de returnare a produsului, utilizând formularul de retur pus la dispoziție de Platformă în cadrul contului de utilizator, funcționalitatea de mesagerie disponibilă în Platformă sau, în cazul achizițiilor efectuate fără crearea unui cont de utilizator, prin e-mail, la adresa indicată de Platformă în acest scop."
+    },
+    {
+      "t": "h",
+      "s": "Cine gestionează returul"
+    },
+    {
+      "t": "p",
+      "s": "Produsele comercializate prin intermediul Platformei sunt oferite spre vânzare de Vânzători independenți."
+    },
+    {
+      "t": "p",
+      "s": "Fiecare Vânzător este responsabil pentru retururi, rambursări, garanții, conformitatea produselor și soluționarea reclamațiilor privind produsele comercializate. Contractul de vânzare se încheie direct între cumpărător și Vânzător, acesta din urmă fiind singurul responsabil pentru executarea obligațiilor care decurg din respectiva tranzacție."
+    },
+    {
+      "t": "p",
+      "s": "Operatorul Platformei nu este vânzătorul produselor afișate pe Platformă și nu preia obligațiile legale care revin Vânzătorului în raport cu cumpărătorii."
+    },
+    {
+      "t": "p",
+      "s": "Operatorul facilitează comunicarea dintre părți și poate interveni, la solicitarea acestora sau din proprie inițiativă, în vederea facilitării unei soluționări amiabile a neînțelegerilor apărute între cumpărător și Vânzător, fără a deveni parte a raportului contractual dintre aceștia și fără a garanta soluționarea favorabilă a unei reclamații."
+    },
+    {
+      "t": "h",
+      "s": "2. Dreptul de retragere (14 zile)"
+    },
+    {
+      "t": "p",
+      "s": "Conform OUG nr. 34/2014 privind drepturile consumatorilor în cadrul contractelor încheiate cu profesioniștii, cumpărătorul care are calitatea de consumator beneficiază de dreptul de a se retrage din contract, fără a indica un motiv, în termen de 14 zile de la data la care acesta sau o persoană desemnată de acesta, alta decât transportatorul, intră în posesia fizică a produsului."
+    },
+    {
+      "t": "p",
+      "s": "Dreptul de retragere poate fi exercitat exclusiv de consumatori, respectiv persoane fizice care acționează în scopuri din afara activității lor comerciale, industriale, artizanale, profesionale sau liberale."
+    },
+    {
+      "t": "p",
+      "s": "Pentru exercitarea dreptului de retragere din contract, Cumpărătorul trebuie să comunice în mod clar și neechivoc intenția sa de retragere și de returnare a produsului. În acest scop, Cumpărătorul poate utiliza formularul de retur pus la dispoziție de Platformă în cadrul contului de utilizator, funcționalitatea de mesagerie disponibilă în Platformă sau poate transmite solicitarea la adresa de e-mail: info.craftology.shop@gmail.com"
+    },
+    {
+      "t": "p",
+      "s": "Dreptul de retragere se consideră exercitat în termen dacă notificarea este transmisă înainte de expirarea perioadei legale de 14 zile."
+    },
+    {
+      "t": "p",
+      "s": "Exercitarea dreptului de retragere produce efectele prevăzute de legislația aplicabilă și de prezenta Politică de Retururi și Rambursări."
+    },
+    {
+      "t": "h",
+      "s": "Excepții de la dreptul de retragere"
+    },
+    {
+      "t": "p",
+      "s": "Dreptul de retragere nu poate fi exercitat în situațiile prevăzute de art. 16 din OUG nr. 34/2014 privind drepturile consumatorilor în cadrul contractelor încheiate cu profesioniștii."
+    },
+    {
+      "t": "p",
+      "s": "Având în vedere specificul Platformei și natura produselor comercializate prin intermediul acesteia, dreptul de retragere nu se aplică, în special, produselor realizate după specificațiile cumpărătorului, produselor personalizate în mod clar sau produselor executate la comandă, în conformitate cu art. 16 lit. c) din OUG nr. 34/2014."
+    },
+    {
+      "t": "p",
+      "s": "Sunt considerate produse personalizate sau realizate la comandă, fără a se limita la acestea, produsele confecționate după indicațiile, dimensiunile, preferințele, inscripțiile, gravurile, culorile, modelele ori alte cerințe specifice formulate de cumpărător."
+    },
+    {
+      "t": "p",
+      "s": "Vânzătorul are obligația de a indica în mod clar în descrierea produsului dacă acesta este personalizat, realizat la comandă sau confecționat după specificațiile cumpărătorului."
+    },
+    {
+      "t": "p",
+      "s": "Prin plasarea unei comenzi pentru un produs personalizat sau realizat la comandă, cumpărătorul confirmă că a luat cunoștință de natura specială a produsului și de faptul că acesta se încadrează în excepțiile legale de la exercitarea dreptului de retragere."
+    },
+    {
+      "t": "p",
+      "s": "În măsura în care pe Platformă vor fi comercializate și alte categorii de produse care se încadrează în excepțiile prevăzute de art. 16 din OUG nr. 34/2014, dreptul de retragere nu va putea fi exercitat nici în privința acestora, în condițiile prevăzute de lege."
+    },
+    {
+      "t": "p",
+      "s": "Existența unei excepții de la dreptul de retragere nu afectează drepturile cumpărătorului privind garanția legală de conformitate și remediile prevăzute de legislația aplicabilă în cazul produselor neconforme."
+    },
+    {
+      "t": "h",
+      "s": "4. Cum se returnează produsele"
+    },
+    {
+      "t": "p",
+      "s": "Pentru exercitarea dreptului de retragere, Cumpărătorul va utiliza modalitățile de comunicare puse la dispoziție prin Platformă, respectiv formularul de retur disponibil în contul de utilizator, mesagerie sau, în cazul achizițiilor efectuate fără crearea unui cont de utilizator, adresa de e-mail indicată de Platformă în acest scop, cu respectarea termenului legal de 14 zile de la primirea produsului."
+    },
+    {
+      "t": "p",
+      "s": "După transmiterea notificării de retragere, cumpărătorul are obligația de a returna produsul către Vânzător fără întârzieri nejustificate și cel târziu în termen de 14 zile de la data comunicării intenției de retragere."
+    },
+    {
+      "t": "p",
+      "s": "Produsul trebuie returnat în starea în care a fost primit, împreună cu accesoriile, documentele primite, în măsura în care acestea există și pot fi returnate în mod rezonabil."
+    },
+    {
+      "t": "p",
+      "s": "Cumpărătorul este responsabil doar pentru diminuarea valorii produsului rezultată din manipulări care depășesc ceea ce este necesar pentru determinarea naturii, caracteristicilor și funcționării produsului."
+    },
+    {
+      "t": "p",
+      "s": "Costurile directe aferente returnării produsului sunt suportate de cumpărător, cu excepția cazurilor în care legea prevede altfel sau Vânzătorul a acceptat în mod expres suportarea acestora."
+    },
+    {
+      "t": "p",
+      "s": "Dovada expedierii produsului returnat poate fi solicitată de Vânzător pentru verificarea respectării termenelor și condițiilor legale aplicabile."
+    },
+    {
+      "t": "h",
+      "s": "4. Rambursarea sumelor"
+    },
+    {
+      "t": "p",
+      "s": "În cazul exercitării valabile a dreptului de retragere, Vânzătorul va rambursa cumpărătorului toate sumele încasate pentru produsul returnat, inclusiv costurile standard de livrare, dacă acestea au fost suportate de cumpărător, fără întârzieri nejustificate și cel târziu în termen de 14 zile de la data la care a fost informat cu privire la decizia de retragere din contract."
+    },
+    {
+      "t": "p",
+      "s": "Rambursarea se efectuează utilizând aceeași modalitate de plată folosită de cumpărător pentru tranzacția inițială, cu excepția cazului în care părțile convin în mod expres asupra unei alte modalități de rambursare."
+    },
+    {
+      "t": "p",
+      "s": "În cazul în care cumpărătorul a ales o metodă de livrare diferită și mai costisitoare decât metoda standard de livrare oferită de Vânzător, acesta nu este obligat să ramburseze costurile suplimentare aferente respectivei metode de livrare."
+    },
+    {
+      "t": "p",
+      "s": "Vânzătorul poate amâna rambursarea sumelor până la primirea produsului returnat ori până la prezentarea de către cumpărător a dovezii expedierii acestuia către Vânzător."
+    },
+    {
+      "t": "p",
+      "s": "Rambursarea sumelor aferente produselor comercializate prin intermediul Platformei este efectuată de către Vânzător, acesta fiind singurul responsabil pentru respectarea obligațiilor legale privind retragerea din contract și restituirea sumelor încasate."
+    },
+    {
+      "t": "h",
+      "s": "5. Garanția legală de conformitate"
+    },
+    {
+      "t": "p",
+      "s": "Produsele comercializate prin intermediul Platformei beneficiază de garanția legală de conformitate în condițiile prevăzute de OUG nr. 140/2021 și de celelalte dispoziții legale aplicabile."
+    },
+    {
+      "t": "p",
+      "s": "Vânzătorul este responsabil pentru conformitatea produselor comercializate, descrierea acestora, materialele utilizate, siguranța produsului și pentru soluționarea reclamațiilor privind eventualele neconformități constatate de cumpărător."
+    },
+    {
+      "t": "p",
+      "s": "În cazul în care un produs prezintă o neconformitate, cumpărătorul beneficiază de drepturile și remediile prevăzute de lege, inclusiv repararea sau înlocuirea produsului, reducerea proporțională a prețului ori încetarea contractului și rambursarea sumelor achitate, după caz și în condițiile prevăzute de legislația aplicabilă."
+    },
+    {
+      "t": "p",
+      "s": "Reclamațiile privind conformitatea produselor se adresează direct Vânzătorului, utilizând datele de contact puse la dispoziție prin intermediul Platformei. În vederea soluționării reclamației, Vânzătorul poate solicita cumpărătorului informații suplimentare, fotografii, documente justificative sau, după caz, returnarea produsului în vederea verificării neconformității invocate."
+    },
+    {
+      "t": "p",
+      "s": "Operatorul Platformei nu acordă garanții pentru produsele comercializate de Vânzători și nu răspunde pentru neconformitatea acestora, obligațiile privind garanția legală revenind exclusiv Vânzătorului."
+    },
+    {
+      "t": "p",
+      "s": "În cazul în care cumpărătorul și Vânzătorul nu reușesc să soluționeze reclamația pe cale amiabilă, Operatorul poate facilita comunicarea dintre aceștia, fără a deveni parte a raportului contractual și fără a prelua obligațiile legale ale Vânzătorului."
+    },
+    {
+      "t": "h",
+      "s": "6. Produse deteriorate, neconforme sau livrate incorect"
+    },
+    {
+      "t": "p",
+      "s": "În cazul în care produsul primit este deteriorat, prezintă defecte, este incomplet, diferă în mod semnificativ de descrierea sau fotografiile prezentate pe Platformă ori nu corespunde comenzii efectuate, cumpărătorul va adresa reclamația direct Vânzătorului, utilizând datele de contact puse la dispoziție prin intermediul Platformei."
+    },
+    {
+      "t": "p",
+      "s": "În vederea soluționării reclamației, cumpărătorul este încurajat să transmită Vânzătorului o descriere cât mai detaliată a situației, precum și, după caz, fotografii, documente sau orice alte informații relevante care pot facilita verificarea reclamației. În funcție de natura reclamației, Vânzătorul poate solicita returnarea produsului în vederea verificării neconformității invocate."
+    },
+    {
+      "t": "p",
+      "s": "Vânzătorul este responsabil pentru analizarea reclamației și pentru stabilirea măsurilor necesare în conformitate cu dispozițiile legale aplicabile, inclusiv, după caz, repararea sau înlocuirea produsului, reducerea corespunzătoare a prețului ori rambursarea sumelor achitate, în condițiile prevăzute de lege."
+    },
+    {
+      "t": "p",
+      "s": "În cazul în care reclamația nu poate fi soluționată pe cale amiabilă împreună cu Vânzătorul, cumpărătorul poate contacta Operatorul Platformei la adresa de e-mail info.craftology.shop@gmail.com în vederea facilitării comunicării dintre părți și a identificării unei soluții amiabile."
+    },
+    {
+      "t": "p",
+      "s": "Intervenția Operatorului are exclusiv rolul de mediator și nu implică asumarea răspunderii pentru produsul comercializat sau pentru obligațiile legale ale Vânzătorului."
+    },
+    {
+      "t": "h",
+      "s": "7. Protecția consumatorilor și soluționarea reclamațiilor"
+    },
+    {
+      "t": "p",
+      "s": "Craft’zaar încurajează soluționarea pe cale amiabilă a oricăror neînțelegeri apărute între cumpărători și Vânzători."
+    },
+    {
+      "t": "p",
+      "s": "În cazul în care reclamația nu poate fi soluționată pe cale amiabilă, consumatorii își pot exercita drepturile prin utilizarea mecanismelor prevăzute de legislația aplicabilă, inclusiv prin formularea unei reclamații către Autoritatea Națională pentru Protecția Consumatorilor (ANPC), informații și date de contact fiind disponibile pe site-ul oficial https://anpc.ro."
+    },
+    {
+      "t": "p",
+      "s": "Consumatorii pot utiliza, de asemenea, procedura de Soluționare Alternativă a Litigiilor (SAL), disponibilă prin platforma electronică administrată de ANPC, accesibilă la adresa https://reclamatiisal.anpc.ro."
+    },
+    {
+      "t": "p",
+      "s": "Prezenta Politică nu limitează și nu aduce atingere drepturilor consumatorilor conferite de legislația aplicabilă și nici dreptului acestora de a se adresa instanțelor judecătorești competente."
     }
   ],
 };

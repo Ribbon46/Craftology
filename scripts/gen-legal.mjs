@@ -8,18 +8,28 @@ const today = '2 iulie 2026'; // per the lawyer's dated Terms (2.07.2026)
 
 // exported const name, source temp file (the lawyer's latest), clean <h1> title.
 const DOCS = [
-  { key: 'PRIVACY', src: 'C:/Users/ribbon/AppData/Local/Temp/claude/legal-new-0.txt', title: 'Politica de Confidențialitate' },
-  { key: 'TERMS', src: 'C:/Users/ribbon/AppData/Local/Temp/claude/legal-new-1.txt', title: 'Termeni și Condiții' },
-  { key: 'SELLER_AGREEMENT', src: 'C:/Users/ribbon/AppData/Local/Temp/claude/legal-new-2.txt', title: 'Acordul Vânzătorului' },
+  { key: 'PRIVACY', src: 'C:/Users/ribbon/AppData/Local/Temp/claude/legal-src-0.txt', title: 'Politica de Confidențialitate' },
+  { key: 'TERMS', src: 'C:/Users/ribbon/AppData/Local/Temp/claude/legal-src-1.txt', title: 'Termeni și Condiții' },
+  { key: 'SELLER_AGREEMENT', src: 'C:/Users/ribbon/AppData/Local/Temp/claude/legal-src-2.txt', title: 'Acordul Vânzătorului' },
+  { key: 'COOKIES', src: 'C:/Users/ribbon/AppData/Local/Temp/claude/legal-src-3.txt', title: 'Politica de Cookie-uri' },
+  { key: 'RETURNS', src: 'C:/Users/ribbon/AppData/Local/Temp/claude/legal-src-4.txt', title: 'Politica de Retururi și Rambursări' },
 ];
 
-// Owner-authorised standardisation of the docs' identity + brand:
+// Owner-authorised standardisation of the docs' identity + brand + lawyer typos:
 // email → info.craftology.shop@gmail.com, brand → Craft'zaar, address → blv 35/60.
-// (Case-sensitive "Craftology" so the lowercase email domain is left untouched.)
 function normalize(s) {
   return s
+    // Fix the capital-C email typo (Returns doc) BEFORE the brand replace, so the
+    // lowercase email domain survives the case-sensitive "Craftology" swap below.
+    .replaceAll('info.Craftology.shop', 'info.craftology.shop')
     .replaceAll('l.decokubik@gmail.com', 'info.craftology.shop@gmail.com')
+    // Missing-T brand typo in the Returns doc ("Craf'zaar" → "Craft'zaar").
+    .replaceAll("CRAF'ZAAR", "Craft'zaar")
+    .replaceAll("Craf'Zaar", "Craft'zaar")
+    .replaceAll("Craf'zaar", "Craft'zaar")
+    // Old brand → new brand (case-sensitive; the email domain is now lowercase).
     .replaceAll('Craftology', "Craft'zaar")
+    // Address consistency.
     .replaceAll('str Odobesti 13/ aprt 60', 'str Odobesti 13, blv 35/60')
     .replaceAll('blV35/60', 'blv 35/60')
     .replaceAll('blv35/60', 'blv 35/60');
