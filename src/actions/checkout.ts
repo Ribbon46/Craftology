@@ -6,13 +6,13 @@ import { createServerClient } from '@/lib/supabase/server';
 import { createServiceClient, isServiceConfigured } from '@/lib/supabase/admin';
 import { isPlatformOwner } from '@/lib/owner';
 
-const COMMISSION_RATE = 0.15; // platform takes 15% (see docs/PLAN-MARKETPLACE-RO.md)
+const COMMISSION_RATE = 0.1; // platform takes 10% (per the Seller Agreement)
 
 /**
  * Stripe Checkout for a listing.
  * - Platform-owned listing → normal checkout to the platform account.
  * - Marketplace seller → **direct charge** on the seller's connected account
- *   (seller is merchant + bears Stripe fee) with a 15% `application_fee_amount`
+ *   (seller is merchant + bears Stripe fee) with a 10% `application_fee_amount`
  *   to the platform. Requires the seller to have completed Connect onboarding.
  */
 export async function createCheckoutSession(listingId: string) {
@@ -73,7 +73,7 @@ export async function createCheckoutSession(listingId: string) {
       return { url: session.url };
     }
 
-    // Marketplace seller → direct charge on their connected account + 15% fee.
+    // Marketplace seller → direct charge on their connected account + 10% fee.
     if (!isServiceConfigured()) return { error: 'Plățile pentru vânzători nu sunt configurate complet.' };
     const svc = createServiceClient();
     const { data: seller } = await svc

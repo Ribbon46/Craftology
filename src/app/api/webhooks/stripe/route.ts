@@ -57,9 +57,9 @@ export async function POST(req: NextRequest) {
       const buyerId = session.metadata?.buyer_id || null;
       const stripeAccountId = event.account ?? null;
       const amountTotal = session.amount_total ?? 0;
-      // We charge a 15% application fee on marketplace (connected-account) sales;
-      // platform-owned listings (no connected account) take no fee.
-      const applicationFee = stripeAccountId ? Math.round(amountTotal * 0.15) : 0;
+      // We charge a 10% application fee on marketplace (connected-account) sales
+      // (must match COMMISSION_RATE in checkout.ts); platform-owned listings take none.
+      const applicationFee = stripeAccountId ? Math.round(amountTotal * 0.1) : 0;
 
       // Upsert on the session id so Stripe retries don't create duplicates.
       const { error: insErr } = await db.from('orders').upsert(

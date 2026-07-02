@@ -53,7 +53,7 @@ async function refundOrder(
       const refund = await stripe.refunds.create(
         {
           payment_intent: order.payment_intent_id,
-          // Marketplace (connected account): return the platform's 15% too.
+          // Marketplace (connected account): return the platform's 10% fee too.
           ...(order.stripe_account_id ? { refund_application_fee: true } : {}),
           // Only order_id in the refund body — cancelled_by is recorded in our
           // DB, not here, so concurrent seller+buyer cancels share an identical

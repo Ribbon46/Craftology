@@ -13,7 +13,7 @@ function origin(h: Headers) {
 /**
  * Creates (once) a Stripe Connect Express account for the current approved
  * seller and returns a hosted onboarding Account Link. The seller is the
- * merchant of record (direct charges); the platform later takes a 15% fee.
+ * merchant of record (direct charges); the platform later takes a 10% fee.
  */
 export async function createSellerOnboardingLink() {
   if (!isStripeConfigured() || !stripe) return { error: 'Plățile nu sunt configurate momentan.' };
