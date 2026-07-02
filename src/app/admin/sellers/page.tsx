@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Mail, Phone, Link2 } from 'lucide-react';
+import { Mail, Phone, Link2, Trash2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { listSellerApplications, reviewSeller } from '@/actions/admin';
+import { listSellerApplications, reviewSeller, deleteUserAsAdmin } from '@/actions/admin';
 
 interface Seller {
   id: string;
@@ -45,6 +45,7 @@ export default function AdminSellersPage() {
   // unstyled chrome and lets an empty reason through).
   const [rejecting, setRejecting] = useState<Seller | null>(null);
   const [reason, setReason] = useState('');
+  const [deleting, setDeleting] = useState<Seller | null>(null);
 
   const load = useCallback(async () => {
     const res = await listSellerApplications();
@@ -88,6 +89,23 @@ export default function AdminSellersPage() {
     await act(id, 'reject', trimmed);
   };
 
+  const confirmDelete = async () => {
+    if (!deleting) return;
+    const id = deleting.id;
+    setDeleting(null);
+    setBusy(id);
+    setError(null);
+    try {
+      const res = await deleteUserAsAdmin(id);
+      if (res && typeof res === 'object' && 'error' in res && res.error) setError(String(res.error));
+      await load();
+    } catch {
+      setError('Ștergerea nu a reușit. Încearcă din nou.');
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const pending = sellers.filter((s) => s.status === 'pending');
   const others = sellers.filter((s) => s.status !== 'pending');
 
@@ -112,13 +130,13 @@ export default function AdminSellersPage() {
           {pending.length > 0 && (
             <section className="space-y-3">
               <h2 className="text-[11px] uppercase tracking-[0.2em] text-ink-faint">De verificat ({pending.length})</h2>
-              {pending.map((s) => <SellerCard key={s.id} s={s} busy={busy === s.id} onAct={act} />)}
+              {pending.map((s) => <SellerCard key={s.id} s={s} busy={busy === s.id} onAct={act} onDelete={setDeleting} />)}
             </section>
           )}
           {others.length > 0 && (
             <section className="space-y-3">
               <h2 className="text-[11px] uppercase tracking-[0.2em] text-ink-faint">Procesate</h2>
-              {others.map((s) => <SellerCard key={s.id} s={s} busy={busy === s.id} onAct={act} />)}
+              {others.map((s) => <SellerCard key={s.id} s={s} busy={busy === s.id} onAct={act} onDelete={setDeleting} />)}
             </section>
           )}
         </div>
@@ -149,11 +167,30 @@ export default function AdminSellersPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={deleting !== null} onOpenChange={(open) => !open && setDeleting(null)}>
+        <DialogContent className="sm:max-w-md p-6">
+          <DialogHeader className="pr-6">
+            <DialogTitle className="font-display text-xl">Șterge contul</DialogTitle>
+            <DialogDescription>
+              {deleting?.company_name} — se șterge definitiv contul, profilul și produsele asociate. Acțiunea nu poate fi anulată.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 pt-1">
+            <Button variant="outline" className="rounded-full" onClick={() => setDeleting(null)}>
+              Renunță
+            </Button>
+            <Button className="rounded-full bg-destructive text-white hover:bg-destructive/90" onClick={confirmDelete}>
+              Șterge definitiv
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-function SellerCard({ s, busy, onAct }: { s: Seller; busy: boolean; onAct: (id: string, a: 'approve' | 'reject' | 'suspend') => void }) {
+function SellerCard({ s, busy, onAct, onDelete }: { s: Seller; busy: boolean; onAct: (id: string, a: 'approve' | 'reject' | 'suspend') => void; onDelete: (s: Seller) => void }) {
   const badge = STATUS_LABEL[s.status];
   return (
     <Card className="border-line">
@@ -197,6 +234,15 @@ function SellerCard({ s, busy, onAct }: { s: Seller; busy: boolean; onAct: (id: 
           {s.status === 'approved' && (
             <Button size="sm" variant="outline" className="rounded-full text-clay-deep border-clay/30" disabled={busy} onClick={() => onAct(s.id, 'suspend')}>Suspendă</Button>
           )}
+          <Button
+            size="sm"
+            variant="outline"
+            className="rounded-full text-destructive border-destructive/30 hover:bg-destructive hover:text-white ml-auto"
+            disabled={busy}
+            onClick={() => onDelete(s)}
+          >
+            <Trash2 className="w-3.5 h-3.5 mr-1" /> Șterge cont
+          </Button>
         </div>
       </CardContent>
     </Card>

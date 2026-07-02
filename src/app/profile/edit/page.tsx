@@ -116,7 +116,7 @@ export default function EditProfilePage() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-ink" htmlFor="full_name">Nume complet</label>
-              <Input id="full_name" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="ex: Deco Kubik" disabled={!loaded} />
+              <Input id="full_name" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="ex: Maria Popescu" disabled={!loaded} />
             </div>
 
             <Button type="submit" className="w-full rounded-full" disabled={saving || !loaded}>

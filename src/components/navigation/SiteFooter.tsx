@@ -8,7 +8,7 @@ export function SiteFooter() {
       <div className="mx-auto w-full max-w-6xl px-8 py-14 grid grid-cols-[1.5fr_1fr_1fr_1fr] gap-10">
         <div className="max-w-xs">
           <p className="font-display text-2xl text-ink">{APP_NAME}</p>
-          <p className="text-[10px] uppercase tracking-[0.28em] text-clay/80 mt-1 mb-3">by Deco Kubik</p>
+          <p className="text-[10px] uppercase tracking-[0.28em] text-clay/80 mt-1 mb-3">powered by Deco Kubik</p>
           <p className="text-sm text-ink-soft leading-relaxed">
             Un atelier digital de produse handmade românești — bijuterii, lumânări, accesorii — de la creatori
             verificați, lucrate cu mâna și cu suflet.
@@ -21,7 +21,7 @@ export function SiteFooter() {
       </div>
       <div className="border-t border-line">
         <div className="mx-auto w-full max-w-6xl px-8 py-5 flex items-center justify-between text-xs text-ink-faint">
-          <span>© {new Date().getFullYear()} Deco Kubik SRL</span>
+          <span>© {new Date().getFullYear()} Craft&apos;zaar</span>
           <span className="font-display italic">Lucrate manual în România</span>
         </div>
       </div>

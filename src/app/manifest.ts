@@ -4,7 +4,7 @@ import type { MetadataRoute } from 'next';
 // Android home screens as a full-screen, app-like experience.
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Craft'zaar by Deco Kubik",
+    name: "Craft'zaar — Handmade Românesc",
     short_name: "Craft'zaar",
     description: 'Marketplace de produse handmade românești — bijuterii, haine, lumânări, accesorii, frumusețe.',
     start_url: '/',

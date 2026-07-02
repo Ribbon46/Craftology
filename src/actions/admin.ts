@@ -142,6 +142,32 @@ export async function listRecentUsers(): Promise<
   return { users };
 }
 
+/** Permanently delete a user account (auth + profile + their listings cascade).
+ *  Admin-only. Refuses to delete another admin/owner or an account with paid
+ *  orders (as buyer or seller) so live transactions are never orphaned. */
+export async function deleteUserAsAdmin(userId: string): Promise<{ success: true } | { error: string }> {
+  if (!(await isAdminUser())) return { error: 'Acces interzis' };
+  if (!serviceConfigured()) return { error: 'Indisponibil: lipsește SUPABASE_SERVICE_ROLE_KEY.' };
+  if (!userId) return { error: 'Cont invalid.' };
+  if (adminIds().includes(userId)) return { error: 'Nu poți șterge un cont de administrator.' };
+
+  const a = adminClient();
+  const [asSeller, asBuyer] = await Promise.all([
+    a.from('orders').select('id', { count: 'exact', head: true }).eq('seller_id', userId).eq('status', 'paid'),
+    a.from('orders').select('id', { count: 'exact', head: true }).eq('buyer_id', userId).eq('status', 'paid'),
+  ]);
+  if ((asSeller.count ?? 0) > 0 || (asBuyer.count ?? 0) > 0) {
+    return { error: 'Contul are comenzi plătite. Rezolvă-le (rambursare/finalizare) înainte de ștergere.' };
+  }
+
+  const { error } = await a.auth.admin.deleteUser(userId);
+  if (error) return { error: error.message };
+  revalidatePath('/admin/sellers');
+  revalidatePath('/admin');
+  revalidatePath('/');
+  return { success: true };
+}
+
 export async function listAllOrders() {
   if (!(await isAdminUser())) return { error: 'Acces interzis' };
   if (!serviceConfigured()) return { error: 'Indisponibil: lipsește SUPABASE_SERVICE_ROLE_KEY.' };

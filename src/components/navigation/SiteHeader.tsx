@@ -44,7 +44,6 @@ export function SiteHeader() {
       <div className="mx-auto w-full max-w-6xl flex items-center gap-4 lg:gap-6 px-4 sm:px-5 lg:px-8 h-16 lg:h-[72px]">
         <Link href="/" className="flex flex-col leading-none shrink-0">
           <span className="font-display text-2xl font-semibold tracking-tight text-ink">{APP_NAME}</span>
-          <span className="text-[10px] uppercase tracking-[0.28em] text-clay/80 mt-0.5">by Deco Kubik</span>
         </Link>
 
         {/* Desktop nav links with a sliding liquid-glass active indicator */}

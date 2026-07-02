@@ -105,7 +105,7 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
             decorations (dot grid + paper confetti) live behind the text and
             only on lg+ so phones stay clean. */}
         <header className="relative pt-5 lg:pt-14 mb-5 lg:mb-10">
-          <p className="text-[11px] uppercase tracking-[0.25em] text-clay mb-1 lg:mb-3">Atelier · Deco Kubik</p>
+          <p className="text-[11px] uppercase tracking-[0.25em] text-clay mb-1 lg:mb-3">Handmade Românesc</p>
           <div className="relative max-w-3xl">
             {/* Paper-confetti collage hugging the headline's right edge —
                 anchored to the heading box so it composes at any width */}

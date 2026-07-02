@@ -2,7 +2,7 @@
 // Romanian language constants and branding settings
 
 export const APP_NAME = "Craft'zaar";
-export const APP_NAME_FULL = "Craft'zaar by Deco Kubik";
+export const APP_NAME_FULL = "Craft'zaar — produse handmade românești";
 
 // Single source of truth for the legal/company identity shown on the
 // Terms / Privacy / Returns pages. Update here → all three stay in sync.
