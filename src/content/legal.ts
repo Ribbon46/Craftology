@@ -20,7 +20,7 @@ export const PRIVACY: LegalDocContent = {
     },
     {
       "t": "p",
-      "s": "SOCIETATEA Deco kubik srl S.R.L., cu sediul în Bucuresti str Odobesti 13, blv35/60, înregistrată la Oficiul Registrului Comerțului sub nr. J40/64417/2008, având CUI RO24386414 (denumită în continuare „Operatorul”), prelucrează datele cu caracter personal prin intermediul Platformei Craft'zaar, în calitate de operator de date, în conformitate cu Regulamentul (UE) 2016/679 privind protecția persoanelor fizice în ceea ce privește prelucrarea datelor cu caracter personal („GDPR”) și cu legislația națională aplicabilă."
+      "s": "SOCIETATEA Deco kubik srl S.R.L., cu sediul în Bucuresti str Odobesti 13, blv 35/60, înregistrată la Oficiul Registrului Comerțului sub nr. J40/64417/2008, având CUI RO24386414 (denumită în continuare „Operatorul”), prelucrează datele cu caracter personal prin intermediul Platformei Craft'zaar, în calitate de operator de date, în conformitate cu Regulamentul (UE) 2016/679 privind protecția persoanelor fizice în ceea ce privește prelucrarea datelor cu caracter personal („GDPR”) și cu legislația națională aplicabilă."
     },
     {
       "t": "p",
@@ -44,7 +44,7 @@ export const PRIVACY: LegalDocContent = {
     },
     {
       "t": "p",
-      "s": "În funcție de calitatea utilizatorului (Cumpărător sau Vânzător) și de modul în care acesta utilizează Platforma Craftology, Operatorul poate prelucra următoarele categorii de date cu caracter personal:"
+      "s": "În funcție de calitatea utilizatorului (Cumpărător sau Vânzător) și de modul în care acesta utilizează Platforma Craft'zaar, Operatorul poate prelucra următoarele categorii de date cu caracter personal:"
     },
     {
       "t": "p",
@@ -244,7 +244,7 @@ export const PRIVACY: LegalDocContent = {
     },
     {
       "t": "p",
-      "s": "Operatorul poate divulga datele cu caracter personal numai în măsura în care acest lucru este necesar pentru furnizarea serviciilor oferite prin intermediul Platformei Craftology, îndeplinirea obligațiilor legale care îi revin sau protejarea drepturilor și intereselor legitime ale Operatorului, ale Vânzătorilor și ale Cumpărătorilor."
+      "s": "Operatorul poate divulga datele cu caracter personal numai în măsura în care acest lucru este necesar pentru furnizarea serviciilor oferite prin intermediul Platformei Craft'zaar, îndeplinirea obligațiilor legale care îi revin sau protejarea drepturilor și intereselor legitime ale Operatorului, ale Vânzătorilor și ale Cumpărătorilor."
     },
     {
       "t": "p",
@@ -284,7 +284,7 @@ export const PRIVACY: LegalDocContent = {
     },
     {
       "t": "p",
-      "s": "Operatorul poate utiliza și alți furnizori de servicii specializați, în măsura în care acest lucru este necesar pentru funcționarea, dezvoltarea, administrarea sau securizarea Platformei Craftology. În măsura în care acești furnizori prelucrează date cu caracter personal în numele și pe seama Operatorului, prelucrarea se va realiza exclusiv în baza instrucțiunilor Operatorului și cu respectarea cerințelor prevăzute de Regulamentul (UE) 2016/679 (GDPR)."
+      "s": "Operatorul poate utiliza și alți furnizori de servicii specializați, în măsura în care acest lucru este necesar pentru funcționarea, dezvoltarea, administrarea sau securizarea Platformei Craft'zaar. În măsura în care acești furnizori prelucrează date cu caracter personal în numele și pe seama Operatorului, prelucrarea se va realiza exclusiv în baza instrucțiunilor Operatorului și cu respectarea cerințelor prevăzute de Regulamentul (UE) 2016/679 (GDPR)."
     },
     {
       "t": "p",
@@ -376,11 +376,11 @@ export const PRIVACY: LegalDocContent = {
     },
     {
       "t": "p",
-      "s": "8. Cookie-uri: Platforma Craftology utilizează cookie-uri și tehnologii similare în condițiile prevăzute în Politica de Cookie-uri, document distinct, disponibil pe Platformă, care completează prezenta Politică de Confidențialitate."
+      "s": "8. Cookie-uri: Platforma Craft'zaar utilizează cookie-uri și tehnologii similare în condițiile prevăzute în Politica de Cookie-uri, document distinct, disponibil pe Platformă, care completează prezenta Politică de Confidențialitate."
     },
     {
       "t": "p",
-      "s": "9. Modificări ale Politicii de Confidențialitate: Operatorul își rezervă dreptul de a modifica sau actualiza prezenta Politică de Confidențialitate ori de câte ori este necesar, inclusiv ca urmare a modificărilor legislative, a schimbărilor intervenite în funcționarea Platformei Craftology sau a modului de prelucrare a datelor cu caracter personal."
+      "s": "9. Modificări ale Politicii de Confidențialitate: Operatorul își rezervă dreptul de a modifica sau actualiza prezenta Politică de Confidențialitate ori de câte ori este necesar, inclusiv ca urmare a modificărilor legislative, a schimbărilor intervenite în funcționarea Platformei Craft'zaar sau a modului de prelucrare a datelor cu caracter personal."
     },
     {
       "t": "p",
@@ -403,7 +403,7 @@ export const TERMS: LegalDocContent = {
     },
     {
       "t": "p",
-      "s": "Platforma Craft'zaar (denumită în continuare „Platforma”) este operată de SOCIETATEA Deco Kubik srl persoană juridică română, înregistrată la Registrul Comerțului sub nr.J40/64417/2008 cu sediul înBucuresti, str Odobesti 13/ aprt 60 email l.decokubik@gmail.com. Telefon 0732 781 226(denumită în continuare „Operatorul”, „noi” sau „Craft'zaar”)."
+      "s": "Platforma Craft'zaar (denumită în continuare „Platforma”) este operată de SOCIETATEA Deco Kubik srl persoană juridică română, înregistrată la Registrul Comerțului sub nr.J40/64417/2008 cu sediul înBucuresti, str Odobesti 13, blv 35/60 email info.craftology.shop@gmail.com. Telefon 0732 781 226(denumită în continuare „Operatorul”, „noi” sau „Craft'zaar”)."
     },
     {
       "t": "p",
@@ -427,7 +427,7 @@ export const TERMS: LegalDocContent = {
     },
     {
       "t": "p",
-      "s": "Platforma – aplicația și/sau site-ul web Craftology, precum și toate serviciile, funcționalitățile, paginile, conținutul și instrumentele puse la dispoziția utilizatorilor prin intermediul acesteia."
+      "s": "Platforma – aplicația și/sau site-ul web Craft'zaar, precum și toate serviciile, funcționalitățile, paginile, conținutul și instrumentele puse la dispoziția utilizatorilor prin intermediul acesteia."
     },
     {
       "t": "p",
@@ -483,7 +483,7 @@ export const TERMS: LegalDocContent = {
     },
     {
       "t": "p",
-      "s": "Servicii ale Platformei – totalitatea serviciilor furnizate de Operator prin intermediul Craftology, inclusiv intermedierea relației dintre cumpărători și vânzători, administrarea conturilor, afișarea produselor, facilitarea comenzilor și alte funcționalități disponibile utilizatorilor."
+      "s": "Servicii ale Platformei – totalitatea serviciilor furnizate de Operator prin intermediul Craft'zaar, inclusiv intermedierea relației dintre cumpărători și vânzători, administrarea conturilor, afișarea produselor, facilitarea comenzilor și alte funcționalități disponibile utilizatorilor."
     },
     {
       "t": "h",
@@ -831,7 +831,7 @@ export const TERMS: LegalDocContent = {
     },
     {
       "t": "p",
-      "s": "Sesizările pot fi transmise la adresa de email info.craftology.shop@gmail.com sau accesand formularul de raportare prezent la pagina produsului/ vanzatorului cu indicarea, pe cât posibil, a următoarelor informații:"
+      "s": "Sesizările pot fi transmise la adresa de email info.craftology.shop@gmail.com cu indicarea, pe cât posibil, a următoarelor informații:"
     },
     {
       "t": "li",
@@ -1326,7 +1326,7 @@ export const SELLER_AGREEMENT: LegalDocContent = {
     },
     {
       "t": "p",
-      "s": "Platforma: Craft'zaar, persoană juridică română, având CUI RO24386414, înregistrată la Registrul Comerțului sub nr. J40/64417/2008, cu sediul în Bucuresti, str Odobesti 13, blV35/60, denumită în continuare „Operatorul”."
+      "s": "Platforma: Craft'zaar, persoană juridică română, având CUI RO24386414, înregistrată la Registrul Comerțului sub nr. J40/64417/2008, cu sediul în Bucuresti, str Odobesti 13, blv 35/60, denumită în continuare „Operatorul”."
     },
     {
       "t": "p",

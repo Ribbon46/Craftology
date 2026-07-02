@@ -4,14 +4,26 @@
 // word of the source is preserved.
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 
-const today = new Date().toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' });
+const today = '2 iulie 2026'; // per the lawyer's dated Terms (2.07.2026)
 
-// exported const name, source temp file, and the clean page <h1> title.
+// exported const name, source temp file (the lawyer's latest), clean <h1> title.
 const DOCS = [
-  { key: 'PRIVACY', src: 'C:/Users/ribbon/AppData/Local/Temp/claude/legal-0.txt', title: 'Politica de Confidențialitate' },
-  { key: 'TERMS', src: 'C:/Users/ribbon/AppData/Local/Temp/claude/legal-1.txt', title: 'Termeni și Condiții' },
-  { key: 'SELLER_AGREEMENT', src: 'C:/Users/ribbon/AppData/Local/Temp/claude/legal-2.txt', title: 'Acordul Vânzătorului' },
+  { key: 'PRIVACY', src: 'C:/Users/ribbon/AppData/Local/Temp/claude/legal-new-0.txt', title: 'Politica de Confidențialitate' },
+  { key: 'TERMS', src: 'C:/Users/ribbon/AppData/Local/Temp/claude/legal-new-1.txt', title: 'Termeni și Condiții' },
+  { key: 'SELLER_AGREEMENT', src: 'C:/Users/ribbon/AppData/Local/Temp/claude/legal-new-2.txt', title: 'Acordul Vânzătorului' },
 ];
+
+// Owner-authorised standardisation of the docs' identity + brand:
+// email → info.craftology.shop@gmail.com, brand → Craft'zaar, address → blv 35/60.
+// (Case-sensitive "Craftology" so the lowercase email domain is left untouched.)
+function normalize(s) {
+  return s
+    .replaceAll('l.decokubik@gmail.com', 'info.craftology.shop@gmail.com')
+    .replaceAll('Craftology', "Craft'zaar")
+    .replaceAll('str Odobesti 13/ aprt 60', 'str Odobesti 13, blv 35/60')
+    .replaceAll('blV35/60', 'blv 35/60')
+    .replaceAll('blv35/60', 'blv 35/60');
+}
 
 const isDateLine = (l) => /^(Data ultimei actualizări|Ultima actualizare)/i.test(l);
 
@@ -30,9 +42,9 @@ function build(src) {
   const lines = raw.split(/\r?\n/).map((l) => l.trim()).filter((l) => l.length > 0);
   const heading = lines.shift(); // first line = the document's own title (dropped; page shows a clean <h1>)
   const blocks = [];
-  for (const line of lines) {
-    if (isDateLine(line)) continue; // the component renders "Ultima actualizare" itself
-    blocks.push(classify(line));
+  for (const rawLine of lines) {
+    if (isDateLine(rawLine)) continue; // the component renders "Ultima actualizare" itself
+    blocks.push(classify(normalize(rawLine)));
   }
   return { blocks, sourceTitle: heading };
 }
