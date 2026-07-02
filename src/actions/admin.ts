@@ -122,6 +122,26 @@ export async function getAdminStats() {
   };
 }
 
+/** Recent signups for the admin dashboard (email + confirmation status). Reads
+ *  auth.users via the service-role admin API (not exposed to normal clients). */
+export async function listRecentUsers(): Promise<
+  { users: Array<{ id: string; email: string | null; created_at: string; confirmed: boolean }> } | { error: string }
+> {
+  if (!(await isAdminUser())) return { error: 'Acces interzis' };
+  if (!serviceConfigured()) return { error: 'Indisponibil: lipsește SUPABASE_SERVICE_ROLE_KEY.' };
+  const { data, error } = await adminClient().auth.admin.listUsers({ page: 1, perPage: 100 });
+  if (error) return { error: error.message };
+  const users = data.users
+    .map((u) => ({
+      id: u.id,
+      email: u.email ?? null,
+      created_at: u.created_at ?? '',
+      confirmed: !!u.email_confirmed_at,
+    }))
+    .sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+  return { users };
+}
+
 export async function listAllOrders() {
   if (!(await isAdminUser())) return { error: 'Acces interzis' };
   if (!serviceConfigured()) return { error: 'Indisponibil: lipsește SUPABASE_SERVICE_ROLE_KEY.' };
