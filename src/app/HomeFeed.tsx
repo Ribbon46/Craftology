@@ -136,7 +136,7 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
             </h1>
           </div>
           <p className="hidden lg:block text-lg text-ink-soft mt-4 max-w-xl leading-relaxed">
-            Produse unicat de la creatori români verificați — fiecare produs, lucrat manual.
+            Produse handmade de la creatori români verificați — fiecare produs este lucrat cu pasiune.
           </p>
           {!isInitialLoading && (
             <p className="text-sm text-ink-soft mt-1 lg:mt-5">
@@ -189,6 +189,9 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
           </div>
         ) : (
           <>
+            {activeCategory === 'all' && activeSub === 'all' && (
+              <h2 className="font-display text-xl lg:text-2xl text-ink mb-4">✨ Adăugate recent</h2>
+            )}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 lg:gap-6 pb-10">
               {listings.map((listing, i) => (
                 <ListingCard key={listing.id} listing={listing} index={i} />
@@ -209,6 +212,32 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
             <div ref={sentinelRef} className="h-1" />
           </>
         )}
+
+        {/* Mini-guide: how to become a seller (per the owner's request) */}
+        <section className="mt-4 mb-10 rounded-2xl border-[1.5px] border-line-strong bg-surface shadow-[4px_4px_0_0_var(--press-soft)] p-5 lg:p-7">
+          <h2 className="font-display text-xl lg:text-2xl text-ink mb-1">Vinzi produse handmade?</h2>
+          <p className="text-sm text-ink-soft mb-4">Devino vânzător pe Craft&apos;zaar în câțiva pași simpli:</p>
+          <ol className="space-y-2 text-sm text-ink-soft mb-5">
+            {[
+              'Creează-ți un cont gratuit și confirmă emailul.',
+              'Completează cererea de vânzător cu datele firmei tale (SRL / PFA + CUI).',
+              'Noi verificăm și aprobăm cererea — primești email de confirmare.',
+              'Configurezi plățile prin Stripe (banii ajung direct în contul tău).',
+              'Publici produsele și începi să vinzi!',
+            ].map((s, i) => (
+              <li key={i} className="flex gap-2.5">
+                <span className="w-5 h-5 rounded-full bg-clay text-paper text-[11px] font-bold grid place-items-center shrink-0 mt-px">{i + 1}</span>
+                {s}
+              </li>
+            ))}
+          </ol>
+          <a
+            href="/seller/apply"
+            className="inline-flex items-center rounded-full bg-clay text-paper px-5 py-2.5 text-sm font-medium border-[1.5px] border-edge shadow-[3px_3px_0_0_var(--press)] hover:bg-clay-deep transition-colors"
+          >
+            Devino vânzător
+          </a>
+        </section>
       </main>
       </div>
     </PullToRefresh>

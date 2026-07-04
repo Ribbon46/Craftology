@@ -29,7 +29,7 @@ const FAQ: Array<{ q: string; a: string }> = [
   },
   {
     q: 'Cum contactez un vânzător?',
-    a: 'Pe pagina fiecărui produs ai butonul „Trimite mesaj" — poți vorbi direct cu artizanul despre produs, personalizare sau livrare (necesită cont).',
+    a: 'Ca vizitator (fără cont): pe pagina produsului găsești secțiunea „Contact vânzător" cu emailul și telefonul artizanului — îi poți scrie direct, de exemplu pentru detalii înainte să te înregistrezi. Cu cont: folosește butonul „Trimite mesaj" pentru chat direct în aplicație.',
   },
 ];
 
