@@ -4,6 +4,7 @@ import { BottomNav } from '@/components/navigation/BottomNav';
 import { SiteHeader } from '@/components/navigation/SiteHeader';
 import { SiteFooter } from '@/components/navigation/SiteFooter';
 import { CookieConsent } from '@/components/CookieConsent';
+import { HelpWidget } from '@/components/HelpWidget';
 import { InstallPrompt } from '@/components/InstallPrompt';
 import { Providers } from './providers';
 import { APP_NAME_FULL } from '@/config/app';
@@ -84,6 +85,8 @@ export default function RootLayout({
         <CookieConsent />
         {/* Android "add to home screen" install prompt */}
         <InstallPrompt />
+        {/* Floating help: quick FAQ + WhatsApp/email contact with the admin */}
+        <HelpWidget />
       </body>
     </html>
   );

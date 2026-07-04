@@ -76,8 +76,12 @@ export function BuyerOrders() {
                 {new Date(o.created_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', year: 'numeric' })}
               </p>
               {o.status === 'paid' && (
-                <Button size="sm" variant="outline" className="rounded-full mt-2.5" onClick={() => { setCancelling(o); setError(null); }}>
-                  Cere retur / rambursare
+                <Button
+                  variant="outline"
+                  className="w-full rounded-full mt-3 border-clay/45 text-clay hover:bg-clay hover:text-paper font-medium"
+                  onClick={() => { setCancelling(o); setError(null); }}
+                >
+                  Retur / Renunțare la achiziție
                 </Button>
               )}
             </CardContent>
@@ -88,17 +92,30 @@ export function BuyerOrders() {
       <Dialog open={cancelling !== null} onOpenChange={(o) => !o && setCancelling(null)}>
         <DialogContent className="sm:max-w-md p-6">
           <DialogHeader className="pr-6">
-            <DialogTitle className="font-display text-xl">Retur și rambursare</DialogTitle>
+            <DialogTitle className="font-display text-xl">Formular de retragere din contract</DialogTitle>
             <DialogDescription>
-              Ai dreptul de retragere în 14 zile de la primire. Primești rambursarea completă, în 5–10 zile lucrătoare.
+              Conform OUG 34/2014, ai dreptul să te retragi din contract în 14 zile de la primirea produsului, fără a
+              indica un motiv.
             </DialogDescription>
           </DialogHeader>
-          <Textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2} placeholder="Motiv (opțional)" className="resize-none" />
+          {cancelling && (
+            <div className="rounded-xl bg-cream border border-line p-3 text-sm text-ink-soft leading-relaxed">
+              Prin prezenta vă informez că mă retrag din contractul de vânzare pentru produsul{' '}
+              <strong className="text-ink">„{cancelling.listings?.title ?? 'Produs'}"</strong>, comandat la data de{' '}
+              <strong className="text-ink">
+                {new Date(cancelling.created_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' })}
+              </strong>
+              , și solicit rambursarea sumei de{' '}
+              <strong className="text-ink price">{fmt(cancelling.amount_total)} lei</strong>.
+            </div>
+          )}
+          <Textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2} placeholder="Motiv (opțional — nu este obligatoriu)" className="resize-none" />
+          <p className="text-xs text-ink-faint">Primești rambursarea completă, prin aceeași metodă de plată, în 5–10 zile lucrătoare.</p>
           {error && <p className="text-xs text-destructive">{error}</p>}
           <div className="flex justify-end gap-2 pt-1">
-            <Button variant="outline" className="rounded-full" onClick={() => setCancelling(null)}>Renunță</Button>
+            <Button variant="outline" className="rounded-full" onClick={() => setCancelling(null)}>Înapoi</Button>
             <Button className="rounded-full" disabled={busy} onClick={confirmCancel}>
-              {busy ? 'Se anulează…' : 'Confirmă'}
+              {busy ? 'Se trimite…' : 'Trimite cererea de retragere'}
             </Button>
           </div>
         </DialogContent>

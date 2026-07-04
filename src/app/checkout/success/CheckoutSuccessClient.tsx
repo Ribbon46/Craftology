@@ -68,33 +68,41 @@ export function CheckoutSuccessClient({
         Înapoi la magazin
       </Link>
 
-      {/* Self-service cancel, while the order is still 'paid' */}
+      {/* Self-service withdrawal (OUG 34/2014), while the order is still 'paid'.
+          Deliberately a clear, labeled button — not a subtle link or icon. */}
       {sessionId && status === 'paid' && (
         <div className="mt-8 max-w-xs w-full">
           {!open ? (
-            <button onClick={() => setOpen(true)} className="text-sm text-ink-faint hover:text-clay underline underline-offset-2">
-              Te-ai răzgândit? Anulează comanda
+            <button
+              onClick={() => setOpen(true)}
+              className="w-full rounded-full border-[1.5px] border-clay/45 text-clay px-5 py-2.5 text-sm font-medium hover:bg-clay hover:text-paper transition-colors"
+            >
+              Retur / Renunțare la achiziție
             </button>
           ) : (
             <div className="rounded-2xl border-[1.5px] border-line-strong bg-surface shadow-[4px_4px_0_0_var(--press-soft)] p-4 text-left">
-              <p className="text-sm font-medium text-ink mb-2">Anulează comanda (rambursare completă)</p>
+              <p className="text-sm font-medium text-ink mb-1">Formular de retragere din contract</p>
+              <p className="text-xs text-ink-soft mb-2 leading-relaxed">
+                Prin trimiterea acestui formular te retragi din contractul de vânzare (OUG 34/2014) și primești
+                rambursarea completă în 5–10 zile lucrătoare.
+              </p>
               <input
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder="Motiv (opțional)"
+                placeholder="Motiv (opțional — nu este obligatoriu)"
                 className="w-full rounded-lg border-[1.5px] border-input bg-paper px-3 py-2 text-sm mb-2 focus:outline-none focus:border-clay focus:shadow-[3px_3px_0_0_var(--focus-press)]"
               />
               {error && <p className="text-xs text-destructive mb-2">{error}</p>}
               <div className="flex justify-end gap-2">
                 <button onClick={() => setOpen(false)} className="rounded-full border-[1.5px] border-line text-ink-soft px-4 py-1.5 text-sm">
-                  Renunță
+                  Înapoi
                 </button>
                 <button
                   onClick={cancel}
                   disabled={pending}
                   className="rounded-full bg-clay text-paper px-4 py-1.5 text-sm font-medium border-[1.5px] border-edge disabled:opacity-60"
                 >
-                  {pending ? 'Se anulează…' : 'Anulează comanda'}
+                  {pending ? 'Se trimite…' : 'Trimite cererea de retragere'}
                 </button>
               </div>
             </div>

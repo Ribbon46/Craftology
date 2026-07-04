@@ -1,11 +1,14 @@
 import Link from 'next/link';
 import { APP_NAME } from '@/config/app';
+import { AnpcBadges } from '@/components/AnpcBadges';
 
-// Desktop-only footer. Phones use the bottom tab bar, so this is hidden there.
+// Footer. The full link grid is desktop-only (phones use the bottom tab bar),
+// but the legal strip — mandatory ANPC/SOL badges + © — shows on ALL sizes so
+// mobile users see the consumer-protection notices too.
 export function SiteFooter() {
   return (
-    <footer className="hidden lg:block border-t-2 border-dashed border-line-strong bg-paper mt-20">
-      <div className="mx-auto w-full max-w-6xl px-8 py-14 grid grid-cols-[1.5fr_1fr_1fr_1fr] gap-10">
+    <footer className="border-t-2 border-dashed border-line-strong bg-paper mt-10 lg:mt-20">
+      <div className="hidden lg:grid mx-auto w-full max-w-6xl px-8 py-14 grid-cols-[1.5fr_1fr_1fr_1fr] gap-10">
         <div className="max-w-xs">
           <p className="font-display text-2xl text-ink">{APP_NAME}</p>
           <p className="text-[10px] uppercase tracking-[0.28em] text-clay/80 mt-1 mb-3">powered by Deco Kubik</p>
@@ -19,10 +22,15 @@ export function SiteFooter() {
         <FooterCol title="Cont" links={[['Profil', '/profile'], ['Mesaje', '/messages'], ['Setări', '/profile/settings']]} />
         <FooterCol title="Legal" links={[['Termeni', '/terms'], ['Confidențialitate', '/privacy'], ['Cookie-uri', '/cookies'], ['Acord vânzător', '/seller-agreement'], ['Retururi', '/returns']]} />
       </div>
-      <div className="border-t border-line">
-        <div className="mx-auto w-full max-w-6xl px-8 py-5 flex items-center justify-between text-xs text-ink-faint">
-          <span>© {new Date().getFullYear()} Craft&apos;zaar</span>
-          <span className="font-display italic">Lucrate manual în România</span>
+      {/* Legal strip — visible on ALL screen sizes (mandatory badges). Mobile
+          gets extra bottom padding to clear the fixed bottom tab bar. */}
+      <div className="lg:border-t border-line">
+        <div className="mx-auto w-full max-w-6xl px-5 lg:px-8 pt-5 pb-28 lg:pb-5">
+          <AnpcBadges className="justify-center lg:justify-start mb-4" />
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-1.5 text-xs text-ink-faint text-center">
+            <span>© {new Date().getFullYear()} Craft&apos;zaar · Deco Kubik SRL · CUI RO24386414</span>
+            <span className="font-display italic">Lucrate manual în România</span>
+          </div>
         </div>
       </div>
     </footer>
