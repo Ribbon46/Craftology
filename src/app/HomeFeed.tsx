@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useCallback, useState } from 'react';
+import { useRef, useCallback, useEffect, useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Star } from 'lucide-react';
 import { CATEGORIES, SUBCATEGORIES, MESSAGES, type CategoryKey } from '@/config/app';
@@ -19,6 +19,15 @@ import { QRShare } from '@/components/QRShare';
 export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [activeSub, setActiveSub] = useState<string>('all');
+  // /auth/confirm redirects here with ?auth=confirmare_esuata when a
+  // confirmation link is expired/already used — surface it, don't drop it.
+  const [confirmFailed, setConfirmFailed] = useState(false);
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('auth') === 'confirmare_esuata') {
+      setConfirmFailed(true);
+      window.history.replaceState(null, '', '/');
+    }
+  }, []);
   const [sort, setSort] = useState<SortOption>('newest');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
@@ -136,6 +145,18 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
           )}
           <div className="hidden lg:block rule-craft w-24 mt-7" />
         </header>
+
+        {confirmFailed && (
+          <div className="mb-5 p-4 rounded-2xl border-[1.5px] border-clay/45 bg-clay-soft/50 text-sm text-ink flex items-start justify-between gap-3">
+            <span>
+              Linkul de confirmare a expirat sau a fost deja folosit. Încearcă să te autentifici — dacă nu merge,
+              înregistrează-te din nou și vei primi un email nou.
+            </span>
+            <button onClick={() => setConfirmFailed(false)} className="text-ink-faint hover:text-ink shrink-0" aria-label="Închide">
+              ✕
+            </button>
+          </div>
+        )}
 
         {activeCategory === 'all' && activeSub === 'all' && <QRShare />}
 

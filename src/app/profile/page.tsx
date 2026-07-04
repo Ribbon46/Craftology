@@ -14,6 +14,7 @@ import { avatarFor, SellerProfile, Listing } from '@/lib/mock';
 import { fetchProfile, fetchSellerListings } from '@/lib/data/listings';
 import { getSellerReviews, type PublicReview } from '@/actions/reviews';
 import { isAdminUser } from '@/actions/admin';
+import { deleteListing } from '@/actions/listings';
 import { BuyerOrders } from '@/components/BuyerOrders';
 
 export default function ProfilePage() {
@@ -27,6 +28,32 @@ export default function ProfilePage() {
   const [reviews, setReviews] = useState<PublicReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const handleDelete = async (id: string) => {
+    // Two-tap confirm: first tap arms the button, second tap deletes.
+    if (confirmDeleteId !== id) {
+      setConfirmDeleteId(id);
+      setDeleteError(null);
+      return;
+    }
+    setDeletingId(id);
+    try {
+      const res = await deleteListing(id);
+      if (res && 'error' in res && res.error) {
+        setDeleteError(String(res.error));
+      } else {
+        setListings((prev) => prev.filter((l) => l.id !== id));
+      }
+    } catch {
+      setDeleteError('Ștergerea nu a reușit. Încearcă din nou.');
+    } finally {
+      setDeletingId(null);
+      setConfirmDeleteId(null);
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -43,6 +70,10 @@ export default function ProfilePage() {
           setListings(l);
           setReviews(r);
         }
+      })
+      .catch(() => {
+        // Transient fetch failure — keep whatever rendered; don't crash to a
+        // misleading "no listings" state via an unhandled rejection.
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -165,6 +196,11 @@ export default function ProfilePage() {
           </TabsList>
 
           <TabsContent value="listings" className="space-y-3 pt-4">
+            {deleteError && (
+              <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/25 text-destructive text-sm">
+                {deleteError}
+              </div>
+            )}
             {loading ? (
               <div className="space-y-3" aria-hidden>
                 {Array.from({ length: 3 }, (_, i) => (
@@ -211,14 +247,33 @@ export default function ProfilePage() {
                         <h3 className="font-display text-ink line-clamp-1 mb-1">{listing.title}</h3>
                         <div className="flex items-center justify-between gap-2">
                           <span className="price font-semibold text-ink">{formatPrice(listing.price)} lei</span>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 text-xs rounded-full flex-shrink-0"
-                            onClick={() => router.push(`/listings/${listing.id}`)}
-                          >
-                            Vezi
-                          </Button>
+                          <div className="flex gap-1.5 flex-shrink-0">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 text-xs rounded-full"
+                              onClick={() => router.push(`/listings/${listing.id}`)}
+                            >
+                              Vezi
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className={`h-8 text-xs rounded-full ${
+                                confirmDeleteId === listing.id
+                                  ? 'bg-destructive text-white border-destructive hover:bg-destructive/90'
+                                  : 'text-destructive border-destructive/30'
+                              }`}
+                              disabled={deletingId === listing.id}
+                              onClick={() => handleDelete(listing.id)}
+                            >
+                              {deletingId === listing.id
+                                ? 'Se șterge…'
+                                : confirmDeleteId === listing.id
+                                  ? 'Sigur? Șterge'
+                                  : 'Șterge'}
+                            </Button>
+                          </div>
                         </div>
                       </CardContent>
                     </div>

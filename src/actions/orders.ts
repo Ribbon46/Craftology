@@ -201,19 +201,26 @@ export async function getMyOrders(): Promise<OrderRow[]> {
   return (data as unknown as OrderRow[]) ?? [];
 }
 
-/** Minimal order info for the checkout-success page (guest-safe, service-role). */
+/** Minimal order info for the checkout-success page (guest-safe, service-role).
+ *  `guest` tells the UI which withdrawal path applies: guest orders cancel via
+ *  the session-id capability; member orders cancel from Profil → Tranzacții. */
 export async function getOrderForSuccess(
   sessionId: string,
-): Promise<{ status: string; amount_total: number; title: string | null } | null> {
+): Promise<{ status: string; amount_total: number; title: string | null; guest: boolean } | null> {
   if (!isServiceConfigured()) return null;
   const svc = createServiceClient();
   const { data } = await svc
     .from('orders')
-    .select('status, amount_total, listings ( title )')
+    .select('status, amount_total, buyer_id, listings ( title )')
     .eq('stripe_session_id', sessionId)
     .maybeSingle();
   if (!data) return null;
   const listings = data.listings as { title: string } | { title: string }[] | null;
   const title = Array.isArray(listings) ? listings[0]?.title ?? null : listings?.title ?? null;
-  return { status: data.status as string, amount_total: data.amount_total as number, title };
+  return {
+    status: data.status as string,
+    amount_total: data.amount_total as number,
+    title,
+    guest: data.buyer_id === null,
+  };
 }

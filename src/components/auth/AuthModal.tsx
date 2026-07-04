@@ -47,7 +47,7 @@ export function AuthModal() {
     setLoading(true);
     const supabase = createClient();
 
-    const { error: authError } = isLogin
+    const { data: authData, error: authError } = isLogin
       ? await supabase.auth.signInWithPassword({ email, password })
       : await supabase.auth.signUp({
           email,
@@ -66,6 +66,15 @@ export function AuthModal() {
       setOpen(false);
       router.refresh();
     } else {
+      // Enumeration protection: signUp "succeeds" for an existing email but
+      // returns a user with NO identities and sends no email — telling the
+      // user "check your inbox" would leave them waiting forever.
+      const existing = authData?.user && (authData.user.identities?.length ?? 0) === 0;
+      if (existing) {
+        setError('Există deja un cont cu acest email. Autentifică-te mai jos.');
+        setIsLogin(true);
+        return;
+      }
       // Supabase sends a confirmation email by default.
       setInfo('Cont creat! Ți-am trimis un email de confirmare — verifică inbox-ul (și folderul Spam), apoi autentifică-te.');
       setIsLogin(true);

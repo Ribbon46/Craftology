@@ -1,5 +1,7 @@
-'use client';
-
+// NO 'use client' here: this module is imported by the createListing server
+// action — a 'use client' directive turns its exports into client-reference
+// proxies on the server (schema.safeParse crashes with "not a function", which
+// 500'd every publish attempt in production). Schemas must stay directive-free.
 import { z } from 'zod';
 import { CATEGORIES, SUBCATEGORY_PARENT } from '@/config/app';
 

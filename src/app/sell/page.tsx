@@ -30,7 +30,15 @@ export default function SellPage() {
   useEffect(() => {
     if (!user) return;
     setEligibility(null);
-    canSell().then(setEligibility);
+    // One retry, then fail CLOSED with a visible message instead of spinning
+    // forever (an unhandled rejection here left the page stuck on the loader).
+    canSell()
+      .then(setEligibility)
+      .catch(() =>
+        canSell()
+          .then(setEligibility)
+          .catch(() => setError('Nu am putut verifica contul tău. Reîncarcă pagina.')),
+      );
   }, [user]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -165,8 +173,17 @@ export default function SellPage() {
 
   if (!eligibility) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-6 h-6 border-2 border-clay border-t-transparent rounded-full animate-spin" />
+      <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center gap-4">
+        {error ? (
+          <>
+            <p className="text-ink-soft max-w-xs">{error}</p>
+            <Button variant="outline" className="rounded-full" onClick={() => window.location.reload()}>
+              Reîncearcă
+            </Button>
+          </>
+        ) : (
+          <div className="w-6 h-6 border-2 border-clay border-t-transparent rounded-full animate-spin" />
+        )}
       </div>
     );
   }

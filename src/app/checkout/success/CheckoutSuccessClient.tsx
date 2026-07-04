@@ -1,27 +1,55 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { CheckCircle2, Undo2 } from 'lucide-react';
-import { cancelOrderByBuyer } from '@/actions/orders';
+import { cancelOrderByBuyer, getOrderForSuccess } from '@/actions/orders';
 
 /**
  * Success screen + the GUEST cancellation entry point. A buyer who paid without
  * an account is authorized to cancel by possessing the (unguessable) Stripe
  * session id in the URL — the capability-URL model. Full refund, item re-listed.
+ * The Stripe redirect usually lands BEFORE the webhook records the order, so
+ * when no order exists yet we poll for it instead of hiding the withdrawal UI.
  */
 export function CheckoutSuccessClient({
   sessionId,
-  status,
+  status: initialStatus,
+  guest: initialGuest,
 }: {
   sessionId?: string;
   status?: string;
+  guest?: boolean;
 }) {
-  const [cancelled, setCancelled] = useState(status === 'refunded');
+  const [status, setStatus] = useState<string | undefined>(initialStatus);
+  const [guest, setGuest] = useState<boolean | undefined>(initialGuest);
+  const [cancelled, setCancelled] = useState(initialStatus === 'refunded');
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+
+  // Webhook race: order not recorded yet → poll a few times until it appears.
+  useEffect(() => {
+    if (!sessionId || status) return;
+    let tries = 0;
+    let active = true;
+    const tick = async () => {
+      if (!active || tries++ >= 10) return;
+      try {
+        const o = await getOrderForSuccess(sessionId);
+        if (o && active) {
+          setStatus(o.status);
+          setGuest(o.guest);
+          if (o.status === 'refunded') setCancelled(true);
+          return;
+        }
+      } catch { /* keep polling */ }
+      if (active) setTimeout(tick, 3000);
+    };
+    const t = setTimeout(tick, 2500);
+    return () => { active = false; clearTimeout(t); };
+  }, [sessionId, status]);
 
   const cancel = async () => {
     if (!sessionId) return;
@@ -68,9 +96,31 @@ export function CheckoutSuccessClient({
         Înapoi la magazin
       </Link>
 
+      {/* Order still being confirmed by the payment webhook */}
+      {sessionId && !status && (
+        <p className="mt-8 text-sm text-ink-faint flex items-center gap-2">
+          <span className="w-3.5 h-3.5 border-2 border-clay border-t-transparent rounded-full animate-spin inline-block" />
+          Confirmăm plata… opțiunea de retur apare în câteva secunde.
+        </p>
+      )}
+
+      {/* Logged-in buyers cancel from their account (the session-id capability
+          only authorizes guest orders). Clear text link, not an icon. */}
+      {sessionId && status === 'paid' && guest === false && (
+        <div className="mt-8 max-w-xs w-full">
+          <Link
+            href="/profile"
+            className="block w-full rounded-full border-[1.5px] border-clay/45 text-clay px-5 py-2.5 text-sm font-medium hover:bg-clay hover:text-paper transition-colors"
+          >
+            Retur / Renunțare la achiziție
+          </Link>
+          <p className="text-xs text-ink-faint mt-2">Găsești comanda în Profil → Tranzacții.</p>
+        </div>
+      )}
+
       {/* Self-service withdrawal (OUG 34/2014), while the order is still 'paid'.
           Deliberately a clear, labeled button — not a subtle link or icon. */}
-      {sessionId && status === 'paid' && (
+      {sessionId && status === 'paid' && guest !== false && (
         <div className="mt-8 max-w-xs w-full">
           {!open ? (
             <button

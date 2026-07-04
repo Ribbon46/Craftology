@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Star, Share2, ArrowLeft, MessageCircle, ShoppingBag, Mail, Phone, Link2, BadgeCheck } from 'lucide-react';
@@ -36,24 +36,54 @@ export function ListingDetailClient({ listing, sellerContact }: { listing: Listi
   const [buying, setBuying] = useState(false);
   const [buyError, setBuyError] = useState<string | null>(null);
 
+  const sold = listing.status !== 'active';
+
+  // Coming BACK from Stripe via the browser back button restores this page from
+  // bfcache with `buying` still true (button stuck on "Se redirecționează…").
+  // pageshow with persisted=true fires exactly then — reset the pending states.
+  useEffect(() => {
+    const onShow = (e: PageTransitionEvent) => {
+      if (e.persisted) {
+        setBuying(false);
+        setMessaging(false);
+      }
+    };
+    window.addEventListener('pageshow', onShow);
+    return () => window.removeEventListener('pageshow', onShow);
+  }, []);
+
   const handleMessageSeller = async () => {
     if (!user) { setOpen(true); return; }
+    setBuyError(null);
     setMessaging(true);
-    await createConversation(listing.id);
-    setMessaging(false);
-    router.push('/messages');
+    try {
+      const res = await createConversation(listing.id);
+      if (res && typeof res === 'object' && 'error' in res && res.error) {
+        setBuyError(String(res.error));
+        return;
+      }
+      router.push('/messages');
+    } catch {
+      setBuyError('Nu am putut deschide conversația. Încearcă din nou.');
+    } finally {
+      setMessaging(false);
+    }
   };
 
   const handleBuy = async () => {
     setBuyError(null);
     setBuying(true);
-    const res = await createCheckoutSession(listing.id);
-    if ('url' in res && res.url) {
-      window.location.href = res.url;
-    } else {
+    try {
+      const res = await createCheckoutSession(listing.id);
+      if ('url' in res && res.url) {
+        window.location.href = res.url;
+        return; // navigating away — keep the loading state
+      }
       setBuyError(('error' in res && res.error) || 'Plata nu a putut fi inițiată.');
-      setBuying(false);
+    } catch {
+      setBuyError('Plata nu a putut fi inițiată. Verifică conexiunea și încearcă din nou.');
     }
+    setBuying(false);
   };
 
   const handleShare = async () => {
@@ -196,9 +226,14 @@ export function ListingDetailClient({ listing, sellerContact }: { listing: Listi
           {buyError && (
             <div className="p-3 rounded-xl bg-clay-soft text-clay-deep text-sm text-center">{buyError}</div>
           )}
-          <Button className="w-full h-[52px] text-base rounded-full" onClick={handleBuy} disabled={buying}>
+          {sold && (
+            <div className="p-3 rounded-xl bg-ink/5 border border-line text-ink-soft text-sm text-center font-medium">
+              Acest produs a fost vândut și nu mai este disponibil.
+            </div>
+          )}
+          <Button className="w-full h-[52px] text-base rounded-full" onClick={handleBuy} disabled={buying || sold}>
             <ShoppingBag className="w-5 h-5 mr-2" />
-            {buying ? 'Se redirecționează…' : `Cumpără · ${formatPrice(listing.price)} lei`}
+            {sold ? 'Vândut' : buying ? 'Se redirecționează…' : `Cumpără · ${formatPrice(listing.price)} lei`}
           </Button>
           <Button variant="outline" className="w-full h-12 rounded-full" onClick={handleMessageSeller} disabled={messaging}>
             <MessageCircle className="w-4 h-4 mr-2" />

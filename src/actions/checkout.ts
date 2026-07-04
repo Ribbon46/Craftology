@@ -60,6 +60,11 @@ export async function createCheckoutSession(listingId: string) {
       phone_number_collection: { enabled: true },
     };
 
+    // Sessions expire after 30 min (Stripe minimum) instead of the 24h default,
+    // shrinking the window where two buyers can both hold open checkouts for
+    // the same single-quantity handmade item.
+    const expires_at = Math.floor(Date.now() / 1000) + 30 * 60;
+
     // Platform's own product (Deco Kubik) → money to the platform, no split.
     if (isPlatformOwner(listing.seller_id)) {
       const session = await stripe.checkout.sessions.create({
@@ -69,6 +74,7 @@ export async function createCheckoutSession(listingId: string) {
         metadata: orderMeta,
         success_url,
         cancel_url,
+        expires_at,
       });
       return { url: session.url };
     }
@@ -95,6 +101,7 @@ export async function createCheckoutSession(listingId: string) {
         metadata: orderMeta,
         success_url,
         cancel_url,
+        expires_at,
       },
       { stripeAccount: seller.stripe_account_id },
     );

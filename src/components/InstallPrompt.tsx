@@ -18,6 +18,21 @@ export function InstallPrompt() {
   const [evt, setEvt] = useState<BeforeInstallPromptEvent | null>(null);
   const [show, setShow] = useState(false);
 
+  const [consented, setConsented] = useState(false);
+  useEffect(() => {
+    // Wait for the cookie banner to be answered so the two cards never stack.
+    const check = () => {
+      try {
+        setConsented(!!localStorage.getItem('craftzaar-cookie-consent'));
+      } catch {
+        setConsented(true);
+      }
+    };
+    check();
+    window.addEventListener('cz-consent-set', check);
+    return () => window.removeEventListener('cz-consent-set', check);
+  }, []);
+
   useEffect(() => {
     // Already installed (running standalone) or previously dismissed → skip.
     if (window.matchMedia('(display-mode: standalone)').matches) return;
@@ -53,7 +68,7 @@ export function InstallPrompt() {
     setShow(false);
   };
 
-  if (!show) return null;
+  if (!show || !consented) return null;
   return (
     <div className="fixed inset-x-0 bottom-36 lg:bottom-20 z-[61] px-3">
       <div className="mx-auto max-w-md rounded-2xl border-[1.5px] border-line-strong bg-surface/95 backdrop-blur-md shadow-[4px_4px_0_0_var(--press-soft)] p-3.5 flex items-center gap-3">

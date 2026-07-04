@@ -45,29 +45,26 @@ export async function fetchListingsPage(
   const sort = opts.sort ?? 'newest';
 
   if (isSupabaseConfigured()) {
-    try {
-      const supabase = createClient();
-      // Filters first (FilterBuilder), then ordering (TransformBuilder), then range.
-      let fq = supabase.from('listings').select(SELECT).eq('status', 'active');
-      if (isRealCategory(opts.category)) fq = fq.eq('category', opts.category);
-      if (opts.subcategory) fq = fq.eq('subcategory', opts.subcategory);
-      if (opts.minPrice != null) fq = fq.gte('price', opts.minPrice);
-      if (opts.maxPrice != null) fq = fq.lte('price', opts.maxPrice);
-      const ordered =
-        sort === 'price_asc'
-          ? fq.order('price', { ascending: true }).order('created_at', { ascending: false })
-          : sort === 'price_desc'
-            ? fq.order('price', { ascending: false }).order('created_at', { ascending: false })
-            : fq.order('created_at', { ascending: false });
+    const supabase = createClient();
+    // Filters first (FilterBuilder), then ordering (TransformBuilder), then range.
+    let fq = supabase.from('listings').select(SELECT).eq('status', 'active');
+    if (isRealCategory(opts.category)) fq = fq.eq('category', opts.category);
+    if (opts.subcategory) fq = fq.eq('subcategory', opts.subcategory);
+    if (opts.minPrice != null) fq = fq.gte('price', opts.minPrice);
+    if (opts.maxPrice != null) fq = fq.lte('price', opts.maxPrice);
+    const ordered =
+      sort === 'price_asc'
+        ? fq.order('price', { ascending: true }).order('created_at', { ascending: false })
+        : sort === 'price_desc'
+          ? fq.order('price', { ascending: false }).order('created_at', { ascending: false })
+          : fq.order('created_at', { ascending: false });
 
-      const { data, error } = await ordered.range(offset, offset + PAGE_SIZE - 1);
-      if (!error && data) {
-        const rows = data as unknown as Listing[];
-        return { data: rows, nextCursor: rows.length === PAGE_SIZE ? offset + PAGE_SIZE : null };
-      }
-    } catch {
-      // fall through to mock
-    }
+    const { data, error } = await ordered.range(offset, offset + PAGE_SIZE - 1);
+    // Live mode: a failed read THROWS (React Query retries / keeps previous
+    // data) — never silently serve the fake demo catalog to real users.
+    if (error) throw new Error(error.message);
+    const rows = (data ?? []) as unknown as Listing[];
+    return { data: rows, nextCursor: rows.length === PAGE_SIZE ? offset + PAGE_SIZE : null };
   }
 
   let filtered = isRealCategory(opts.category)
@@ -83,13 +80,10 @@ export async function fetchListingsPage(
 
 export async function fetchListingById(id: string): Promise<Listing | null> {
   if (isSupabaseConfigured()) {
-    try {
-      const supabase = createClient();
-      const { data, error } = await supabase.from('listings').select(SELECT).eq('id', id).single();
-      if (!error && data) return data as unknown as Listing;
-    } catch {
-      // fall through to mock
-    }
+    const supabase = createClient();
+    const { data, error } = await supabase.from('listings').select(SELECT).eq('id', id).maybeSingle();
+    if (error) throw new Error(error.message); // live read failure ≠ "not found"
+    return (data as unknown as Listing) ?? null;
   }
   return findMockListing(id);
 }
@@ -103,24 +97,21 @@ export async function searchListings(
   const term = query.trim();
 
   if (isSupabaseConfigured()) {
-    try {
-      const supabase = createClient();
-      let q = supabase.from('listings').select(SELECT).eq('status', 'active');
-      if (isRealCategory(category)) q = q.eq('category', category);
-      if (subcategory) q = q.eq('subcategory', subcategory);
-      if (term) q = q.ilike('title', `%${term}%`);
-      const ordered =
-        sort === 'price_asc'
-          ? q.order('price', { ascending: true })
-          : sort === 'price_desc'
-            ? q.order('price', { ascending: false })
-            : q.order('created_at', { ascending: false });
+    const supabase = createClient();
+    let q = supabase.from('listings').select(SELECT).eq('status', 'active');
+    if (isRealCategory(category)) q = q.eq('category', category);
+    if (subcategory) q = q.eq('subcategory', subcategory);
+    if (term) q = q.ilike('title', `%${term}%`);
+    const ordered =
+      sort === 'price_asc'
+        ? q.order('price', { ascending: true })
+        : sort === 'price_desc'
+          ? q.order('price', { ascending: false })
+          : q.order('created_at', { ascending: false });
 
-      const { data, error } = await ordered.limit(50);
-      if (!error && data) return data as unknown as Listing[];
-    } catch {
-      // fall through to mock
-    }
+    const { data, error } = await ordered.limit(50);
+    if (error) throw new Error(error.message);
+    return (data ?? []) as unknown as Listing[];
   }
 
   let list = isRealCategory(category) ? MOCK_LISTINGS.filter((l) => l.category === category) : [...MOCK_LISTINGS];
@@ -135,17 +126,14 @@ export async function searchListings(
 /** All listings for one seller (their profile page). */
 export async function fetchSellerListings(sellerId: string): Promise<Listing[]> {
   if (isSupabaseConfigured()) {
-    try {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('listings')
-        .select(SELECT)
-        .eq('seller_id', sellerId)
-        .order('created_at', { ascending: false });
-      if (!error && data) return data as unknown as Listing[];
-    } catch {
-      // fall through to mock
-    }
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('listings')
+      .select(SELECT)
+      .eq('seller_id', sellerId)
+      .order('created_at', { ascending: false });
+    if (error) throw new Error(error.message);
+    return (data ?? []) as unknown as Listing[];
   }
   return MOCK_LISTINGS.filter((l) => l.seller_id === sellerId);
 }

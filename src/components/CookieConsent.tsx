@@ -31,6 +31,9 @@ export function CookieConsent() {
       localStorage.setItem(KEY, c);
     } catch {}
     setChoice(c);
+    // Tell the other floating widgets (Help, Install) the banner is gone —
+    // they hold back until consent is decided so nothing overlaps it.
+    window.dispatchEvent(new Event('cz-consent-set'));
   };
 
   return (

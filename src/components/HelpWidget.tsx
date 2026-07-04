@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { HelpCircle, X, MessageCircle, Mail } from 'lucide-react';
 import { COMPANY } from '@/config/app';
 
@@ -36,6 +36,23 @@ const FAQ: Array<{ q: string; a: string }> = [
 export function HelpWidget() {
   const [open, setOpen] = useState(false);
   const [openIdx, setOpenIdx] = useState<number | null>(null);
+  // Hold back while the cookie-consent banner occupies the same bottom zone
+  // (it renders above us in z-order and would cover the button on phones).
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const check = () => {
+      try {
+        setReady(!!localStorage.getItem('craftzaar-cookie-consent'));
+      } catch {
+        setReady(true);
+      }
+    };
+    check();
+    window.addEventListener('cz-consent-set', check);
+    return () => window.removeEventListener('cz-consent-set', check);
+  }, []);
+
+  if (!ready) return null;
 
   return (
     <>
