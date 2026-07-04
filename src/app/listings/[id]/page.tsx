@@ -62,7 +62,17 @@ export default async function ListingDetailPage({ params }: Params) {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <ListingDetailClient listing={listing} sellerContact={sellerContact} />
+      {/* Owner decision: seller contact details are NOT shown to buyers —
+          communication happens via in-app messaging. Only the verified badge
+          (company_name presence) is passed; email/phone/other stay server-side. */}
+      <ListingDetailClient
+        listing={listing}
+        sellerContact={
+          sellerContact
+            ? { company_name: sellerContact.company_name, contact_email: null, contact_phone: null, contact_other: null }
+            : null
+        }
+      />
     </>
   );
 }
