@@ -87,8 +87,23 @@ export default function SellPage() {
     setIsSubmitting(true);
 
     // Validate required fields
-    if (!title.trim()) {
-      setError('Vă rugăm să adăugați un titlu');
+    if (title.trim().length < 3) {
+      setError('Titlul trebuie să aibă cel puțin 3 caractere.');
+      setIsSubmitting(false);
+      return;
+    }
+    if (title.trim().length > 100) {
+      setError('Titlul poate avea maximum 100 de caractere.');
+      setIsSubmitting(false);
+      return;
+    }
+    if (description.trim().length < 20) {
+      setError('Descrierea trebuie să aibă cel puțin 20 de caractere.');
+      setIsSubmitting(false);
+      return;
+    }
+    if (description.trim().length > 1000) {
+      setError('Descrierea poate avea maximum 1000 de caractere.');
       setIsSubmitting(false);
       return;
     }
@@ -150,7 +165,13 @@ export default function SellPage() {
       const result = await createListing(formData);
 
       if (result.error) {
-        setError(result.error);
+        // Surface the SPECIFIC validation message (e.g. "Descrierea poate avea
+        // maximum 1000 de caractere") instead of the bare "Date invalide".
+        const fieldMessages =
+          'details' in result && result.details
+            ? Object.values(result.details as Record<string, string[]>).flat()
+            : [];
+        setError(fieldMessages[0] ?? result.error);
         setIsSubmitting(false);
         return;
       }
@@ -270,9 +291,10 @@ export default function SellPage() {
                   placeholder="Ex: Colier Mărgele Colorate - Handmade"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
+                  maxLength={100}
                   required
                 />
-                <p className="text-xs text-ink-soft">Titlul trebuie să aibă cel puțin 3 caractere</p>
+                <p className="text-xs text-ink-soft">Între 3 și 100 de caractere ({title.length}/100)</p>
               </div>
 
               {/* Category + dependent subcategory */}
@@ -348,10 +370,11 @@ export default function SellPage() {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={5}
+                  maxLength={1000}
                   required
                   className="resize-none"
                 />
-                <p className="text-xs text-ink-soft">Descrierea trebuie să aibă cel puțin 20 de caractere</p>
+                <p className="text-xs text-ink-soft">Între 20 și 1000 de caractere ({description.length}/1000)</p>
               </div>
 
               {/* Images */}
