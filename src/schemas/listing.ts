@@ -18,7 +18,7 @@ export const listingFormSchema = z
     description: z
       .string()
       .min(20, 'Descrierea trebuie să aibă cel puțin 20 de caractere')
-      .max(1000, 'Descrierea nu poate avea mai mult de 1000 de caractere')
+      .max(3000, 'Descrierea nu poate avea mai mult de 3000 de caractere')
       .trim(),
     price: z
       .number()

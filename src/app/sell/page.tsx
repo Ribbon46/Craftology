@@ -102,8 +102,8 @@ export default function SellPage() {
       setIsSubmitting(false);
       return;
     }
-    if (description.trim().length > 1000) {
-      setError('Descrierea poate avea maximum 1000 de caractere.');
+    if (description.trim().length > 3000) {
+      setError('Descrierea poate avea maximum 3000 de caractere.');
       setIsSubmitting(false);
       return;
     }
@@ -370,11 +370,11 @@ export default function SellPage() {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={5}
-                  maxLength={1000}
+                  maxLength={3000}
                   required
                   className="resize-none"
                 />
-                <p className="text-xs text-ink-soft">Între 20 și 1000 de caractere ({description.length}/1000)</p>
+                <p className="text-xs text-ink-soft">Între 20 și 3000 de caractere ({description.length}/3000)</p>
               </div>
 
               {/* Images */}
