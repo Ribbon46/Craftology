@@ -119,14 +119,8 @@ export default function SellPage() {
       return;
     }
 
-    // Check file sizes (max 5MB each)
-    for (const file of files) {
-      if (file.size > 5 * 1024 * 1024) {
-        setError(`Fișierul ${file.name} este prea mare (max 5MB)`);
-        setIsSubmitting(false);
-        return;
-      }
-    }
+    // Per-file size is checked AFTER client-side compression (below) — raw
+    // phone photos are often >5MB but compress to a few hundred KB.
 
     try {
       const formData = new FormData();
@@ -137,6 +131,12 @@ export default function SellPage() {
       formData.append('subcategory', subcategory);
 
       const compressed = await Promise.all(files.map(compressImage));
+      const oversized = compressed.find((f) => f.size > 5 * 1024 * 1024);
+      if (oversized) {
+        setError(`Fișierul ${oversized.name} este prea mare chiar și după comprimare (max 5MB).`);
+        setIsSubmitting(false);
+        return;
+      }
       const totalBytes = compressed.reduce((s, f) => s + f.size, 0);
       if (totalBytes > 3.8 * 1024 * 1024) {
         setError('Fotografiile sunt prea mari împreună. Încearcă cu mai puține imagini sau imagini mai mici.');
@@ -359,7 +359,9 @@ export default function SellPage() {
                 onFilesAdded={handleFilesAdded}
                 onFilesRemoved={handleFilesRemoved}
                 maxFiles={5}
-                maxFileSize={5 * 1024 * 1024}
+                // Phones routinely produce 5–12 MB photos; accept them here and
+                // compress client-side at submit (→ ~300 KB each).
+                maxFileSize={15 * 1024 * 1024}
               />
 
               {/* Submit */}
