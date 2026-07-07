@@ -43,11 +43,12 @@ export interface SellerRow {
   workshop_description: string | null;
   rejection_reason: string | null;
   stripe_onboarded: boolean;
+  vacation_until: string | null;
   created_at: string;
 }
 
 const SELLER_COLS =
-  'id, status, company_name, cui, contact_email, contact_phone, contact_other, workshop_description, rejection_reason, stripe_onboarded, created_at';
+  'id, status, company_name, cui, contact_email, contact_phone, contact_other, workshop_description, rejection_reason, stripe_onboarded, vacation_until, created_at';
 
 /** The current user's own seller row (their application), or null. */
 export async function getMySeller(): Promise<{ authed: boolean; seller: SellerRow | null }> {
@@ -154,6 +155,45 @@ export async function resendSellerApplication(): Promise<{ success: true } | { e
   });
   if ('skipped' in res) return { error: 'Notificările pe email nu sunt configurate momentan.' };
   if ('error' in res) return { error: 'Nu am putut retrimite cererea. Încearcă din nou.' };
+  return { success: true };
+}
+
+/**
+ * Vacation mode: the seller sets a date until which they can't fulfil orders.
+ * Buyers see a banner on their listings and purchasing is blocked until then.
+ * Pass null to end the vacation early. Service-role write (the column has no
+ * user UPDATE grant), gated on row ownership.
+ */
+export async function setVacationMode(until: string | null): Promise<{ success: true } | { error: string }> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'Autentificare necesară' };
+  if (!isServiceConfigured()) return { error: 'Indisponibil momentan.' };
+
+  let value: string | null = null;
+  if (until) {
+    const d = new Date(until + 'T00:00:00');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const max = new Date(today);
+    max.setFullYear(max.getFullYear() + 1);
+    if (isNaN(d.getTime()) || d <= today) return { error: 'Alege o dată din viitor.' };
+    if (d > max) return { error: 'Perioada de vacanță poate fi de maximum un an.' };
+    value = until;
+  }
+
+  const svc = createServiceClient();
+  const { data: seller } = await svc.from('sellers').select('id').eq('id', user.id).maybeSingle();
+  if (!seller) return { error: 'Nu ești înregistrat ca vânzător.' };
+
+  const { error } = await svc
+    .from('sellers')
+    .update({ vacation_until: value, updated_at: new Date().toISOString() })
+    .eq('id', user.id);
+  if (error) return { error: 'Nu am putut salva. Încearcă din nou.' };
+
+  revalidatePath('/seller/dashboard');
+  revalidatePath('/');
   return { success: true };
 }
 

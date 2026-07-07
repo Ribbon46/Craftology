@@ -15,6 +15,7 @@ import { fetchProfile, fetchSellerListings } from '@/lib/data/listings';
 import { getSellerReviews, type PublicReview } from '@/actions/reviews';
 import { isAdminUser } from '@/actions/admin';
 import { deleteListing } from '@/actions/listings';
+import { getMyWishlist, toggleWishlist, type WishlistItem } from '@/actions/wishlist';
 import { BuyerOrders } from '@/components/BuyerOrders';
 
 export default function ProfilePage() {
@@ -28,6 +29,7 @@ export default function ProfilePage() {
   const [reviews, setReviews] = useState<PublicReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -81,6 +83,11 @@ export default function ProfilePage() {
     isAdminUser()
       .then((admin) => {
         if (active) setIsAdmin(admin);
+      })
+      .catch(() => {});
+    getMyWishlist()
+      .then((w) => {
+        if (active) setWishlist(w);
       })
       .catch(() => {});
     return () => {
@@ -189,11 +196,76 @@ export default function ProfilePage() {
       {/* Tabs */}
       <div className="px-4">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3 bg-surface">
+          <TabsList className="grid w-full grid-cols-4 bg-surface">
             <TabsTrigger value="listings">Produse</TabsTrigger>
+            <TabsTrigger value="wishlist">Favorite</TabsTrigger>
             <TabsTrigger value="reviews">Recenzii</TabsTrigger>
             <TabsTrigger value="transactions">Tranzacții</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="wishlist" className="space-y-3 pt-4">
+            {wishlist.length === 0 ? (
+              <div className="flex flex-col items-center text-center py-10">
+                <Star className="w-10 h-10 text-ink-faint mb-3" />
+                <p className="text-ink-soft">Nu ai produse salvate încă.</p>
+                <p className="text-xs text-ink-faint mt-1">Apasă „Salvează la favorite" pe un produs care îți place.</p>
+              </div>
+            ) : (
+              wishlist
+                .filter((w) => w.listings)
+                .map((w) => (
+                  <Card key={w.listing_id} className="overflow-hidden border-line">
+                    <div className="flex">
+                      <button
+                        onClick={() => router.push(`/listings/${w.listing_id}`)}
+                        className="relative w-24 h-24 flex-shrink-0 overflow-hidden bg-cream"
+                      >
+                        {w.listings?.image_urls?.[0] && (
+                          <Image src={w.listings.image_urls[0]} alt={w.listings.title} fill sizes="96px" className="object-cover" />
+                        )}
+                      </button>
+                      <CardContent className="p-3 flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <span className="text-xs font-medium text-ink-soft uppercase truncate">{w.listings?.category}</span>
+                          {w.listings?.status !== 'active' && (
+                            <span className="text-xs text-ink-faint flex-shrink-0">Indisponibil</span>
+                          )}
+                        </div>
+                        <h3 className="font-display text-ink line-clamp-1 mb-1">{w.listings?.title}</h3>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="price font-semibold text-ink">{formatPrice(w.listings?.price ?? 0)} lei</span>
+                          <div className="flex gap-1.5 flex-shrink-0">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 text-xs rounded-full"
+                              onClick={() => router.push(`/listings/${w.listing_id}`)}
+                            >
+                              Vezi
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 text-xs rounded-full text-ink-soft"
+                              onClick={async () => {
+                                setWishlist((prev) => prev.filter((x) => x.listing_id !== w.listing_id));
+                                try {
+                                  await toggleWishlist(w.listing_id);
+                                } catch {
+                                  /* refetch on next visit */
+                                }
+                              }}
+                            >
+                              Elimină
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </div>
+                  </Card>
+                ))
+            )}
+          </TabsContent>
 
           <TabsContent value="listings" className="space-y-3 pt-4">
             {deleteError && (

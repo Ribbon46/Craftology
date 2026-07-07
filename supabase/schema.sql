@@ -529,3 +529,26 @@ GRANT SELECT (id, listing_id, seller_id, buyer_id, buyer_email, amount_total,
               application_fee_amount, currency, status, amount_refunded,
               cancelled_by, cancel_reason, created_at, refunded_at)
   ON orders TO authenticated;
+
+-- ============ Wishlist + seller vacation mode (feature batch, iul 2026) ======
+-- Seller vacation mode: date until which the seller can't fulfil orders.
+-- Written only via the service-role server action; readable by everyone so
+-- listing pages can show the vacation banner + block checkout.
+alter table public.sellers add column if not exists vacation_until date;
+grant select (vacation_until) on public.sellers to anon, authenticated;
+
+-- Wishlist (favorites) — registered users only, strictly private per user.
+create table if not exists public.wishlist (
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  listing_id uuid not null references public.listings(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (user_id, listing_id)
+);
+alter table public.wishlist enable row level security;
+create policy "Wishlist select own" on public.wishlist
+  for select using (auth.uid() = user_id);
+create policy "Wishlist insert own" on public.wishlist
+  for insert with check (auth.uid() = user_id);
+create policy "Wishlist delete own" on public.wishlist
+  for delete using (auth.uid() = user_id);
+grant select, insert, delete on public.wishlist to authenticated;

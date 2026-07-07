@@ -60,6 +60,21 @@ export async function createCheckoutSession(listingId: string) {
       phone_number_collection: { enabled: true },
     };
 
+    // Seller on vacation → block new purchases until they're back (the UI also
+    // disables the button; this is the server-side enforcement).
+    const { data: vac } = await supabase
+      .from('sellers')
+      .select('vacation_until')
+      .eq('id', listing.seller_id)
+      .maybeSingle();
+    if (vac?.vacation_until) {
+      const until = new Date(vac.vacation_until + 'T00:00:00');
+      if (until > new Date()) {
+        const dateRo = until.toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' });
+        return { error: `Vânzătorul este momentan în vacanță și nu poate livra. Revine în data de ${dateRo}.` };
+      }
+    }
+
     // Sessions expire after 30 min (Stripe minimum) instead of the 24h default,
     // shrinking the window where two buyers can both hold open checkouts for
     // the same single-quantity handmade item.

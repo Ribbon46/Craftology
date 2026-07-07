@@ -3,7 +3,16 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Star, Share2, ArrowLeft, MessageCircle, ShoppingBag, Mail, Phone, Link2, BadgeCheck } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Star, Share2, ArrowLeft, MessageCircle, ShoppingBag, Mail, Phone, Link2, BadgeCheck, Heart, Plane } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Listing } from '@/lib/mock';
@@ -11,6 +20,8 @@ import { useSession } from '@/lib/hooks';
 import { useAuthModal } from '@/lib/auth-modal';
 import { createConversation } from '@/actions/messages';
 import { createCheckoutSession } from '@/actions/checkout';
+import { toggleWishlist, getWishlistState } from '@/actions/wishlist';
+import { sendGuestInquiry } from '@/actions/inquiries';
 import { FollowButton } from '@/components/FollowButton';
 import { ReviewSection } from '@/components/ReviewSection';
 import { ReportButton } from '@/components/ReportButton';
@@ -26,7 +37,15 @@ interface SellerContact {
   contact_other: string | null;
 }
 
-export function ListingDetailClient({ listing, sellerContact }: { listing: Listing; sellerContact?: SellerContact | null }) {
+export function ListingDetailClient({
+  listing,
+  sellerContact,
+  vacationUntil,
+}: {
+  listing: Listing;
+  sellerContact?: SellerContact | null;
+  vacationUntil?: string | null;
+}) {
   const router = useRouter();
   const { user } = useSession();
   const { setOpen } = useAuthModal();
@@ -35,8 +54,67 @@ export function ListingDetailClient({ listing, sellerContact }: { listing: Listi
   const [messaging, setMessaging] = useState(false);
   const [buying, setBuying] = useState(false);
   const [buyError, setBuyError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+  const [savingFav, setSavingFav] = useState(false);
+  // Guest inquiry dialog (visitors can message the seller without an account —
+  // the platform relays it by email, seller contact stays hidden).
+  const [guestOpen, setGuestOpen] = useState(false);
+  const [guestEmail, setGuestEmail] = useState('');
+  const [guestMsg, setGuestMsg] = useState('');
+  const [guestSending, setGuestSending] = useState(false);
+  const [guestSent, setGuestSent] = useState(false);
+  const [guestErr, setGuestErr] = useState<string | null>(null);
 
   const sold = listing.status !== 'active';
+  const vacationDate = vacationUntil ? new Date(vacationUntil + 'T00:00:00') : null;
+  const onVacation = !!vacationDate && vacationDate > new Date();
+  const vacationRo = vacationDate?.toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  useEffect(() => {
+    if (!user) {
+      setSaved(false);
+      return;
+    }
+    getWishlistState(listing.id)
+      .then((s) => setSaved(s.saved))
+      .catch(() => {});
+  }, [user, listing.id]);
+
+  const handleFav = async () => {
+    if (!user) {
+      setOpen(true);
+      return;
+    }
+    setSavingFav(true);
+    const prev = saved;
+    setSaved(!prev); // optimistic
+    try {
+      const res = await toggleWishlist(listing.id);
+      if ('error' in res) setSaved(prev);
+      else setSaved(res.saved);
+    } catch {
+      setSaved(prev);
+    } finally {
+      setSavingFav(false);
+    }
+  };
+
+  const submitGuestInquiry = async () => {
+    setGuestErr(null);
+    setGuestSending(true);
+    try {
+      const res = await sendGuestInquiry(listing.id, guestEmail, guestMsg);
+      if ('error' in res) {
+        setGuestErr(res.error);
+        return;
+      }
+      setGuestSent(true);
+    } catch {
+      setGuestErr('Mesajul nu a putut fi trimis. Încearcă din nou.');
+    } finally {
+      setGuestSending(false);
+    }
+  };
 
   // Coming BACK from Stripe via the browser back button restores this page from
   // bfcache with `buying` still true (button stuck on "Se redirecționează…").
@@ -53,7 +131,13 @@ export function ListingDetailClient({ listing, sellerContact }: { listing: Listi
   }, []);
 
   const handleMessageSeller = async () => {
-    if (!user) { setOpen(true); return; }
+    if (!user) {
+      // Visitors can ask the seller a question without an account.
+      setGuestErr(null);
+      setGuestSent(false);
+      setGuestOpen(true);
+      return;
+    }
     setBuyError(null);
     setMessaging(true);
     try {
@@ -231,13 +315,30 @@ export function ListingDetailClient({ listing, sellerContact }: { listing: Listi
               Acest produs a fost vândut și nu mai este disponibil.
             </div>
           )}
-          <Button className="w-full h-[52px] text-base rounded-full" onClick={handleBuy} disabled={buying || sold}>
+          {!sold && onVacation && (
+            <div className="p-3.5 rounded-xl bg-gold/10 border-[1.5px] border-gold/40 text-ink text-sm text-center">
+              <Plane className="w-4 h-4 inline-block mr-1.5 -mt-0.5 text-gold" />
+              Acest vânzător este momentan în vacanță și nu poate livra. Revine în data de{' '}
+              <strong>{vacationRo}</strong>.
+            </div>
+          )}
+          <Button className="w-full h-[52px] text-base rounded-full" onClick={handleBuy} disabled={buying || sold || onVacation}>
             <ShoppingBag className="w-5 h-5 mr-2" />
-            {sold ? 'Vândut' : buying ? 'Se redirecționează…' : `Cumpără · ${formatPrice(listing.price)} lei`}
+            {sold
+              ? 'Vândut'
+              : onVacation
+                ? `Revine în ${vacationRo}`
+                : buying
+                  ? 'Se redirecționează…'
+                  : `Cumpără · ${formatPrice(listing.price)} lei`}
           </Button>
           <Button variant="outline" className="w-full h-12 rounded-full" onClick={handleMessageSeller} disabled={messaging}>
             <MessageCircle className="w-4 h-4 mr-2" />
             {messaging ? 'Se deschide…' : 'Trimite mesaj'}
+          </Button>
+          <Button variant="outline" className="w-full h-12 rounded-full" onClick={handleFav} disabled={savingFav}>
+            <Heart className={`w-4 h-4 mr-2 ${saved ? 'fill-clay text-clay' : ''}`} />
+            {saved ? 'Salvat la favorite' : 'Salvează la favorite'}
           </Button>
           <Button variant="ghost" className="w-full h-11 rounded-full text-ink-soft" onClick={handleShare}>
             <Share2 className="w-4 h-4 mr-2" />
@@ -249,6 +350,65 @@ export function ListingDetailClient({ listing, sellerContact }: { listing: Listi
         </div>
         </div>
       </div>
+
+      {/* Guest inquiry — visitors message the seller without an account; the
+          platform relays by email (seller contact stays private). */}
+      <Dialog open={guestOpen} onOpenChange={(o) => !o && setGuestOpen(false)}>
+        <DialogContent className="sm:max-w-md p-6">
+          <DialogHeader className="pr-6">
+            <DialogTitle className="font-display text-xl">Întreabă vânzătorul</DialogTitle>
+            <DialogDescription>
+              Nu ai nevoie de cont — primești răspunsul pe email. Sau{' '}
+              <button
+                type="button"
+                className="text-clay underline underline-offset-2"
+                onClick={() => {
+                  setGuestOpen(false);
+                  setOpen(true);
+                }}
+              >
+                autentifică-te
+              </button>{' '}
+              pentru chat direct în aplicație.
+            </DialogDescription>
+          </DialogHeader>
+          {guestSent ? (
+            <div className="py-4 text-center">
+              <p className="text-sage font-medium mb-1">Mesajul a fost trimis! ✓</p>
+              <p className="text-sm text-ink-soft">Vânzătorul îți va răspunde pe adresa de email lăsată.</p>
+              <Button variant="outline" className="rounded-full mt-4" onClick={() => setGuestOpen(false)}>
+                Închide
+              </Button>
+            </div>
+          ) : (
+            <>
+              <Input
+                type="email"
+                placeholder="Emailul tău (pentru răspuns)"
+                value={guestEmail}
+                onChange={(e) => setGuestEmail(e.target.value)}
+              />
+              <Textarea
+                rows={4}
+                placeholder={`Întrebarea ta despre „${listing.title}"…`}
+                value={guestMsg}
+                onChange={(e) => setGuestMsg(e.target.value)}
+                maxLength={1000}
+                className="resize-none"
+              />
+              {guestErr && <p className="text-xs text-destructive">{guestErr}</p>}
+              <div className="flex justify-end gap-2 pt-1">
+                <Button variant="outline" className="rounded-full" onClick={() => setGuestOpen(false)}>
+                  Renunță
+                </Button>
+                <Button className="rounded-full" disabled={guestSending} onClick={submitGuestInquiry}>
+                  {guestSending ? 'Se trimite…' : 'Trimite mesajul'}
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

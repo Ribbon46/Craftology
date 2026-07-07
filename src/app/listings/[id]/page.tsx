@@ -72,6 +72,7 @@ export default async function ListingDetailPage({ params }: Params) {
             ? { company_name: sellerContact.company_name, contact_email: null, contact_phone: null, contact_other: null }
             : null
         }
+        vacationUntil={sellerContact?.vacation_until ?? null}
       />
     </>
   );

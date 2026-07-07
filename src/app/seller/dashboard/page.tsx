@@ -14,6 +14,7 @@ import { createStripeLoginLink } from '@/actions/connect';
 import { fetchSellerListings } from '@/lib/data/listings';
 import { SellerOrders } from '@/components/SellerOrders';
 import { CloseShopButton } from '@/components/CloseShopButton';
+import { VacationCard } from '@/components/VacationCard';
 import { Listing } from '@/lib/mock';
 
 export default function SellerDashboardPage() {
@@ -122,6 +123,8 @@ export default function SellerDashboardPage() {
       </div>
 
       <SellerOrders />
+
+      <VacationCard initialUntil={seller.vacation_until ?? null} />
 
       <div className="flex items-center justify-between mb-3">
         <h2 className="font-display text-lg text-ink">Produsele tale</h2>

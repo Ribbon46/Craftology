@@ -81,6 +81,7 @@ export interface SellerPublic {
   contact_phone: string | null;
   contact_other: string | null;
   status: string;
+  vacation_until: string | null;
 }
 
 /** Public seller info (company + contact methods) for buyer display on a
@@ -90,7 +91,7 @@ export async function fetchSellerPublicById(id: string): Promise<SellerPublic | 
     try {
       const { data, error } = await anon()
         .from('sellers')
-        .select('id, company_name, contact_email, contact_phone, contact_other, status')
+        .select('id, company_name, contact_email, contact_phone, contact_other, status, vacation_until')
         .eq('id', id)
         .maybeSingle();
       if (!error && data) return data as SellerPublic;

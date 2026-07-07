@@ -38,10 +38,23 @@ export function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 }
 
-export async function sendEmail(opts: { to: string; subject: string; html?: string; text?: string }) {
+export async function sendEmail(opts: {
+  to: string;
+  subject: string;
+  html?: string;
+  text?: string;
+  replyTo?: string;
+}) {
   if (!isEmailConfigured()) return { skipped: true as const };
   try {
-    await getTransport().sendMail({ from: FROM, to: opts.to, subject: opts.subject, html: opts.html, text: opts.text });
+    await getTransport().sendMail({
+      from: FROM,
+      to: opts.to,
+      subject: opts.subject,
+      html: opts.html,
+      text: opts.text,
+      replyTo: opts.replyTo,
+    });
     return { sent: true as const };
   } catch (e) {
     console.error('sendEmail failed:', e);
