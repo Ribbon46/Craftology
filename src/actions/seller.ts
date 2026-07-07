@@ -194,6 +194,9 @@ export async function setVacationMode(until: string | null): Promise<{ success: 
 
   revalidatePath('/seller/dashboard');
   revalidatePath('/');
+  // Listing pages are ISR-cached (300s) and render the vacation banner from
+  // the seller row — invalidate them all so the banner appears immediately.
+  revalidatePath('/listings/[id]', 'page');
   return { success: true };
 }
 
