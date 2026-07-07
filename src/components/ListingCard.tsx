@@ -60,11 +60,13 @@ export function ListingCard({ listing, index = 0 }: { listing: Listing; index?: 
               <img src={listing.profiles.avatar_url} alt="" className="w-full h-full object-cover" />
             ) : (
               <span className="grid place-items-center w-full h-full text-[9px] font-semibold text-ink-soft">
-                {listing.profiles?.username?.charAt(0).toUpperCase() ?? 'V'}
+                {(listing.profiles?.full_name || listing.profiles?.username)?.charAt(0).toUpperCase() ?? 'V'}
               </span>
             )}
           </div>
-          <span className="text-[11px] text-ink-soft truncate min-w-0">{listing.profiles?.username ?? 'vânzător'}</span>
+          <span className="text-[11px] text-ink-soft truncate min-w-0">
+            {listing.profiles?.full_name || listing.profiles?.username || 'vânzător'}
+          </span>
           {listing.profiles?.rating != null && (
             <span className="ml-auto flex items-center gap-0.5 text-[11px] font-medium text-gold flex-shrink-0">
               <Star className="w-3 h-3 fill-gold" />

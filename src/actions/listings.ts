@@ -69,10 +69,10 @@ export async function createListing(formData: FormData) {
   if (images.length === 0) {
     return { error: 'Vă rugăm să încărcați cel puțin o imagine' };
   }
-  // The client Dropzone caps at 5, but this action is a POST endpoint that can
+  // The client Dropzone caps at 10, but this action is a POST endpoint that can
   // be called directly — enforce the cap server-side too (storage-abuse guard).
-  if (images.length > 5) {
-    return { error: 'Poți încărca maximum 5 imagini.' };
+  if (images.length > 10) {
+    return { error: 'Poți încărca maximum 10 imagini.' };
   }
 
   // Whitelist real raster image types. The stored extension is derived from

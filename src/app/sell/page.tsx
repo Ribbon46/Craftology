@@ -58,28 +58,29 @@ export default function SellPage() {
     setFiles((prev) => prev.filter((f) => !removedFiles.includes(f)));
   }, []);
 
-  // Downscale a photo in the browser (max edge 1600px, JPEG) so 5 phone photos
-  // (2–8 MB each) fit under the server action's 4 MB body cap. Mirrors the
-  // server-side sharp resize; falls back to the original on any failure.
-  const compressImage = async (file: File): Promise<File> => {
+  // Downscale a photo in the browser (JPEG) so up to 10 phone photos (2–25 MB
+  // each) fit under the server action's 4 MB body cap. Mirrors the server-side
+  // sharp resize; falls back to the original on any failure.
+  const compressTo = async (file: File, maxEdge: number, quality: number, skipUnder: number): Promise<File> => {
     if (!file.type.startsWith('image/') || file.type === 'image/gif') return file;
-    if (file.size <= 400 * 1024) return file;
+    if (file.size <= skipUnder) return file;
     try {
       const bmp = await createImageBitmap(file);
-      const scale = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+      const scale = Math.min(1, maxEdge / Math.max(bmp.width, bmp.height));
       const canvas = document.createElement('canvas');
       canvas.width = Math.max(1, Math.round(bmp.width * scale));
       canvas.height = Math.max(1, Math.round(bmp.height * scale));
       canvas.getContext('2d')?.drawImage(bmp, 0, 0, canvas.width, canvas.height);
-      const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, 'image/jpeg', 0.82));
+      const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, 'image/jpeg', quality));
       if (blob && blob.size < file.size) {
         return new File([blob], file.name.replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg' });
       }
     } catch {
-      // canvas/bitmap unsupported → send the original
+      // canvas/bitmap unsupported (e.g. HEIC on some browsers) → send original
     }
     return file;
   };
+  const compressImage = (f: File) => compressTo(f, 1600, 0.82, 400 * 1024);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,8 +129,8 @@ export default function SellPage() {
       setIsSubmitting(false);
       return;
     }
-    if (files.length > 5) {
-      setError('Poți încărca maxim 5 imagini');
+    if (files.length > 10) {
+      setError('Poți încărca maximum 10 imagini');
       setIsSubmitting(false);
       return;
     }
@@ -145,16 +146,24 @@ export default function SellPage() {
       formData.append('category', category);
       formData.append('subcategory', subcategory);
 
-      const compressed = await Promise.all(files.map(compressImage));
+      let compressed = await Promise.all(files.map(compressImage));
+      // Adaptive second pass: with many photos the batch can still exceed the
+      // 4 MB request cap — re-compress smaller/stronger until it fits.
+      const total = (arr: File[]) => arr.reduce((s, f) => s + f.size, 0);
+      if (total(compressed) > 3.8 * 1024 * 1024) {
+        compressed = await Promise.all(compressed.map((f) => compressTo(f, 1280, 0.72, 200 * 1024)));
+      }
+      if (total(compressed) > 3.8 * 1024 * 1024) {
+        compressed = await Promise.all(compressed.map((f) => compressTo(f, 1024, 0.65, 120 * 1024)));
+      }
       const oversized = compressed.find((f) => f.size > 5 * 1024 * 1024);
       if (oversized) {
         setError(`Fișierul ${oversized.name} este prea mare chiar și după comprimare (max 5MB).`);
         setIsSubmitting(false);
         return;
       }
-      const totalBytes = compressed.reduce((s, f) => s + f.size, 0);
-      if (totalBytes > 3.8 * 1024 * 1024) {
-        setError('Fotografiile sunt prea mari împreună. Încearcă cu mai puține imagini sau imagini mai mici.');
+      if (total(compressed) > 3.8 * 1024 * 1024) {
+        setError('Fotografiile sunt prea mari împreună. Încearcă cu mai puține imagini.');
         setIsSubmitting(false);
         return;
       }
@@ -381,10 +390,10 @@ export default function SellPage() {
               <Dropzone
                 onFilesAdded={handleFilesAdded}
                 onFilesRemoved={handleFilesRemoved}
-                maxFiles={5}
-                // Phones routinely produce 5–12 MB photos; accept them here and
-                // compress client-side at submit (→ ~300 KB each).
-                maxFileSize={15 * 1024 * 1024}
+                maxFiles={10}
+                // Phones routinely produce 5–25 MB photos; accept them here and
+                // compress client-side at submit (→ ~200–400 KB each).
+                maxFileSize={25 * 1024 * 1024}
               />
 
               {/* Submit */}
