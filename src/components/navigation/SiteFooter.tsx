@@ -13,7 +13,7 @@ export function SiteFooter() {
           <p className="font-display text-2xl text-ink">{APP_NAME}</p>
           <p className="text-[10px] uppercase tracking-[0.28em] text-clay/80 mt-1 mb-3">powered by Deco Kubik</p>
           <p className="text-sm text-ink-soft leading-relaxed">
-            Un atelier digital de produse handmade românești — bijuterii, lumânări, accesorii — de la creatori
+            Un atelier digital de produse handmade românești: bijuterii, lumânări și accesorii de la creatori
             verificați.
           </p>
         </div>

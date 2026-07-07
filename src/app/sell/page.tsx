@@ -58,6 +58,29 @@ export default function SellPage() {
     setFiles((prev) => prev.filter((f) => !removedFiles.includes(f)));
   }, []);
 
+  // Downscale a photo in the browser (max edge 1600px, JPEG) so 5 phone photos
+  // (2–8 MB each) fit under the server action's 4 MB body cap. Mirrors the
+  // server-side sharp resize; falls back to the original on any failure.
+  const compressImage = async (file: File): Promise<File> => {
+    if (!file.type.startsWith('image/') || file.type === 'image/gif') return file;
+    if (file.size <= 400 * 1024) return file;
+    try {
+      const bmp = await createImageBitmap(file);
+      const scale = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(bmp.width * scale));
+      canvas.height = Math.max(1, Math.round(bmp.height * scale));
+      canvas.getContext('2d')?.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+      const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, 'image/jpeg', 0.82));
+      if (blob && blob.size < file.size) {
+        return new File([blob], file.name.replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg' });
+      }
+    } catch {
+      // canvas/bitmap unsupported → send the original
+    }
+    return file;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -113,7 +136,14 @@ export default function SellPage() {
       formData.append('category', category);
       formData.append('subcategory', subcategory);
 
-      files.forEach((file) => {
+      const compressed = await Promise.all(files.map(compressImage));
+      const totalBytes = compressed.reduce((s, f) => s + f.size, 0);
+      if (totalBytes > 3.8 * 1024 * 1024) {
+        setError('Fotografiile sunt prea mari împreună. Încearcă cu mai puține imagini sau imagini mai mici.');
+        setIsSubmitting(false);
+        return;
+      }
+      compressed.forEach((file) => {
         formData.append('images', file);
       });
 
@@ -138,7 +168,10 @@ export default function SellPage() {
         router.push('/');
       }, 2000);
     } catch (err) {
-      setError('A apărut o eroare la publicarea produsului');
+      // A 413 here means the upload was still too large for the server.
+      setError(
+        'A apărut o eroare la publicarea produsului. Dacă se repetă, încearcă cu mai puține fotografii sau fotografii mai mici.',
+      );
       setIsSubmitting(false);
     }
   };

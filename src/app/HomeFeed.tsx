@@ -136,7 +136,7 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
             </h1>
           </div>
           <p className="hidden lg:block text-lg text-ink-soft mt-4 max-w-xl leading-relaxed">
-            Produse handmade de la creatori români verificați — fiecare produs este lucrat cu pasiune.
+            Produse handmade de la creatori români verificați. Fiecare produs este lucrat cu pasiune.
           </p>
           {!isInitialLoading && (
             <p className="text-sm text-ink-soft mt-1 lg:mt-5">
@@ -158,7 +158,26 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
           </div>
         )}
 
-        {activeCategory === 'all' && activeSub === 'all' && <QRShare />}
+        {activeCategory === 'all' && activeSub === 'all' && (
+          <div className="flex flex-col sm:flex-row sm:items-stretch gap-3 mb-5 lg:mb-7 [&>*]:mb-0">
+            <QRShare />
+            {/* Owner requirement: a big, obvious return/refund entry point on the
+                home screen (consumer-rights visibility), not just in the account. */}
+            <div className="flex flex-col justify-center rounded-2xl border-[1.5px] border-line-strong bg-surface/70 shadow-[3px_3px_0_0_var(--press-soft)] p-4 max-w-sm">
+              <p className="font-display text-ink leading-tight mb-0.5">Ai comandat ceva?</p>
+              <p className="text-xs text-ink-soft mb-3">Ai drept de retur în 14 zile de la primire.</p>
+              <a
+                href="/profile"
+                className="inline-flex items-center justify-center rounded-full border-[1.5px] border-clay/45 text-clay px-4 py-2 text-sm font-medium hover:bg-clay hover:text-paper transition-colors"
+              >
+                Cerere retur / rambursare
+              </a>
+              <p className="text-[11px] text-ink-faint mt-2">
+                Fără cont? Folosește linkul din pagina comenzii sau scrie-ne la info.craftology.shop@gmail.com.
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="mb-5 lg:mb-7">
           <FeedControls

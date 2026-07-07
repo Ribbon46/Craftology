@@ -27,7 +27,7 @@ const hanken = Hanken_Grotesk({
 });
 
 const DESCRIPTION =
-  'Marketplace curat de produse handmade românești — bijuterii, haine, lumânări, accesorii și frumusețe. Vânzători verificați.';
+  'Marketplace de produse handmade românești: accesorii, haine și decorațiuni pentru casă, de la vânzători verificați.';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://craftology-peach.vercel.app'),

@@ -21,20 +21,33 @@ function admin() {
 }
 
 export async function POST(req: NextRequest) {
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-  if (!isStripeConfigured() || !stripe || !webhookSecret) {
+  // Two endpoints can point here with different signing secrets: the original
+  // platform-account endpoint (STRIPE_WEBHOOK_SECRET) and the connected-accounts
+  // endpoint (STRIPE_CONNECT_WEBHOOK_SECRET) that carries marketplace-seller
+  // events. Verification tries each configured secret.
+  const secrets = [process.env.STRIPE_WEBHOOK_SECRET, process.env.STRIPE_CONNECT_WEBHOOK_SECRET].filter(
+    (s): s is string => !!s,
+  );
+  if (!isStripeConfigured() || !stripe || secrets.length === 0) {
     return NextResponse.json({ received: true, note: 'stripe webhook not configured' });
   }
 
   const signature = req.headers.get('stripe-signature');
   const rawBody = await req.text();
 
-  let event;
-  try {
-    event = stripe.webhooks.constructEvent(rawBody, signature ?? '', webhookSecret);
-  } catch (err) {
+  let event: Stripe.Event | null = null;
+  let lastErr: Error | null = null;
+  for (const secret of secrets) {
+    try {
+      event = stripe.webhooks.constructEvent(rawBody, signature ?? '', secret);
+      break;
+    } catch (err) {
+      lastErr = err as Error;
+    }
+  }
+  if (!event) {
     return NextResponse.json(
-      { error: `Webhook signature verification failed: ${(err as Error).message}` },
+      { error: `Webhook signature verification failed: ${lastErr?.message ?? 'no matching secret'}` },
       { status: 400 },
     );
   }

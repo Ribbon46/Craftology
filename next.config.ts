@@ -1,6 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    serverActions: {
+      // Default is 1 MB, which rejected every real product photo upload with
+      // "Body exceeded 1 MB limit" (413). 4 MB is the safe ceiling under
+      // Vercel's ~4.5 MB request cap; the sell form also compresses images
+      // client-side so 5 photos stay well below this.
+      bodySizeLimit: "4mb",
+    },
+  },
   images: {
     // Hosts the app actually serves images from: Supabase storage (real
     // uploads), placehold.co (seed/mock listings), ui-avatars.com (avatars).
