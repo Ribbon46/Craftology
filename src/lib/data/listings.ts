@@ -16,6 +16,8 @@ const SELECT =
 export interface ListingsPage {
   data: Listing[];
   nextCursor: number | null;
+  /** Total matching rows (first page only) — drives "N produse disponibile". */
+  total?: number | null;
 }
 
 function isRealCategory(category?: string): category is string {
@@ -47,7 +49,7 @@ export async function fetchListingsPage(
   if (isSupabaseConfigured()) {
     const supabase = createClient();
     // Filters first (FilterBuilder), then ordering (TransformBuilder), then range.
-    let fq = supabase.from('listings').select(SELECT).eq('status', 'active');
+    let fq = supabase.from('listings').select(SELECT, { count: 'exact' }).eq('status', 'active');
     if (isRealCategory(opts.category)) fq = fq.eq('category', opts.category);
     if (opts.subcategory) fq = fq.eq('subcategory', opts.subcategory);
     if (opts.minPrice != null) fq = fq.gte('price', opts.minPrice);
@@ -59,12 +61,12 @@ export async function fetchListingsPage(
           ? fq.order('price', { ascending: false }).order('created_at', { ascending: false })
           : fq.order('created_at', { ascending: false });
 
-    const { data, error } = await ordered.range(offset, offset + PAGE_SIZE - 1);
+    const { data, error, count } = await ordered.range(offset, offset + PAGE_SIZE - 1);
     // Live mode: a failed read THROWS (React Query retries / keeps previous
     // data) — never silently serve the fake demo catalog to real users.
     if (error) throw new Error(error.message);
     const rows = (data ?? []) as unknown as Listing[];
-    return { data: rows, nextCursor: rows.length === PAGE_SIZE ? offset + PAGE_SIZE : null };
+    return { data: rows, nextCursor: rows.length === PAGE_SIZE ? offset + PAGE_SIZE : null, total: count };
   }
 
   let filtered = isRealCategory(opts.category)
@@ -75,7 +77,7 @@ export async function fetchListingsPage(
   if (opts.maxPrice != null) filtered = filtered.filter((l) => l.price <= opts.maxPrice!);
   filtered = sortListings(filtered, sort);
   const slice = filtered.slice(offset, offset + PAGE_SIZE);
-  return { data: slice, nextCursor: offset + PAGE_SIZE < filtered.length ? offset + PAGE_SIZE : null };
+  return { data: slice, nextCursor: offset + PAGE_SIZE < filtered.length ? offset + PAGE_SIZE : null, total: filtered.length };
 }
 
 export async function fetchListingById(id: string): Promise<Listing | null> {

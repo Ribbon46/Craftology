@@ -51,16 +51,16 @@ export async function fetchListingsPageServer(
     try {
       let query = anon()
         .from('listings')
-        .select(SELECT)
+        .select(SELECT, { count: 'exact' })
         .eq('status', 'active')
         .order('created_at', { ascending: false })
         .range(offset, offset + PAGE_SIZE - 1);
       if (isRealCategory(opts.category)) query = query.eq('category', opts.category);
 
-      const { data, error } = await query;
+      const { data, error, count } = await query;
       if (!error && data) {
         const rows = data as unknown as Listing[];
-        return { data: rows, nextCursor: rows.length === PAGE_SIZE ? offset + PAGE_SIZE : null };
+        return { data: rows, nextCursor: rows.length === PAGE_SIZE ? offset + PAGE_SIZE : null, total: count };
       }
     } catch {
       // fall through to mock
@@ -71,7 +71,7 @@ export async function fetchListingsPageServer(
     ? MOCK_LISTINGS.filter((l) => l.category === opts.category)
     : MOCK_LISTINGS;
   const slice = filtered.slice(offset, offset + PAGE_SIZE);
-  return { data: slice, nextCursor: offset + PAGE_SIZE < filtered.length ? offset + PAGE_SIZE : null };
+  return { data: slice, nextCursor: offset + PAGE_SIZE < filtered.length ? offset + PAGE_SIZE : null, total: filtered.length };
 }
 
 export interface SellerPublic {

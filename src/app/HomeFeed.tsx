@@ -138,11 +138,14 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
           <p className="hidden lg:block text-lg text-ink-soft mt-4 max-w-xl leading-relaxed">
             Produse handmade de la creatori români verificați. Fiecare produs este lucrat cu pasiune.
           </p>
-          {!isInitialLoading && (
-            <p className="text-sm text-ink-soft mt-1 lg:mt-5">
-              {listings.length} {listings.length === 1 ? 'produs disponibil' : 'produse disponibile'}
-            </p>
-          )}
+          {!isInitialLoading && (() => {
+            const total = data?.pages?.[0]?.total ?? listings.length;
+            return (
+              <p className="text-sm text-ink-soft mt-1 lg:mt-5">
+                {total} {total === 1 ? 'produs disponibil' : 'produse disponibile'}
+              </p>
+            );
+          })()}
           <div className="hidden lg:block rule-craft w-24 mt-7" />
         </header>
 
