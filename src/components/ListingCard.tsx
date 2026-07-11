@@ -50,7 +50,17 @@ export function ListingCard({ listing, index = 0 }: { listing: Listing; index?: 
           {listing.title}
         </h3>
         <div className="flex items-baseline justify-between gap-2">
-          <span className="price text-lg lg:text-xl font-semibold text-ink">{formatPrice(listing.price)}</span>
+          <span className="flex items-baseline gap-1.5 flex-wrap min-w-0">
+            <span className="price text-lg lg:text-xl font-semibold text-ink">{formatPrice(listing.price)}</span>
+            {listing.original_price != null && listing.original_price > listing.price && (
+              <>
+                <s className="price text-xs text-ink-faint">{formatPrice(listing.original_price)}</s>
+                <span className="px-1.5 py-px rounded-full bg-clay text-paper text-[10px] font-bold">
+                  -{Math.round((1 - listing.price / listing.original_price) * 100)}%
+                </span>
+              </>
+            )}
+          </span>
           <span className="hidden lg:block text-xs text-ink-faint">{formatTimeAgo(listing.created_at)}</span>
         </div>
         <div className="flex items-center gap-1.5 mt-2.5 pt-2.5 border-t border-line/70 min-w-0">

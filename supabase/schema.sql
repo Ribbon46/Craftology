@@ -552,3 +552,10 @@ create policy "Wishlist insert own" on public.wishlist
 create policy "Wishlist delete own" on public.wishlist
   for delete using (auth.uid() = user_id);
 grant select, insert, delete on public.wishlist to authenticated;
+
+-- ============ Seller discounts (iul 2026) =================================
+-- When original_price is set and greater than price, the UI shows the old
+-- price struck through + a percentage-off badge. Managed via updateListing.
+alter table public.listings add column if not exists original_price numeric(10,2);
+alter table public.listings add constraint listings_discount_sane
+  check (original_price is null or original_price > 0);

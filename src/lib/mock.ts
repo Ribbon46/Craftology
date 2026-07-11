@@ -15,6 +15,8 @@ export interface Listing {
   title: string;
   description: string;
   price: number;
+  /** When set and > price: the pre-discount price (UI shows strikethrough + % off). */
+  original_price?: number | null;
   category: string;
   subcategory?: string | null;
   image_urls: string[];

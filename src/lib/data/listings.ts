@@ -10,7 +10,7 @@ const PAGE_SIZE = 20;
 
 // Embeds the seller profile via the explicit FK so the join is unambiguous.
 const SELECT =
-  'id, title, description, price, category, subcategory, image_urls, seller_id, status, created_at, ' +
+  'id, title, description, price, original_price, category, subcategory, image_urls, seller_id, status, created_at, ' +
   'profiles:profiles!listings_seller_id_fkey ( id, username, full_name, avatar_url, rating )';
 
 export interface ListingsPage {

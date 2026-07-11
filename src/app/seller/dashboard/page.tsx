@@ -15,6 +15,7 @@ import { fetchSellerListings } from '@/lib/data/listings';
 import { SellerOrders } from '@/components/SellerOrders';
 import { CloseShopButton } from '@/components/CloseShopButton';
 import { VacationCard } from '@/components/VacationCard';
+import { ImportCatalogCard } from '@/components/ImportCatalogCard';
 import { Listing } from '@/lib/mock';
 
 export default function SellerDashboardPage() {
@@ -125,6 +126,8 @@ export default function SellerDashboardPage() {
       <SellerOrders />
 
       <VacationCard initialUntil={seller.vacation_until ?? null} />
+
+      <ImportCatalogCard />
 
       <div className="flex items-center justify-between mb-3">
         <h2 className="font-display text-lg text-ink">Produsele tale</h2>

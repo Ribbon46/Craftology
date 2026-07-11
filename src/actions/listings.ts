@@ -224,6 +224,78 @@ export async function deleteListing(listingId: string) {
   return { success: true };
 }
 
+/**
+ * Edit an own listing (title/description/price/category + discount).
+ * Discount model: `originalPrice` set and > price → UI shows the old price
+ * struck through with a percentage-off badge; null clears the discount.
+ * Images are not editable here (v1) — sellers re-create for photo changes.
+ */
+export async function updateListing(
+  listingId: string,
+  fields: {
+    title: string;
+    description: string;
+    price: number;
+    category: string;
+    subcategory: string;
+    originalPrice: number | null;
+  },
+) {
+  const supabase = await createServerClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) return { error: 'Autentificare necesară' };
+
+  const validated = listingFormSchema.safeParse({
+    title: fields.title,
+    description: fields.description,
+    price: Number(fields.price),
+    category: fields.category,
+    subcategory: fields.subcategory,
+  });
+  if (!validated.success) {
+    return { error: 'Date invalide', details: validated.error.flatten().fieldErrors };
+  }
+
+  let originalPrice: number | null = null;
+  if (fields.originalPrice != null) {
+    const op = Number(fields.originalPrice);
+    if (!Number.isFinite(op) || op <= validated.data.price) {
+      return { error: 'Prețul vechi trebuie să fie mai mare decât prețul redus.' };
+    }
+    if (op > 1000000) return { error: 'Preț invalid.' };
+    originalPrice = Math.round(op * 100) / 100;
+  }
+
+  const { data: listing } = await supabase
+    .from('listings')
+    .select('seller_id')
+    .eq('id', listingId)
+    .maybeSingle();
+  if (!listing) return { error: 'Anunțul nu a fost găsit' };
+  if (listing.seller_id !== user.id) {
+    return { error: 'Nu aveți permisiunea să modificați acest anunț' };
+  }
+
+  const { error: updateError } = await supabase
+    .from('listings')
+    .update({
+      title: validated.data.title,
+      description: validated.data.description,
+      price: validated.data.price,
+      category: validated.data.category,
+      subcategory: validated.data.subcategory,
+      original_price: originalPrice,
+    })
+    .eq('id', listingId);
+  if (updateError) {
+    return { error: `Eroare la salvarea modificărilor: ${updateError.message}` };
+  }
+
+  revalidatePath('/');
+  revalidatePath(`/listings/${listingId}`);
+  return { success: true };
+}
+
 export async function updateListingStatus(listingId: string, status: 'active' | 'sold') {
   const supabase = await createServerClient();
 

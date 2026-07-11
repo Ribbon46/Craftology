@@ -235,9 +235,17 @@ export function ListingDetailClient({
             )}
           </div>
           <h1 className="font-display text-[28px] lg:text-[40px] leading-tight text-ink text-balance mb-3">{listing.title}</h1>
-          <div className="flex items-baseline gap-1.5">
+          <div className="flex items-baseline gap-2 flex-wrap">
             <span className="price text-4xl font-semibold text-clay">{formatPrice(listing.price)}</span>
             <span className="text-ink-soft text-lg">lei</span>
+            {listing.original_price != null && listing.original_price > listing.price && (
+              <>
+                <s className="price text-xl text-ink-faint">{formatPrice(listing.original_price)} lei</s>
+                <span className="px-2 py-0.5 rounded-full bg-clay text-paper text-xs font-bold">
+                  -{Math.round((1 - listing.price / listing.original_price) * 100)}%
+                </span>
+              </>
+            )}
           </div>
 
           {/* Seller */}
@@ -344,6 +352,14 @@ export function ListingDetailClient({
             <Share2 className="w-4 h-4 mr-2" />
             Partajează
           </Button>
+          {user?.id === listing.seller_id && (
+            <Link
+              href={`/listings/${listing.id}/edit`}
+              className="flex items-center justify-center w-full h-12 rounded-full border-[1.5px] border-clay/45 text-clay text-sm font-medium hover:bg-clay hover:text-paper transition-colors"
+            >
+              Modifică produsul / Oferă discount
+            </Link>
+          )}
           <div className="pt-1 text-center">
             <ReportButton listingId={listing.id} />
           </div>
