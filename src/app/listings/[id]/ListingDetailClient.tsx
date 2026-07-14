@@ -66,6 +66,14 @@ export function ListingDetailClient({
   const [guestErr, setGuestErr] = useState<string | null>(null);
 
   const sold = listing.status !== 'active';
+  // Owner sees a management view (no buy/message/save on their own product);
+  // ?preview=1 shows them the buyer view instead (opened from the editor).
+  const [preview, setPreview] = useState(false);
+  useEffect(() => {
+    setPreview(new URLSearchParams(window.location.search).get('preview') === '1');
+  }, []);
+  const isOwner = !!user && user.id === listing.seller_id;
+  const ownerView = isOwner && !preview;
   const vacationDate = vacationUntil ? new Date(vacationUntil + 'T00:00:00') : null;
   const onVacation = !!vacationDate && vacationDate > new Date();
   const vacationRo = vacationDate?.toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -303,7 +311,8 @@ export function ListingDetailClient({
         {/* Description */}
         <div className="mt-6">
           <h3 className="font-display text-lg text-ink mb-2">Descriere</h3>
-          <p className="text-[15px] text-ink-soft leading-relaxed">{listing.description}</p>
+          {/* whitespace-pre-line: keep the seller's paragraphs/line breaks */}
+          <p className="text-[15px] text-ink-soft leading-relaxed whitespace-pre-line">{listing.description}</p>
           <div className="rule-craft mt-5 mb-4" />
           <p className="text-xs text-ink-faint">
             Adăugat pe {new Date(listing.created_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' })}
@@ -315,6 +324,14 @@ export function ListingDetailClient({
 
         {/* Actions */}
         <div className="mt-7 space-y-3">
+          {isOwner && preview && (
+            <div className="p-3 rounded-xl bg-sage/10 border-[1.5px] border-sage/40 text-ink text-sm text-center">
+              Mod previzualizare — așa văd cumpărătorii pagina ta. Butoanele sunt dezactivate.{' '}
+              <Link href={`/listings/${listing.id}/edit`} className="text-clay underline underline-offset-2">
+                Înapoi la editare
+              </Link>
+            </div>
+          )}
           {buyError && (
             <div className="p-3 rounded-xl bg-clay-soft text-clay-deep text-sm text-center">{buyError}</div>
           )}
@@ -330,39 +347,56 @@ export function ListingDetailClient({
               <strong>{vacationRo}</strong>.
             </div>
           )}
-          <Button className="w-full h-[52px] text-base rounded-full" onClick={handleBuy} disabled={buying || sold || onVacation}>
-            <ShoppingBag className="w-5 h-5 mr-2" />
-            {sold
-              ? 'Vândut'
-              : onVacation
-                ? `Revine în ${vacationRo}`
-                : buying
-                  ? 'Se redirecționează…'
-                  : `Cumpără · ${formatPrice(listing.price)} lei`}
-          </Button>
-          <Button variant="outline" className="w-full h-12 rounded-full" onClick={handleMessageSeller} disabled={messaging}>
-            <MessageCircle className="w-4 h-4 mr-2" />
-            {messaging ? 'Se deschide…' : 'Trimite mesaj'}
-          </Button>
-          <Button variant="outline" className="w-full h-12 rounded-full" onClick={handleFav} disabled={savingFav}>
-            <Heart className={`w-4 h-4 mr-2 ${saved ? 'fill-clay text-clay' : ''}`} />
-            {saved ? 'Salvat la favorite' : 'Salvează la favorite'}
-          </Button>
+
+          {ownerView ? (
+            /* The seller's own product → management view, no buyer actions. */
+            <>
+              <div className="p-3 rounded-xl bg-cream border border-line text-ink-soft text-sm text-center">
+                Acesta este produsul tău.
+              </div>
+              <Link
+                href={`/listings/${listing.id}/edit`}
+                className="flex items-center justify-center w-full h-12 rounded-full bg-clay text-paper text-sm font-medium border-[1.5px] border-edge shadow-[3px_3px_0_0_var(--press)] hover:bg-clay-deep transition-colors"
+              >
+                Modifică produsul / Oferă discount
+              </Link>
+            </>
+          ) : (
+            <>
+              <Button
+                className="w-full h-[52px] text-base rounded-full"
+                onClick={handleBuy}
+                disabled={buying || sold || onVacation || preview}
+              >
+                <ShoppingBag className="w-5 h-5 mr-2" />
+                {sold
+                  ? 'Vândut'
+                  : onVacation
+                    ? `Revine în ${vacationRo}`
+                    : buying
+                      ? 'Se redirecționează…'
+                      : `Cumpără · ${formatPrice(listing.price)} lei`}
+              </Button>
+              <Button variant="outline" className="w-full h-12 rounded-full" onClick={handleMessageSeller} disabled={messaging || preview}>
+                <MessageCircle className="w-4 h-4 mr-2" />
+                {messaging ? 'Se deschide…' : 'Trimite mesaj'}
+              </Button>
+              <Button variant="outline" className="w-full h-12 rounded-full" onClick={handleFav} disabled={savingFav || preview}>
+                <Heart className={`w-4 h-4 mr-2 ${saved ? 'fill-clay text-clay' : ''}`} />
+                {saved ? 'Salvat la favorite' : 'Salvează la favorite'}
+              </Button>
+            </>
+          )}
+
           <Button variant="ghost" className="w-full h-11 rounded-full text-ink-soft" onClick={handleShare}>
             <Share2 className="w-4 h-4 mr-2" />
             Partajează
           </Button>
-          {user?.id === listing.seller_id && (
-            <Link
-              href={`/listings/${listing.id}/edit`}
-              className="flex items-center justify-center w-full h-12 rounded-full border-[1.5px] border-clay/45 text-clay text-sm font-medium hover:bg-clay hover:text-paper transition-colors"
-            >
-              Modifică produsul / Oferă discount
-            </Link>
+          {!isOwner && (
+            <div className="pt-1 text-center">
+              <ReportButton listingId={listing.id} />
+            </div>
           )}
-          <div className="pt-1 text-center">
-            <ReportButton listingId={listing.id} />
-          </div>
         </div>
         </div>
       </div>

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Search, SearchX } from 'lucide-react';
 import { CATEGORIES, SUBCATEGORIES, type CategoryKey } from '@/config/app';
-import { searchListings, type SortOption } from '@/lib/data/listings';
+import { searchListings, fetchArtisans, type ArtisanOption, type SortOption } from '@/lib/data/listings';
 import { Listing } from '@/lib/mock';
 import { CategoryChips } from '@/components/CategoryChips';
 import { SortSelect } from '@/components/SortSelect';
@@ -19,8 +19,14 @@ export default function SearchPage() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedSub, setSelectedSub] = useState('all');
   const [sort, setSort] = useState<SortOption>('newest');
+  const [artisan, setArtisan] = useState('');
+  const [artisans, setArtisans] = useState<ArtisanOption[]>([]);
   const [results, setResults] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchArtisans().then(setArtisans).catch(() => {});
+  }, []);
 
   const onCategoryChange = (cat: string) => {
     setSelectedCategory(cat);
@@ -31,7 +37,7 @@ export default function SearchPage() {
     let active = true;
     setLoading(true);
     const sub = selectedSub !== 'all' ? selectedSub : undefined;
-    searchListings(searchQuery, selectedCategory, sort, sub)
+    searchListings(searchQuery, selectedCategory, sort, sub, artisan || undefined)
       .then((r) => {
         if (active) setResults(r);
       })
@@ -41,7 +47,7 @@ export default function SearchPage() {
     return () => {
       active = false;
     };
-  }, [searchQuery, selectedCategory, selectedSub, sort]);
+  }, [searchQuery, selectedCategory, selectedSub, sort, artisan]);
 
   return (
     <div className="min-h-screen pb-20 pt-4 mx-auto w-full max-w-6xl">
@@ -88,7 +94,20 @@ export default function SearchPage() {
               </>
             )}
           </h2>
-          <SortSelect value={sort} onChange={setSort} />
+          <div className="flex items-center gap-2 shrink-0">
+            <select
+              value={artisan}
+              onChange={(e) => setArtisan(e.target.value)}
+              aria-label="Filtrează după artizan"
+              className="h-10 max-w-[10.5rem] rounded-full border-[1.5px] border-line bg-surface px-3 text-sm text-ink-soft focus:outline-none focus:border-clay"
+            >
+              <option value="">Toți artizanii</option>
+              {artisans.map((a) => (
+                <option key={a.id} value={a.id}>{a.name}</option>
+              ))}
+            </select>
+            <SortSelect value={sort} onChange={setSort} />
+          </div>
         </div>
 
         {loading ? (

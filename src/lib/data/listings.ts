@@ -41,6 +41,7 @@ export async function fetchListingsPage(
     sort?: SortOption;
     minPrice?: number;
     maxPrice?: number;
+    sellerId?: string;
   } = {},
 ): Promise<ListingsPage> {
   const offset = opts.cursor ?? 0;
@@ -54,6 +55,7 @@ export async function fetchListingsPage(
     if (opts.subcategory) fq = fq.eq('subcategory', opts.subcategory);
     if (opts.minPrice != null) fq = fq.gte('price', opts.minPrice);
     if (opts.maxPrice != null) fq = fq.lte('price', opts.maxPrice);
+    if (opts.sellerId) fq = fq.eq('seller_id', opts.sellerId);
     const ordered =
       sort === 'price_asc'
         ? fq.order('price', { ascending: true }).order('created_at', { ascending: false })
@@ -95,6 +97,7 @@ export async function searchListings(
   category?: string,
   sort: SortOption = 'newest',
   subcategory?: string,
+  sellerId?: string,
 ): Promise<Listing[]> {
   const term = query.trim();
 
@@ -103,6 +106,7 @@ export async function searchListings(
     let q = supabase.from('listings').select(SELECT).eq('status', 'active');
     if (isRealCategory(category)) q = q.eq('category', category);
     if (subcategory) q = q.eq('subcategory', subcategory);
+    if (sellerId) q = q.eq('seller_id', sellerId);
     if (term) q = q.ilike('title', `%${term}%`);
     const ordered =
       sort === 'price_asc'
@@ -138,6 +142,31 @@ export async function fetchSellerListings(sellerId: string): Promise<Listing[]> 
     return (data ?? []) as unknown as Listing[];
   }
   return MOCK_LISTINGS.filter((l) => l.seller_id === sellerId);
+}
+
+/** Distinct artisans that currently have active listings (for the filter). */
+export interface ArtisanOption {
+  id: string;
+  name: string;
+}
+export async function fetchArtisans(): Promise<ArtisanOption[]> {
+  if (!isSupabaseConfigured()) {
+    const seen = new Map<string, string>();
+    for (const l of MOCK_LISTINGS) if (l.profiles) seen.set(l.seller_id, l.profiles.full_name || l.profiles.username);
+    return [...seen].map(([id, name]) => ({ id, name }));
+  }
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('listings')
+    .select('seller_id, profiles:profiles!listings_seller_id_fkey ( full_name, username )')
+    .eq('status', 'active')
+    .limit(1000);
+  if (error) throw new Error(error.message);
+  const seen = new Map<string, string>();
+  for (const row of (data ?? []) as unknown as Array<{ seller_id: string; profiles: { full_name: string | null; username: string } | null }>) {
+    if (!seen.has(row.seller_id)) seen.set(row.seller_id, row.profiles?.full_name || row.profiles?.username || 'Artizan');
+  }
+  return [...seen].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name, 'ro'));
 }
 
 /** A single profile row (the signed-in user's own profile). */

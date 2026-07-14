@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Tag, Check } from 'lucide-react';
+import Image from 'next/image';
+import { ArrowLeft, Tag, Check, Eye, X, ImagePlus } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,8 +12,28 @@ import { Button } from '@/components/ui/button';
 import { CATEGORIES, SUBCATEGORIES, type CategoryKey } from '@/config/app';
 import { useSession } from '@/lib/hooks';
 import { fetchListingById } from '@/lib/data/listings';
-import { updateListing } from '@/actions/listings';
+import { updateListing, updateListingPhotos } from '@/actions/listings';
 import type { Listing } from '@/lib/mock';
+
+// Browser-side photo compression (same pipeline as the sell form) so new
+// photos fit under the 4MB server-action body cap.
+async function compressPhoto(file: File): Promise<File> {
+  if (!file.type.startsWith('image/') || file.type === 'image/gif') return file;
+  if (file.size <= 400 * 1024) return file;
+  try {
+    const bmp = await createImageBitmap(file);
+    const scale = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(bmp.width * scale));
+    canvas.height = Math.max(1, Math.round(bmp.height * scale));
+    canvas.getContext('2d')?.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, 'image/jpeg', 0.82));
+    if (blob && blob.size < file.size) {
+      return new File([blob], file.name.replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg' });
+    }
+  } catch { /* fall back to the original */ }
+  return file;
+}
 
 // Owner-only listing editor: modify title/description/price/category and offer
 // a discount ("oferă discount"). Photos aren't editable in v1.
@@ -29,6 +50,10 @@ export default function EditListingPage() {
   const [category, setCategory] = useState('');
   const [subcategory, setSubcategory] = useState('');
   const [discountPct, setDiscountPct] = useState(''); // '' = no discount
+  const [keepUrls, setKeepUrls] = useState<string[]>([]);
+  const [newFiles, setNewFiles] = useState<File[]>([]);
+  const originalUrls = useRef<string[]>([]);
+  const fileRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +76,8 @@ export default function EditListingPage() {
           } else {
             setPrice(String(l.price));
           }
+          setKeepUrls(l.image_urls ?? []);
+          originalUrls.current = l.image_urls ?? [];
         }
       })
       .catch(() => setListing(null))
@@ -61,10 +88,19 @@ export default function EditListingPage() {
   const pct = Math.min(90, Math.max(0, parseInt(discountPct, 10) || 0));
   const finalPrice = useMemo(() => (pct > 0 ? Math.round(priceNum * (1 - pct / 100)) : priceNum), [priceNum, pct]);
 
+  const photosChanged =
+    newFiles.length > 0 ||
+    keepUrls.length !== originalUrls.current.length ||
+    keepUrls.some((u, i) => originalUrls.current[i] !== u);
+
   const save = async () => {
     setError(null);
     if (pct > 0 && finalPrice < 1) {
       setError('Prețul redus trebuie să fie cel puțin 1 leu.');
+      return;
+    }
+    if (keepUrls.length + newFiles.length < 1) {
+      setError('Produsul trebuie să aibă cel puțin o fotografie.');
       return;
     }
     setSaving(true);
@@ -81,6 +117,17 @@ export default function EditListingPage() {
         const details = 'details' in res && res.details ? Object.values(res.details as Record<string, string[]>).flat() : [];
         setError(details[0] ?? String(res.error));
         return;
+      }
+      if (photosChanged) {
+        const fd = new FormData();
+        fd.append('keep', JSON.stringify(keepUrls));
+        const compressed = await Promise.all(newFiles.map(compressPhoto));
+        compressed.forEach((f) => fd.append('images', f));
+        const pres = await updateListingPhotos(id, fd);
+        if (pres && 'error' in pres && pres.error) {
+          setError(`Detaliile s-au salvat, dar fotografiile nu: ${pres.error}`);
+          return;
+        }
       }
       setSaved(true);
       setTimeout(() => router.push(`/listings/${id}`), 1200);
@@ -220,13 +267,76 @@ export default function EditListingPage() {
             <p className="text-xs text-ink-soft">{description.length}/3000</p>
           </div>
 
-          <p className="text-xs text-ink-faint">
-            Fotografiile nu pot fi modificate aici deocamdată — pentru poze noi, șterge produsul și publică-l din nou.
-          </p>
+          {/* Photos: remove existing / add new (compressed in-browser) */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
+              Fotografii ({keepUrls.length + newFiles.length}/10)
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {keepUrls.map((url) => (
+                <div key={url} className="relative w-20 h-20 rounded-xl overflow-hidden border border-line bg-cream">
+                  <Image src={url} alt="" fill sizes="80px" className="object-cover" />
+                  <button
+                    type="button"
+                    aria-label="Elimină fotografia"
+                    onClick={() => setKeepUrls((prev) => prev.filter((u) => u !== url))}
+                    className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-ink/70 text-paper grid place-items-center hover:bg-destructive"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+              {newFiles.map((f, i) => (
+                <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-sage/60 bg-cream">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={URL.createObjectURL(f)} alt="" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    aria-label="Elimină fotografia nouă"
+                    onClick={() => setNewFiles((prev) => prev.filter((_, j) => j !== i))}
+                    className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-ink/70 text-paper grid place-items-center hover:bg-destructive"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+              {keepUrls.length + newFiles.length < 10 && (
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  className="w-20 h-20 rounded-xl border-2 border-dashed border-line-strong text-ink-faint hover:border-clay/45 hover:text-clay grid place-items-center transition-colors"
+                >
+                  <ImagePlus className="w-6 h-6" />
+                </button>
+              )}
+            </div>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                const files = Array.from(e.target.files ?? []);
+                setNewFiles((prev) => [...prev, ...files].slice(0, 10 - keepUrls.length));
+                if (fileRef.current) fileRef.current.value = '';
+              }}
+            />
+            <p className="text-xs text-ink-faint">Prima fotografie este cea principală. Pozele noi (contur verde) se încarcă la salvare.</p>
+          </div>
 
-          <Button className="w-full h-12" disabled={saving} onClick={save}>
-            {saving ? 'Se salvează…' : 'Salvează modificările'}
-          </Button>
+          <div className="flex gap-2">
+            <Link
+              href={`/listings/${id}?preview=1`}
+              target="_blank"
+              className="flex items-center justify-center gap-1.5 h-12 px-5 rounded-full border-[1.5px] border-line-strong text-ink-soft text-sm font-medium hover:border-clay/45 hover:text-clay transition-colors shrink-0"
+            >
+              <Eye className="w-4 h-4" /> Previzualizează
+            </Link>
+            <Button className="flex-1 h-12" disabled={saving} onClick={save}>
+              {saving ? 'Se salvează…' : 'Salvează modificările'}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

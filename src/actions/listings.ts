@@ -296,6 +296,79 @@ export async function updateListing(
   return { success: true };
 }
 
+/**
+ * Add/remove photos on an own listing. `keep` = JSON array of CURRENT image
+ * URLs to retain (validated as a subset); `images` = new files to append.
+ * Final gallery must have 1–10 photos; removed files are deleted from storage.
+ */
+export async function updateListingPhotos(listingId: string, formData: FormData) {
+  const supabase = await createServerClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) return { error: 'Autentificare necesară' };
+
+  const { data: listing } = await supabase
+    .from('listings')
+    .select('seller_id, image_urls')
+    .eq('id', listingId)
+    .maybeSingle();
+  if (!listing) return { error: 'Anunțul nu a fost găsit' };
+  if (listing.seller_id !== user.id) return { error: 'Nu aveți permisiunea să modificați acest anunț' };
+
+  const current: string[] = listing.image_urls ?? [];
+  let keep: string[] = [];
+  try {
+    const parsed = JSON.parse(String(formData.get('keep') ?? '[]'));
+    if (!Array.isArray(parsed)) throw new Error();
+    keep = parsed.filter((u: unknown): u is string => typeof u === 'string' && current.includes(u));
+  } catch {
+    return { error: 'Date invalide.' };
+  }
+
+  const images = formData.getAll('images') as File[];
+  if (keep.length + images.length < 1) return { error: 'Produsul trebuie să aibă cel puțin o imagine.' };
+  if (keep.length + images.length > 10) return { error: 'Poți avea maximum 10 imagini.' };
+
+  const ALLOWED: Record<string, string> = {
+    'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif',
+  };
+  const added: string[] = [];
+  for (const image of images) {
+    if (image.size > 5 * 1024 * 1024) return { error: `Fișierul ${image.name} este prea mare (max 5MB)` };
+    const ext = ALLOWED[image.type];
+    if (!ext) return { error: `Format invalid pentru ${image.name}. Acceptăm JPG, PNG, WEBP sau GIF.` };
+    let body: File | Buffer = image;
+    if (ext !== 'gif') {
+      try {
+        const input = Buffer.from(await image.arrayBuffer());
+        body = await sharp(input).rotate().resize(1600, 1600, { fit: 'inside', withoutEnlargement: true }).toBuffer();
+      } catch { /* store the original on processing failure */ }
+    }
+    const path = `listings/${user.id}/${crypto.randomUUID()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from('listings_images').upload(path, body, { contentType: image.type });
+    if (upErr) return { error: 'Încărcarea imaginii a eșuat. Încearcă din nou.' };
+    const { data: pub } = supabase.storage.from('listings_images').getPublicUrl(path);
+    if (pub?.publicUrl) added.push(pub.publicUrl);
+  }
+
+  const finalUrls = [...keep, ...added];
+  const { error: updErr } = await supabase.from('listings').update({ image_urls: finalUrls }).eq('id', listingId);
+  if (updErr) return { error: `Eroare la salvare: ${updErr.message}` };
+
+  // Best-effort cleanup of removed files (own folder only, per storage policy).
+  const marker = '/listings_images/';
+  const removedPaths = current
+    .filter((u) => !keep.includes(u))
+    .map((u) => { const i = u.indexOf(marker); return i !== -1 ? u.slice(i + marker.length) : null; })
+    .filter((p): p is string => p !== null);
+  if (removedPaths.length > 0) {
+    await supabase.storage.from('listings_images').remove(removedPaths).catch(() => {});
+  }
+
+  revalidatePath('/');
+  revalidatePath(`/listings/${listingId}`);
+  return { success: true, imageUrls: finalUrls };
+}
+
 export async function updateListingStatus(listingId: string, status: 'active' | 'sold') {
   const supabase = await createServerClient();
 

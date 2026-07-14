@@ -4,7 +4,7 @@ import { useRef, useCallback, useEffect, useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Star } from 'lucide-react';
 import { CATEGORIES, SUBCATEGORIES, MESSAGES, type CategoryKey } from '@/config/app';
-import { fetchListingsPage, type ListingsPage, type SortOption } from '@/lib/data/listings';
+import { fetchListingsPage, fetchArtisans, type ArtisanOption, type ListingsPage, type SortOption } from '@/lib/data/listings';
 import { Listing } from '@/lib/mock';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { CategoryChips } from '@/components/CategoryChips';
@@ -31,6 +31,11 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
   const [sort, setSort] = useState<SortOption>('newest');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
+  const [artisan, setArtisan] = useState('');
+  const [artisans, setArtisans] = useState<ArtisanOption[]>([]);
+  useEffect(() => {
+    fetchArtisans().then(setArtisans).catch(() => {});
+  }, []);
 
   const min = minPrice !== '' ? Number(minPrice) : undefined;
   const max = maxPrice !== '' ? Number(maxPrice) : undefined;
@@ -38,7 +43,7 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
   // initialData (server-rendered first page) only applies to the exact default
   // view — otherwise a sort/filter change would briefly show stale default data.
   const isDefaultView =
-    activeCategory === 'all' && activeSub === 'all' && sort === 'newest' && minPrice === '' && maxPrice === '';
+    activeCategory === 'all' && activeSub === 'all' && sort === 'newest' && minPrice === '' && maxPrice === '' && artisan === '';
 
   const onCategoryChange = (cat: string) => {
     setActiveCategory(cat);
@@ -47,9 +52,17 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
 
   const { data, error, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage, status, refetch } =
     useInfiniteQuery({
-      queryKey: ['listings', activeCategory, activeSub, sort, min ?? null, max ?? null],
+      queryKey: ['listings', activeCategory, activeSub, sort, min ?? null, max ?? null, artisan || null],
       queryFn: ({ pageParam }) =>
-        fetchListingsPage({ cursor: pageParam, category: activeCategory, subcategory: subFilter, sort, minPrice: min, maxPrice: max }),
+        fetchListingsPage({
+          cursor: pageParam,
+          category: activeCategory,
+          subcategory: subFilter,
+          sort,
+          minPrice: min,
+          maxPrice: max,
+          sellerId: artisan || undefined,
+        }),
       getNextPageParam: (lastPage) => lastPage.nextCursor,
       initialPageParam: 0 as number | null,
       initialData: isDefaultView ? { pages: [initialPage], pageParams: [0 as number | null] } : undefined,
@@ -179,6 +192,20 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
                 Fără cont? Folosește linkul din pagina comenzii sau scrie-ne la info.craftology.shop@gmail.com.
               </p>
             </div>
+            {/* Seller CTA — compact card up top per the owner (was a large
+                section at the bottom of the feed). */}
+            <div className="flex flex-col justify-center rounded-2xl border-[1.5px] border-line-strong bg-surface/70 shadow-[3px_3px_0_0_var(--press-soft)] p-4 max-w-sm">
+              <p className="font-display text-ink leading-tight mb-0.5">Vinzi produse handmade?</p>
+              <p className="text-xs text-ink-soft mb-3">
+                Cont gratuit, aprobare rapidă, plăți direct în contul tău. Comision doar la vânzare.
+              </p>
+              <a
+                href="/seller/apply"
+                className="inline-flex items-center justify-center rounded-full bg-clay text-paper px-4 py-2 text-sm font-medium border-[1.5px] border-edge shadow-[2px_2px_0_0_var(--press)] hover:bg-clay-deep transition-colors"
+              >
+                Devino vânzător
+              </a>
+            </div>
           </div>
         )}
 
@@ -192,6 +219,9 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
               setMinPrice(mn);
               setMaxPrice(mx);
             }}
+            artisans={artisans}
+            artisan={artisan}
+            onArtisanChange={setArtisan}
           />
         </div>
 
@@ -225,41 +255,28 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
                 <div className="w-6 h-6 border-2 border-clay border-t-transparent rounded-full animate-spin" />
               </div>
             )}
-            {!hasNextPage && (
+            {/* Home shows at most 100 products (owner rule) — the full catalog
+                lives in Căutare. */}
+            {listings.length >= 100 && hasNextPage ? (
               <div className="py-10 text-center">
                 <div className="rule-craft w-16 mx-auto mb-3" />
-                <p className="font-display italic text-ink-soft text-sm">{MESSAGES.endOfFeed}</p>
+                <p className="text-ink-soft text-sm mb-3">Acestea sunt cele mai noi 100 de produse.</p>
+                <a href="/search" className="inline-flex items-center rounded-full border-[1.5px] border-clay/45 text-clay px-5 py-2 text-sm font-medium hover:bg-clay hover:text-paper transition-colors">
+                  Vezi tot catalogul în Căutare
+                </a>
               </div>
+            ) : (
+              !hasNextPage && (
+                <div className="py-10 text-center">
+                  <div className="rule-craft w-16 mx-auto mb-3" />
+                  <p className="font-display italic text-ink-soft text-sm">{MESSAGES.endOfFeed}</p>
+                </div>
+              )
             )}
-            <div ref={sentinelRef} className="h-1" />
+            {listings.length < 100 && <div ref={sentinelRef} className="h-1" />}
           </>
         )}
 
-        {/* Mini-guide: how to become a seller (per the owner's request) */}
-        <section className="mt-4 mb-10 rounded-2xl border-[1.5px] border-line-strong bg-surface shadow-[4px_4px_0_0_var(--press-soft)] p-5 lg:p-7">
-          <h2 className="font-display text-xl lg:text-2xl text-ink mb-1">Vinzi produse handmade?</h2>
-          <p className="text-sm text-ink-soft mb-4">Devino vânzător pe Craft&apos;zaar în câțiva pași simpli:</p>
-          <ol className="space-y-2 text-sm text-ink-soft mb-5">
-            {[
-              'Creează-ți un cont gratuit și confirmă emailul.',
-              'Completează cererea de vânzător cu datele firmei tale (SRL / PFA + CUI).',
-              'Noi verificăm și aprobăm cererea — primești email de confirmare.',
-              'Configurezi plățile prin Stripe (banii ajung direct în contul tău).',
-              'Publici produsele și începi să vinzi!',
-            ].map((s, i) => (
-              <li key={i} className="flex gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-clay text-paper text-[11px] font-bold grid place-items-center shrink-0 mt-px">{i + 1}</span>
-                {s}
-              </li>
-            ))}
-          </ol>
-          <a
-            href="/seller/apply"
-            className="inline-flex items-center rounded-full bg-clay text-paper px-5 py-2.5 text-sm font-medium border-[1.5px] border-edge shadow-[3px_3px_0_0_var(--press)] hover:bg-clay-deep transition-colors"
-          >
-            Devino vânzător
-          </a>
-        </section>
       </main>
       </div>
     </PullToRefresh>

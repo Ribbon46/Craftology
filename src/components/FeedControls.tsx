@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { SlidersHorizontal } from 'lucide-react';
-import type { SortOption } from '@/lib/data/listings';
+import type { SortOption, ArtisanOption } from '@/lib/data/listings';
 import { SortSelect } from '@/components/SortSelect';
 
 export function FeedControls({
@@ -11,17 +11,24 @@ export function FeedControls({
   minPrice,
   maxPrice,
   onPriceChange,
+  artisans,
+  artisan,
+  onArtisanChange,
 }: {
   sort: SortOption;
   onSortChange: (s: SortOption) => void;
   minPrice: string;
   maxPrice: string;
   onPriceChange: (min: string, max: string) => void;
+  /** Optional artisan (seller) filter — rendered when a list is provided. */
+  artisans?: ArtisanOption[];
+  artisan?: string;
+  onArtisanChange?: (id: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [min, setMin] = useState(minPrice);
   const [max, setMax] = useState(maxPrice);
-  const priceActive = minPrice !== '' || maxPrice !== '';
+  const priceActive = minPrice !== '' || maxPrice !== '' || !!artisan;
 
   const apply = () => {
     onPriceChange(min, max);
@@ -31,6 +38,7 @@ export function FeedControls({
     setMin('');
     setMax('');
     onPriceChange('', '');
+    onArtisanChange?.('');
     setOpen(false);
   };
 
@@ -92,6 +100,21 @@ export function FeedControls({
               className="w-28 rounded-lg border border-line bg-paper px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-clay/30"
             />
           </label>
+          {artisans && onArtisanChange && (
+            <label className="flex flex-col gap-1 text-xs text-ink-soft">
+              Artizan
+              <select
+                value={artisan ?? ''}
+                onChange={(e) => onArtisanChange(e.target.value)}
+                className="w-44 rounded-lg border border-line bg-paper px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-clay/30"
+              >
+                <option value="">Toți artizanii</option>
+                {artisans.map((a) => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
+              </select>
+            </label>
+          )}
           <button
             type="button"
             onClick={apply}
