@@ -23,7 +23,6 @@ const ALLOWED_IMAGE_HOSTS = [
   'i.imgur.com',
   'lh3.googleusercontent.com',
 ];
-const NEW_SELLER_CAP = 20;
 
 interface RowResult {
   row: number;
@@ -178,17 +177,6 @@ export async function importCatalog(csvText: string): Promise<
   if (drafts.length === 0) return { error: 'Nu am găsit produse de importat în fișier.' };
   if (drafts.length > MAX_PRODUCTS_PER_RUN) {
     return { error: `Maximum ${MAX_PRODUCTS_PER_RUN} produse per import. Împarte fișierul în mai multe bucăți (fișierul are ${drafts.length}).` };
-  }
-
-  // New-seller cap parity with createListing.
-  if (!isPlatformOwner(user.id)) {
-    const { data: mine } = await supabase.from('listings').select('status').eq('seller_id', user.id);
-    const all = (mine ?? []) as Array<{ status: string }>;
-    const sold = all.filter((l) => l.status === 'sold').length;
-    const active = all.filter((l) => l.status === 'active').length;
-    if (sold === 0 && active + drafts.length > NEW_SELLER_CAP) {
-      return { error: `Vânzătorii noi pot avea maximum ${NEW_SELLER_CAP} produse până la prima vânzare (ai ${active}, imporți ${drafts.length}).` };
-    }
   }
 
   // Skip duplicates by exact title (re-running the same file must be safe).

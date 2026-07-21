@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Star } from 'lucide-react';
 import { CATEGORIES, SUBCATEGORIES, MESSAGES, type CategoryKey } from '@/config/app';
@@ -32,6 +32,7 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [artisan, setArtisan] = useState('');
+  const [blockSize, setBlockSize] = useState(25); // owner spec: 25/50/100, default 25
   const [artisans, setArtisans] = useState<ArtisanOption[]>([]);
   useEffect(() => {
     fetchArtisans().then(setArtisans).catch(() => {});
@@ -43,7 +44,8 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
   // initialData (server-rendered first page) only applies to the exact default
   // view — otherwise a sort/filter change would briefly show stale default data.
   const isDefaultView =
-    activeCategory === 'all' && activeSub === 'all' && sort === 'newest' && minPrice === '' && maxPrice === '' && artisan === '';
+    activeCategory === 'all' && activeSub === 'all' && sort === 'newest' && minPrice === '' && maxPrice === '' &&
+    artisan === '' && blockSize === 25;
 
   const onCategoryChange = (cat: string) => {
     setActiveCategory(cat);
@@ -52,7 +54,7 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
 
   const { data, error, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage, status, refetch } =
     useInfiniteQuery({
-      queryKey: ['listings', activeCategory, activeSub, sort, min ?? null, max ?? null, artisan || null],
+      queryKey: ['listings', activeCategory, activeSub, sort, min ?? null, max ?? null, artisan || null, blockSize],
       queryFn: ({ pageParam }) =>
         fetchListingsPage({
           cursor: pageParam,
@@ -62,24 +64,12 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
           minPrice: min,
           maxPrice: max,
           sellerId: artisan || undefined,
+          limit: blockSize,
         }),
       getNextPageParam: (lastPage) => lastPage.nextCursor,
       initialPageParam: 0 as number | null,
       initialData: isDefaultView ? { pages: [initialPage], pageParams: [0 as number | null] } : undefined,
     });
-
-  const observer = useRef<IntersectionObserver | null>(null);
-  const sentinelRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      if (isFetching) return;
-      if (observer.current) observer.current.disconnect();
-      observer.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && hasNextPage) fetchNextPage();
-      });
-      if (node) observer.current.observe(node);
-    },
-    [isFetching, hasNextPage, fetchNextPage],
-  );
 
   const listings: Listing[] = data?.pages.flatMap((page) => page.data) ?? [];
 
@@ -222,6 +212,11 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
             artisans={artisans}
             artisan={artisan}
             onArtisanChange={setArtisan}
+            categories={Object.keys(CATEGORIES)}
+            category={activeCategory}
+            onCategoryChange={onCategoryChange}
+            blockSize={blockSize}
+            onBlockSizeChange={setBlockSize}
           />
         </div>
 
@@ -250,13 +245,8 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
               ))}
             </div>
 
-            {isFetchingNextPage && (
-              <div className="py-6 flex justify-center">
-                <div className="w-6 h-6 border-2 border-clay border-t-transparent rounded-full animate-spin" />
-              </div>
-            )}
-            {/* Home shows at most 100 products (owner rule) — the full catalog
-                lives in Căutare. */}
+            {/* Owner spec: products load in explicit blocks (25/50/100), home
+                caps at 100 — the full catalog lives in Căutare. */}
             {listings.length >= 100 && hasNextPage ? (
               <div className="py-10 text-center">
                 <div className="rule-craft w-16 mx-auto mb-3" />
@@ -265,15 +255,25 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
                   Vezi tot catalogul în Căutare
                 </a>
               </div>
+            ) : hasNextPage ? (
+              <div className="pb-10 text-center">
+                <button
+                  type="button"
+                  onClick={() => fetchNextPage()}
+                  disabled={isFetchingNextPage}
+                  className="inline-flex items-center rounded-full bg-clay text-paper px-6 py-2.5 text-sm font-medium border-[1.5px] border-edge shadow-[3px_3px_0_0_var(--press)] hover:bg-clay-deep transition-colors disabled:opacity-60"
+                >
+                  {isFetchingNextPage
+                    ? 'Se încarcă…'
+                    : `Vezi următoarele ${Math.min(blockSize, 100 - listings.length)} produse`}
+                </button>
+              </div>
             ) : (
-              !hasNextPage && (
-                <div className="py-10 text-center">
-                  <div className="rule-craft w-16 mx-auto mb-3" />
-                  <p className="font-display italic text-ink-soft text-sm">{MESSAGES.endOfFeed}</p>
-                </div>
-              )
+              <div className="py-10 text-center">
+                <div className="rule-craft w-16 mx-auto mb-3" />
+                <p className="font-display italic text-ink-soft text-sm">{MESSAGES.endOfFeed}</p>
+              </div>
             )}
-            {listings.length < 100 && <div ref={sentinelRef} className="h-1" />}
           </>
         )}
 

@@ -14,6 +14,11 @@ export function FeedControls({
   artisans,
   artisan,
   onArtisanChange,
+  categories,
+  category,
+  onCategoryChange,
+  blockSize,
+  onBlockSizeChange,
 }: {
   sort: SortOption;
   onSortChange: (s: SortOption) => void;
@@ -24,6 +29,13 @@ export function FeedControls({
   artisans?: ArtisanOption[];
   artisan?: string;
   onArtisanChange?: (id: string) => void;
+  /** Optional product-category filter inside the panel (owner request). */
+  categories?: string[];
+  category?: string;
+  onCategoryChange?: (cat: string) => void;
+  /** Optional block-size selector (products per load: 25/50/100). */
+  blockSize?: number;
+  onBlockSizeChange?: (n: number) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [min, setMin] = useState(minPrice);
@@ -72,6 +84,18 @@ export function FeedControls({
             Resetează
           </button>
         )}
+        {blockSize != null && onBlockSizeChange && (
+          <select
+            value={blockSize}
+            onChange={(e) => onBlockSizeChange(Number(e.target.value))}
+            aria-label="Produse pe pagină"
+            className="ml-auto h-10 rounded-full border-[1.5px] border-line bg-surface px-3 text-sm text-ink-soft focus:outline-none focus:border-clay"
+          >
+            {[25, 50, 100].map((n) => (
+              <option key={n} value={n}>{n} / pagină</option>
+            ))}
+          </select>
+        )}
       </div>
 
       {open && (
@@ -100,6 +124,21 @@ export function FeedControls({
               className="w-28 rounded-lg border border-line bg-paper px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-clay/30"
             />
           </label>
+          {categories && onCategoryChange && (
+            <label className="flex flex-col gap-1 text-xs text-ink-soft">
+              Categorie
+              <select
+                value={category ?? 'all'}
+                onChange={(e) => onCategoryChange(e.target.value)}
+                className="w-36 rounded-lg border border-line bg-paper px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-clay/30"
+              >
+                <option value="all">Toate</option>
+                {categories.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </label>
+          )}
           {artisans && onArtisanChange && (
             <label className="flex flex-col gap-1 text-xs text-ink-soft">
               Artizan

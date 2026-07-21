@@ -13,7 +13,8 @@ import type { ListingsPage } from '@/lib/data/listings';
 // into a server-only module). `import type` above is erased at build, so no
 // browser client is pulled in.
 
-const PAGE_SIZE = 20;
+// Matches the home feed's default block size (owner spec: blocks of 25).
+const PAGE_SIZE = 25;
 
 const SELECT =
   'id, title, description, price, original_price, category, subcategory, image_urls, seller_id, status, created_at, ' +

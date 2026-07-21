@@ -42,10 +42,13 @@ export async function fetchListingsPage(
     minPrice?: number;
     maxPrice?: number;
     sellerId?: string;
+    /** Block size (owner spec: 25/50/100; default PAGE_SIZE). */
+    limit?: number;
   } = {},
 ): Promise<ListingsPage> {
   const offset = opts.cursor ?? 0;
   const sort = opts.sort ?? 'newest';
+  const pageSize = opts.limit ?? PAGE_SIZE;
 
   if (isSupabaseConfigured()) {
     const supabase = createClient();
@@ -63,12 +66,12 @@ export async function fetchListingsPage(
           ? fq.order('price', { ascending: false }).order('created_at', { ascending: false })
           : fq.order('created_at', { ascending: false });
 
-    const { data, error, count } = await ordered.range(offset, offset + PAGE_SIZE - 1);
+    const { data, error, count } = await ordered.range(offset, offset + pageSize - 1);
     // Live mode: a failed read THROWS (React Query retries / keeps previous
     // data) — never silently serve the fake demo catalog to real users.
     if (error) throw new Error(error.message);
     const rows = (data ?? []) as unknown as Listing[];
-    return { data: rows, nextCursor: rows.length === PAGE_SIZE ? offset + PAGE_SIZE : null, total: count };
+    return { data: rows, nextCursor: rows.length === pageSize ? offset + pageSize : null, total: count };
   }
 
   let filtered = isRealCategory(opts.category)
@@ -78,8 +81,8 @@ export async function fetchListingsPage(
   if (opts.minPrice != null) filtered = filtered.filter((l) => l.price >= opts.minPrice!);
   if (opts.maxPrice != null) filtered = filtered.filter((l) => l.price <= opts.maxPrice!);
   filtered = sortListings(filtered, sort);
-  const slice = filtered.slice(offset, offset + PAGE_SIZE);
-  return { data: slice, nextCursor: offset + PAGE_SIZE < filtered.length ? offset + PAGE_SIZE : null, total: filtered.length };
+  const slice = filtered.slice(offset, offset + pageSize);
+  return { data: slice, nextCursor: offset + pageSize < filtered.length ? offset + pageSize : null, total: filtered.length };
 }
 
 export async function fetchListingById(id: string): Promise<Listing | null> {
