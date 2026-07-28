@@ -14,5 +14,12 @@ export default async function CheckoutSuccessPage({
 }) {
   const { session_id } = await searchParams;
   const order = session_id ? await getOrderForSuccess(session_id) : null;
-  return <CheckoutSuccessClient sessionId={session_id} status={order?.status} guest={order?.guest} />;
+  return (
+    <CheckoutSuccessClient
+      sessionId={session_id}
+      status={order?.status}
+      guest={order?.guest}
+      listingIds={order?.listingIds}
+    />
+  );
 }

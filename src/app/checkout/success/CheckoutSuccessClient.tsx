@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { CheckCircle2, Undo2 } from 'lucide-react';
 import { cancelOrderByBuyer, getOrderForSuccess } from '@/actions/orders';
+import { useCart } from '@/lib/cart';
 
 /**
  * Success screen + the GUEST cancellation entry point. A buyer who paid without
@@ -16,11 +17,14 @@ export function CheckoutSuccessClient({
   sessionId,
   status: initialStatus,
   guest: initialGuest,
+  listingIds: initialListingIds,
 }: {
   sessionId?: string;
   status?: string;
   guest?: boolean;
+  listingIds?: string[];
 }) {
+  const { removeMany } = useCart();
   const [status, setStatus] = useState<string | undefined>(initialStatus);
   const [guest, setGuest] = useState<boolean | undefined>(initialGuest);
   const [cancelled, setCancelled] = useState(initialStatus === 'refunded');
@@ -28,6 +32,12 @@ export function CheckoutSuccessClient({
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+
+  // Order already resolved server-side → drop those items from the cart.
+  useEffect(() => {
+    if (initialListingIds?.length) removeMany(initialListingIds);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Webhook race: order not recorded yet → poll a few times until it appears.
   useEffect(() => {
@@ -41,6 +51,8 @@ export function CheckoutSuccessClient({
         if (o && active) {
           setStatus(o.status);
           setGuest(o.guest);
+          // Paid items leave the cart.
+          if (o.listingIds?.length) removeMany(o.listingIds);
           if (o.status === 'refunded') setCancelled(true);
           return;
         }

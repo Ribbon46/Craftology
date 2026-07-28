@@ -3,9 +3,10 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { Search, Plus, Sun, Moon, LogIn } from 'lucide-react';
+import { Search, Plus, Sun, Moon, LogIn, ShoppingBag } from 'lucide-react';
 import { APP_NAME } from '@/config/app';
 import { cn } from '@/lib/utils';
+import { useCart } from '@/lib/cart';
 import { useTheme } from '@/lib/theme';
 import { useSession } from '@/lib/hooks';
 import { useAuthModal } from '@/lib/auth-modal';
@@ -27,6 +28,7 @@ export function SiteHeader() {
   const { toggle } = useTheme();
   const { user } = useSession();
   const { setOpen } = useAuthModal();
+  const { count } = useCart();
 
   const initial =
     (user?.user_metadata?.full_name as string | undefined)?.charAt(0) ||
@@ -84,6 +86,20 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2 ml-auto lg:ml-0">
+          {/* Cart — buyers collect items here, then choose to check out */}
+          <Link
+            href="/cart"
+            aria-label={count > 0 ? `Coșul meu (${count} produse)` : 'Coșul meu'}
+            className="relative grid place-items-center w-10 h-10 rounded-full border border-line bg-surface text-ink-soft hover:text-clay hover:border-clay/40 transition-colors"
+          >
+            <ShoppingBag className="w-[18px] h-[18px]" />
+            {count > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-clay text-paper text-[10px] font-bold grid place-items-center ring-2 ring-paper">
+                {count}
+              </span>
+            )}
+          </Link>
+
           {/* Theme toggle — icons are pure CSS off the .dark class (no hydration flash) */}
           <button
             type="button"

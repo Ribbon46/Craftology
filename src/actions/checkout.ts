@@ -7,6 +7,126 @@ import { createServiceClient, isServiceConfigured } from '@/lib/supabase/admin';
 import { isPlatformOwner } from '@/lib/owner';
 
 const COMMISSION_RATE = 0.1; // platform takes 10% (per the Seller Agreement)
+// Stripe metadata values cap at 500 chars; ids are 36 chars + separator, so 10
+// items per order stays well inside the limit.
+const MAX_CART_ITEMS_PER_ORDER = 10;
+
+/**
+ * Cart checkout: several listings from the SAME seller in one payment.
+ * Items from different artisans must check out separately, because each
+ * marketplace sale is a direct charge on that seller's own connected account.
+ */
+export async function createCartCheckoutSession(listingIds: string[]) {
+  if (!isStripeConfigured() || !stripe) return { error: 'Plățile nu sunt configurate momentan.' };
+  const ids = [...new Set((listingIds ?? []).filter((s) => typeof s === 'string' && s.length > 0))];
+  if (ids.length === 0) return { error: 'Coșul este gol.' };
+  if (ids.length > MAX_CART_ITEMS_PER_ORDER) {
+    return { error: `Poți comanda maximum ${MAX_CART_ITEMS_PER_ORDER} produse odată de la același atelier.` };
+  }
+
+  const supabase = await createServerClient();
+  const { data: rows, error } = await supabase
+    .from('listings')
+    .select('id, title, price, image_urls, status, seller_id')
+    .in('id', ids);
+  if (error) return { error: 'Eroare la verificarea produselor. Încearcă din nou.' };
+
+  const listings = (rows ?? []) as Array<{
+    id: string; title: string; price: number; image_urls: string[] | null; status: string; seller_id: string;
+  }>;
+  if (listings.length !== ids.length) {
+    return { error: 'Unele produse nu mai sunt disponibile. Reîmprospătează coșul.' };
+  }
+  const sold = listings.find((l) => l.status !== 'active');
+  if (sold) return { error: `„${sold.title}" nu mai este disponibil. Elimină-l din coș.` };
+
+  const sellerId = listings[0].seller_id;
+  if (listings.some((l) => l.seller_id !== sellerId)) {
+    return { error: 'Produsele din aceeași comandă trebuie să fie de la același atelier.' };
+  }
+
+  const { data: { user: buyer } } = await supabase.auth.getUser();
+  const orderMeta = {
+    listing_ids: listings.map((l) => l.id).join(','),
+    seller_id: sellerId,
+    buyer_id: buyer?.id ?? '',
+  };
+
+  const h = await headers();
+  const base = h.get('origin') ?? (h.get('host') ? `https://${h.get('host')}` : 'https://craftology-peach.vercel.app');
+  const line_items = listings.map((l) => ({
+    quantity: 1,
+    price_data: {
+      currency: 'ron' as const,
+      unit_amount: Math.round(Number(l.price) * 100),
+      product_data: {
+        name: l.title,
+        images: (l.image_urls ?? []).filter((u) => typeof u === 'string' && u.startsWith('http')).slice(0, 1),
+      },
+    },
+  }));
+  const totalAmount = line_items.reduce((s, li) => s + li.price_data.unit_amount, 0);
+
+  try {
+    const fulfilment = {
+      shipping_address_collection: { allowed_countries: ['RO' as const] },
+      phone_number_collection: { enabled: true },
+    };
+
+    const { data: vac } = await supabase
+      .from('sellers')
+      .select('vacation_until')
+      .eq('id', sellerId)
+      .maybeSingle();
+    if (vac?.vacation_until) {
+      const until = new Date(vac.vacation_until + 'T00:00:00');
+      if (until > new Date()) {
+        const dateRo = until.toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' });
+        return { error: `Vânzătorul este momentan în vacanță și nu poate livra. Revine în data de ${dateRo}.` };
+      }
+    }
+
+    const expires_at = Math.floor(Date.now() / 1000) + 30 * 60;
+    const success_url = `${base}/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
+    const cancel_url = `${base}/cart`;
+
+    if (isPlatformOwner(sellerId)) {
+      const session = await stripe.checkout.sessions.create({
+        mode: 'payment', line_items, ...fulfilment, metadata: orderMeta, success_url, cancel_url, expires_at,
+      });
+      return { url: session.url };
+    }
+
+    if (!isServiceConfigured()) return { error: 'Plățile pentru vânzători nu sunt configurate complet.' };
+    const svc = createServiceClient();
+    const { data: seller } = await svc
+      .from('sellers')
+      .select('stripe_account_id, stripe_onboarded, status')
+      .eq('id', sellerId)
+      .maybeSingle();
+    if (!seller || seller.status !== 'approved' || !seller.stripe_account_id || !seller.stripe_onboarded) {
+      return { error: 'Vânzătorul nu poate primi plăți momentan.' };
+    }
+
+    const session = await stripe.checkout.sessions.create(
+      {
+        mode: 'payment',
+        line_items,
+        ...fulfilment,
+        payment_intent_data: { application_fee_amount: Math.round(totalAmount * COMMISSION_RATE) },
+        metadata: orderMeta,
+        success_url,
+        cancel_url,
+        expires_at,
+      },
+      { stripeAccount: seller.stripe_account_id },
+    );
+    return { url: session.url };
+  } catch (e) {
+    console.error('Stripe cart checkout error:', e);
+    return { error: 'Eroare la inițierea plății. Încearcă din nou.' };
+  }
+}
 
 /**
  * Stripe Checkout for a listing.

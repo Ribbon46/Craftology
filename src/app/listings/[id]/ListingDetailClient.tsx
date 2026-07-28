@@ -12,14 +12,14 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Star, Share2, ArrowLeft, MessageCircle, ShoppingBag, Mail, Phone, Link2, BadgeCheck, Heart, Plane } from 'lucide-react';
+import { Star, Share2, ArrowLeft, MessageCircle, ShoppingBag, Mail, Phone, Link2, BadgeCheck, Heart, Plane, Check } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Listing } from '@/lib/mock';
 import { useSession } from '@/lib/hooks';
 import { useAuthModal } from '@/lib/auth-modal';
 import { createConversation } from '@/actions/messages';
-import { createCheckoutSession } from '@/actions/checkout';
+import { useCart } from '@/lib/cart';
 import { toggleWishlist, getWishlistState } from '@/actions/wishlist';
 import { sendGuestInquiry } from '@/actions/inquiries';
 import { FollowButton } from '@/components/FollowButton';
@@ -50,6 +50,7 @@ export function ListingDetailClient({
   const { user } = useSession();
   const { setOpen } = useAuthModal();
 
+  const { add: addToCart, has: inCart } = useCart();
   const [selectedImage, setSelectedImage] = useState(0);
   const [messaging, setMessaging] = useState(false);
   const [buying, setBuying] = useState(false);
@@ -162,19 +163,19 @@ export function ListingDetailClient({
     }
   };
 
-  const handleBuy = async () => {
+  // Owner decision: products go to the CART; checkout happens only when the
+  // buyer chooses to proceed (and accepts the terms) on /cart.
+  const handleAddToCart = () => {
     setBuyError(null);
     setBuying(true);
-    try {
-      const res = await createCheckoutSession(listing.id);
-      if ('url' in res && res.url) {
-        window.location.href = res.url;
-        return; // navigating away — keep the loading state
-      }
-      setBuyError(('error' in res && res.error) || 'Plata nu a putut fi inițiată.');
-    } catch {
-      setBuyError('Plata nu a putut fi inițiată. Verifică conexiunea și încearcă din nou.');
-    }
+    addToCart({
+      id: listing.id,
+      title: listing.title,
+      price: listing.price,
+      image: listing.image_urls?.[0] ?? null,
+      sellerId: listing.seller_id,
+      sellerName: listing.profiles?.full_name || listing.profiles?.username || 'Atelier',
+    });
     setBuying(false);
   };
 
@@ -363,20 +364,28 @@ export function ListingDetailClient({
             </>
           ) : (
             <>
-              <Button
-                className="w-full h-[52px] text-base rounded-full"
-                onClick={handleBuy}
-                disabled={buying || sold || onVacation || preview}
-              >
-                <ShoppingBag className="w-5 h-5 mr-2" />
-                {sold
-                  ? 'Vândut'
-                  : onVacation
-                    ? `Revine în ${vacationRo}`
-                    : buying
-                      ? 'Se redirecționează…'
-                      : `Cumpără · ${formatPrice(listing.price)} lei`}
-              </Button>
+              {inCart(listing.id) && !sold ? (
+                <Link
+                  href="/cart"
+                  className="flex items-center justify-center w-full h-[52px] text-base rounded-full bg-sage text-paper font-medium border-[1.5px] border-edge shadow-[3px_3px_0_0_var(--press)] hover:opacity-90 transition-opacity"
+                >
+                  <Check className="w-5 h-5 mr-2" />
+                  În coș · Vezi coșul
+                </Link>
+              ) : (
+                <Button
+                  className="w-full h-[52px] text-base rounded-full"
+                  onClick={handleAddToCart}
+                  disabled={buying || sold || onVacation || preview}
+                >
+                  <ShoppingBag className="w-5 h-5 mr-2" />
+                  {sold
+                    ? 'Vândut'
+                    : onVacation
+                      ? `Revine în ${vacationRo}`
+                      : `Adaugă în coș · ${formatPrice(listing.price)} lei`}
+                </Button>
+              )}
               <Button variant="outline" className="w-full h-12 rounded-full" onClick={handleMessageSeller} disabled={messaging || preview}>
                 <MessageCircle className="w-4 h-4 mr-2" />
                 {messaging ? 'Se deschide…' : 'Trimite mesaj'}

@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, ReactNode } from 'react';
 import { AuthModalProvider } from '@/lib/auth-modal';
+import { CartProvider } from '@/lib/cart';
 import { ThemeProvider } from '@/lib/theme';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { BackButtonHandler } from '@/components/BackButtonHandler';
@@ -28,7 +29,7 @@ export function Providers({ children }: { children: ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AuthModalProvider>
-          {children}
+          <CartProvider>{children}</CartProvider>
           {/* Single, globally-controlled auth modal */}
           <AuthModal />
           {/* Native Android Back → previous screen instead of exit */}

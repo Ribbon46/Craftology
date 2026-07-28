@@ -64,47 +64,75 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true, note: 'payment not yet collected' });
     }
 
-    const listingId = session.metadata?.listing_id;
-    if (db && listingId) {
+    // Cart checkouts carry `listing_ids` (same seller, several items); older
+    // single-product sessions carry `listing_id`.
+    const listingIds = (session.metadata?.listing_ids ?? session.metadata?.listing_id ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    if (db && listingIds.length > 0) {
       const sellerId = session.metadata?.seller_id || null;
       const buyerId = session.metadata?.buyer_id || null;
       const stripeAccountId = event.account ?? null;
       const amountTotal = session.amount_total ?? 0;
+
+      // Split the charged total across the items by their listed price, so each
+      // order row carries its own amount (refunds are per item).
+      const { data: priced } = await db.from('listings').select('id, price').in('id', listingIds);
+      const priceById = new Map(
+        ((priced ?? []) as Array<{ id: string; price: number }>).map((l) => [l.id, Math.round(Number(l.price) * 100)]),
+      );
+      const priceSum = listingIds.reduce((s, id) => s + (priceById.get(id) ?? 0), 0);
+      const amounts = new Map<string, number>();
+      let assigned = 0;
+      listingIds.forEach((id, i) => {
+        const share =
+          i === listingIds.length - 1
+            ? amountTotal - assigned // last item absorbs the rounding remainder
+            : priceSum > 0
+              ? Math.round((amountTotal * (priceById.get(id) ?? 0)) / priceSum)
+              : Math.round(amountTotal / listingIds.length);
+        amounts.set(id, share);
+        assigned += share;
+      });
+
       // We charge a 10% application fee on marketplace (connected-account) sales
       // (must match COMMISSION_RATE in checkout.ts); platform-owned listings take none.
-      const applicationFee = stripeAccountId ? Math.round(amountTotal * 0.1) : 0;
+      const rows = listingIds.map((id) => ({
+        listing_id: id,
+        seller_id: sellerId,
+        buyer_id: buyerId,
+        buyer_email: session.customer_details?.email ?? null,
+        stripe_session_id: session.id,
+        payment_intent_id: String(session.payment_intent ?? ''),
+        stripe_account_id: stripeAccountId,
+        amount_total: amounts.get(id) ?? 0,
+        application_fee_amount: stripeAccountId ? Math.round((amounts.get(id) ?? 0) * 0.1) : 0,
+        currency: session.currency ?? 'ron',
+        status: 'paid',
+      }));
 
-      // Upsert on the session id so Stripe retries don't create duplicates.
-      const { error: insErr } = await db.from('orders').upsert(
-        {
-          listing_id: listingId,
-          seller_id: sellerId,
-          buyer_id: buyerId,
-          buyer_email: session.customer_details?.email ?? null,
-          stripe_session_id: session.id,
-          payment_intent_id: String(session.payment_intent ?? ''),
-          stripe_account_id: stripeAccountId,
-          amount_total: amountTotal,
-          application_fee_amount: applicationFee,
-          currency: session.currency ?? 'ron',
-          status: 'paid',
-        },
-        { onConflict: 'stripe_session_id', ignoreDuplicates: true },
-      );
+      // Upsert on (session, listing) so Stripe retries don't create duplicates.
+      const { error: insErr } = await db
+        .from('orders')
+        .upsert(rows, { onConflict: 'stripe_session_id,listing_id', ignoreDuplicates: true });
       if (insErr) console.error('order upsert error:', insErr.message);
 
-      // Only mark sold if this order is still 'paid'. A late/duplicate retry of
-      // checkout.session.completed arriving AFTER a refund (which re-listed the
-      // item) must NOT flip it back to 'sold'.
-      const { data: ord } = await db
+      // Only mark sold the items whose order is still 'paid'. A late/duplicate
+      // retry arriving AFTER a refund (which re-listed the item) must NOT flip
+      // it back to 'sold'.
+      const { data: ords } = await db
         .from('orders')
-        .select('status')
-        .eq('stripe_session_id', session.id)
-        .maybeSingle();
-      if (ord?.status === 'paid') {
-        await db.from('listings').update({ status: 'sold' }).eq('id', listingId).eq('status', 'active');
+        .select('listing_id, status')
+        .eq('stripe_session_id', session.id);
+      const stillPaid = ((ords ?? []) as Array<{ listing_id: string; status: string }>)
+        .filter((o) => o.status === 'paid')
+        .map((o) => o.listing_id);
+      if (stillPaid.length > 0) {
+        await db.from('listings').update({ status: 'sold' }).in('id', stillPaid).eq('status', 'active');
         revalidatePath('/');
-        revalidatePath(`/listings/${listingId}`);
+        stillPaid.forEach((id) => revalidatePath(`/listings/${id}`));
       }
     }
   }
@@ -114,26 +142,30 @@ export async function POST(req: NextRequest) {
     const charge = event.data.object as Stripe.Charge;
     const pi = typeof charge.payment_intent === 'string' ? charge.payment_intent : charge.payment_intent?.id;
     if (pi) {
-      const { data: order } = await db
+      // A cart payment maps to several orders sharing one payment intent, so a
+      // partial refund here is ambiguous per-item — only a FULL charge refund
+      // converges every order. App-initiated refunds already flip their own row.
+      const { data: orders } = await db
         .from('orders')
         .select('id, listing_id, amount_total, status')
-        .eq('payment_intent_id', pi)
-        .maybeSingle();
-      if (order) {
-        const fully = (charge.amount_refunded ?? 0) >= order.amount_total;
-        await db
-          .from('orders')
-          .update({
-            amount_refunded: charge.amount_refunded ?? 0,
-            status: fully ? 'refunded' : order.status,
-            refunded_at: fully ? new Date().toISOString() : null,
-          })
-          .eq('id', order.id);
-        // Only a FULL refund re-lists the item.
-        if (fully) {
-          await db.from('listings').update({ status: 'active' }).eq('id', order.listing_id);
+        .eq('payment_intent_id', pi);
+      const rows = (orders ?? []) as Array<{ id: string; listing_id: string; amount_total: number; status: string }>;
+      if (rows.length > 0) {
+        const chargeFullyRefunded = (charge.amount_refunded ?? 0) >= (charge.amount ?? 0);
+        if (chargeFullyRefunded) {
+          const ids = rows.map((o) => o.id);
+          const listingIds = rows.map((o) => o.listing_id);
+          await db
+            .from('orders')
+            .update({ status: 'refunded', refunded_at: new Date().toISOString() })
+            .in('id', ids)
+            .eq('status', 'paid');
+          for (const o of rows) {
+            await db.from('orders').update({ amount_refunded: o.amount_total }).eq('id', o.id);
+          }
+          await db.from('listings').update({ status: 'active' }).in('id', listingIds);
           revalidatePath('/');
-          revalidatePath(`/listings/${order.listing_id}`);
+          listingIds.forEach((id) => revalidatePath(`/listings/${id}`));
         }
       }
     }

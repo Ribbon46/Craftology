@@ -53,6 +53,11 @@ async function refundOrder(
       const refund = await stripe.refunds.create(
         {
           payment_intent: order.payment_intent_id,
+          // Always scope the refund to THIS item's amount: a cart payment covers
+          // several orders on one payment intent, so a full-intent refund would
+          // wrongly return the whole basket. Stripe refunds the application fee
+          // proportionally when an amount is given.
+          amount: order.amount_total,
           // Marketplace (connected account): return the platform's 10% fee too.
           ...(order.stripe_account_id ? { refund_application_fee: true } : {}),
           // Only order_id in the refund body — cancelled_by is recorded in our
@@ -131,15 +136,26 @@ export async function cancelOrderByBuyer(
 
   let order: FullOrder | null = null;
   if (input.sessionId) {
-    const { data } = await svc.from('orders').select('*').eq('stripe_session_id', input.sessionId).maybeSingle();
-    order = (data as FullOrder) ?? null;
+    // A cart payment produces one order per item — cancel them all together.
+    const { data } = await svc.from('orders').select('*').eq('stripe_session_id', input.sessionId);
+    const rows = (data ?? []) as FullOrder[];
     // The session id is a bearer capability (it travels in the success URL). It
     // only authorizes GUEST orders (no account). A logged-in buyer's order can't
     // be refunded by a leaked session id — they must cancel from their profile
     // (the orderId branch, which verifies ownership).
-    if (order && order.buyer_id !== null) {
+    if (rows.some((r) => r.buyer_id !== null)) {
       return { error: 'Această comandă poate fi anulată doar din contul tău.' };
     }
+    if (rows.length === 0) return { error: 'Comanda nu a fost găsită.' };
+    if (rows.length > 1) {
+      let firstError: string | null = null;
+      for (const r of rows.filter((x) => x.status === 'paid')) {
+        const res = await refundOrder(r, 'buyer', reason);
+        if ('error' in res && !firstError) firstError = res.error;
+      }
+      return firstError ? { error: firstError } : { success: true };
+    }
+    order = rows[0];
   } else if (input.orderId) {
     const supabase = await createServerClient();
     const {
@@ -206,21 +222,34 @@ export async function getMyOrders(): Promise<OrderRow[]> {
  *  the session-id capability; member orders cancel from Profil → Tranzacții. */
 export async function getOrderForSuccess(
   sessionId: string,
-): Promise<{ status: string; amount_total: number; title: string | null; guest: boolean } | null> {
+): Promise<{
+  status: string;
+  amount_total: number;
+  title: string | null;
+  guest: boolean;
+  listingIds: string[];
+} | null> {
   if (!isServiceConfigured()) return null;
   const svc = createServiceClient();
+  // Cart payments create one row per item — aggregate them into one summary.
   const { data } = await svc
     .from('orders')
-    .select('status, amount_total, buyer_id, listings ( title )')
-    .eq('stripe_session_id', sessionId)
-    .maybeSingle();
-  if (!data) return null;
-  const listings = data.listings as { title: string } | { title: string }[] | null;
-  const title = Array.isArray(listings) ? listings[0]?.title ?? null : listings?.title ?? null;
+    .select('status, amount_total, buyer_id, listing_id, listings ( title )')
+    .eq('stripe_session_id', sessionId);
+  const rows = (data ?? []) as Array<{
+    status: string; amount_total: number; buyer_id: string | null; listing_id: string;
+    listings: { title: string } | { title: string }[] | null;
+  }>;
+  if (rows.length === 0) return null;
+  const titleOf = (l: { title: string } | { title: string }[] | null) =>
+    Array.isArray(l) ? l[0]?.title ?? null : l?.title ?? null;
+  const first = titleOf(rows[0].listings);
   return {
-    status: data.status as string,
-    amount_total: data.amount_total as number,
-    title,
-    guest: data.buyer_id === null,
+    // Anything still payable keeps the order actionable (retur available).
+    status: rows.some((r) => r.status === 'paid') ? 'paid' : rows[0].status,
+    amount_total: rows.reduce((s, r) => s + (r.amount_total ?? 0), 0),
+    title: rows.length > 1 ? `${first} + încă ${rows.length - 1} produse` : first,
+    guest: rows[0].buyer_id === null,
+    listingIds: rows.map((r) => r.listing_id),
   };
 }

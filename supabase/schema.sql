@@ -559,3 +559,11 @@ grant select, insert, delete on public.wishlist to authenticated;
 alter table public.listings add column if not exists original_price numeric(10,2);
 alter table public.listings add constraint listings_discount_sane
   check (original_price is null or original_price > 0);
+
+-- ============ Cart checkout (iul 2026) ====================================
+-- One Stripe session can contain several listings from the SAME seller, so
+-- uniqueness moves from the session alone to (session, listing): one order row
+-- per item, each refundable on its own.
+alter table public.orders drop constraint if exists orders_stripe_session_id_key;
+alter table public.orders
+  add constraint orders_session_listing_key unique (stripe_session_id, listing_id);
