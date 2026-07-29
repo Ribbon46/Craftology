@@ -89,7 +89,9 @@ export function FeedControls({
             value={blockSize}
             onChange={(e) => onBlockSizeChange(Number(e.target.value))}
             aria-label="Produse pe pagină"
-            className="ml-auto h-10 rounded-full border-[1.5px] border-line bg-surface px-3 text-sm text-ink-soft focus:outline-none focus:border-clay"
+            /* Left-aligned (not ml-auto): on phones it wraps to its own row and
+               would otherwise land under the floating Ajutor button. */
+            className="h-10 shrink-0 rounded-full border-[1.5px] border-line bg-surface px-3 text-sm text-ink-soft focus:outline-none focus:border-clay lg:ml-auto"
           >
             {[25, 50, 100].map((n) => (
               <option key={n} value={n}>{n} / pagină</option>

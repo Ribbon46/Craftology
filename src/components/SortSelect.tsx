@@ -14,7 +14,7 @@ export function SortSelect({ value, onChange }: { value: SortOption; onChange: (
   return (
     // min-w-0 + w-full so the pill can shrink on narrow phones instead of
     // forcing its row (and the page) wider than the screen.
-    <div className="relative min-w-0 flex-1 sm:flex-initial">
+    <div className="relative min-w-[8.5rem] flex-1 sm:flex-initial">
       <ArrowDownUp className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-soft" />
       <select
         aria-label="Sortează"
