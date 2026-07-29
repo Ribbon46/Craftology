@@ -83,7 +83,7 @@ export default function SearchPage() {
       </div>
 
       <div className="px-4 lg:px-8">
-        <div className="flex items-center justify-between gap-3 mb-4">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 mb-4">
           <h2 className="font-display text-lg text-ink min-w-0 truncate">
             {searchQuery ? (
               <>Rezultate pentru „{searchQuery}”</>
@@ -94,12 +94,12 @@ export default function SearchPage() {
               </>
             )}
           </h2>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 min-w-0 w-full sm:w-auto">
             <select
               value={artisan}
               onChange={(e) => setArtisan(e.target.value)}
               aria-label="Filtrează după artizan"
-              className="h-10 max-w-[10.5rem] rounded-full border-[1.5px] border-line bg-surface px-3 text-sm text-ink-soft focus:outline-none focus:border-clay"
+              className="h-10 min-w-0 flex-1 sm:flex-initial sm:max-w-[10.5rem] rounded-full border-[1.5px] border-line bg-surface px-3 text-sm text-ink-soft focus:outline-none focus:border-clay"
             >
               <option value="">Toți artizanii</option>
               {artisans.map((a) => (

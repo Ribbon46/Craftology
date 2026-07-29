@@ -213,6 +213,11 @@
     /* Suppress the browser's native pull-to-refresh / scroll-chaining so our
        custom pull-to-refresh (see PullToRefresh.tsx) owns the gesture. */
     overscroll-behavior-y: contain;
+    /* Safety net: a single too-wide element must never make the whole app
+       horizontally scrollable on a phone (users then have to zoom out to read).
+       `clip` — not `hidden` — because it doesn't create a scroll container and
+       so keeps the sticky category bar working. */
+    overflow-x: clip;
   }
   h1, h2, h3, .font-display {
     font-family: var(--font-display);

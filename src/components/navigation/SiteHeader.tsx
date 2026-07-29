@@ -45,10 +45,14 @@ export function SiteHeader() {
       style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
     >
       <div className="mx-auto w-full max-w-6xl flex items-center gap-4 lg:gap-6 px-4 sm:px-5 lg:px-8 h-16 lg:h-[72px]">
-        <Link href="/" className="flex items-center gap-2 shrink-0">
+        {/* min-w-0 + truncate: the brand yields space on narrow phones instead
+            of forcing the header (and the whole page) wider than the screen. */}
+        <Link href="/" className="flex items-center gap-1.5 sm:gap-2 min-w-0">
           {/* Owner's carousel logo (from the Craftology brand art) */}
-          <Image src="/logo-carusel.png" alt="" width={45} height={32} className="h-8 w-auto" priority />
-          <span className="font-display text-2xl font-semibold tracking-tight text-ink">{APP_NAME}</span>
+          <Image src="/logo-carusel.png" alt="" width={45} height={32} className="h-7 sm:h-8 w-auto shrink-0" priority />
+          <span className="font-display text-xl sm:text-2xl font-semibold tracking-tight text-ink truncate">
+            {APP_NAME}
+          </span>
         </Link>
 
         {/* Desktop nav links with a sliding liquid-glass active indicator */}
@@ -85,12 +89,12 @@ export function SiteHeader() {
           })}
         </nav>
 
-        <div className="flex items-center gap-2 ml-auto lg:ml-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 ml-auto lg:ml-0 shrink-0">
           {/* Cart — buyers collect items here, then choose to check out */}
           <Link
             href="/cart"
             aria-label={count > 0 ? `Coșul meu (${count} produse)` : 'Coșul meu'}
-            className="relative grid place-items-center w-10 h-10 rounded-full border border-line bg-surface text-ink-soft hover:text-clay hover:border-clay/40 transition-colors"
+            className="relative grid place-items-center w-10 h-10 shrink-0 rounded-full border border-line bg-surface text-ink-soft hover:text-clay hover:border-clay/40 transition-colors"
           >
             <ShoppingBag className="w-[18px] h-[18px]" />
             {count > 0 && (
@@ -106,7 +110,7 @@ export function SiteHeader() {
             onClick={toggle}
             aria-label="Comută tema"
             title="Comută tema deschisă / întunecată"
-            className="grid place-items-center w-10 h-10 rounded-full border border-line bg-surface text-ink-soft hover:text-clay hover:border-clay/40 transition-colors"
+            className="grid place-items-center w-10 h-10 shrink-0 rounded-full border border-line bg-surface text-ink-soft hover:text-clay hover:border-clay/40 transition-colors"
           >
             <Moon className="w-[18px] h-[18px] dark:hidden" />
             <Sun className="w-[18px] h-[18px] hidden dark:block" />
@@ -127,7 +131,7 @@ export function SiteHeader() {
             <Link
               href="/profile"
               aria-label="Contul meu"
-              className="grid place-items-center w-10 h-10 rounded-full bg-clay text-paper font-display text-sm font-semibold ring-1 ring-clay/40 hover:bg-clay-deep transition-colors"
+              className="grid place-items-center w-10 h-10 shrink-0 rounded-full bg-clay text-paper font-display text-sm font-semibold ring-1 ring-clay/40 hover:bg-clay-deep transition-colors"
             >
               {initial.toUpperCase()}
             </Link>
@@ -135,10 +139,13 @@ export function SiteHeader() {
             <button
               type="button"
               onClick={() => setOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-clay/45 text-clay px-3.5 py-2 text-sm font-medium hover:bg-clay hover:text-paper hover:border-clay transition-colors"
+              aria-label="Conectează-te"
+              /* Icon-only on narrow phones — the full label needs ~136px and was
+                 pushing the header past the viewport. */
+              className="inline-flex items-center justify-center gap-1.5 shrink-0 w-10 h-10 sm:w-auto sm:h-auto rounded-full border border-clay/45 text-clay sm:px-3.5 sm:py-2 text-sm font-medium hover:bg-clay hover:text-paper hover:border-clay transition-colors"
             >
-              <LogIn className="w-4 h-4" />
-              <span>Conectează-te</span>
+              <LogIn className="w-4 h-4 shrink-0" />
+              <span className="hidden sm:inline">Conectează-te</span>
             </button>
           )}
 
