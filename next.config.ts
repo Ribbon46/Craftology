@@ -11,9 +11,14 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
+    // Vercel's image optimizer is metered and the Hobby quota ran out, which
+    // made /_next/image return 402 and product photos vanish for real buyers.
+    // Uploads are already downscaled to 1600px JPEG (q82) server-side, so we
+    // serve them straight from Supabase's CDN instead. Revisit if the project
+    // moves to a paid plan (or once thumbnails are generated at upload time).
+    unoptimized: true,
     // Hosts the app actually serves images from: Supabase storage (real
     // uploads), placehold.co (seed/mock listings), ui-avatars.com (avatars).
-    // next/image then auto-serves resized AVIF/WebP + a responsive srcset.
     remotePatterns: [
       { protocol: "https", hostname: "**.supabase.co" },
       { protocol: "https", hostname: "placehold.co" },
