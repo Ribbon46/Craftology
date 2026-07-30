@@ -67,6 +67,7 @@ export function ListingDetailClient({
   const [guestErr, setGuestErr] = useState<string | null>(null);
 
   const sold = listing.status !== 'active';
+  const shippingCost = Number(listing.shipping_price ?? 0);
   // Owner sees a management view (no buy/message/save on their own product);
   // ?preview=1 shows them the buyer view instead (opened from the editor).
   const [preview, setPreview] = useState(false);
@@ -175,6 +176,7 @@ export function ListingDetailClient({
       image: listing.image_urls?.[0] ?? null,
       sellerId: listing.seller_id,
       sellerName: listing.profiles?.full_name || listing.profiles?.username || 'Atelier',
+      shipping: shippingCost,
     });
     setBuying(false);
   };
@@ -256,6 +258,16 @@ export function ListingDetailClient({
               </>
             )}
           </div>
+          {/* Seller-declared VAT status + delivery cost */}
+          <p className="text-sm text-ink-soft mt-1.5">
+            {listing.vat_mode === 'not_applicable' ? 'Nu se aplică TVA' : 'TVA inclus (21%)'}
+            {' · '}
+            {shippingCost > 0 ? (
+              <>Livrare {formatPrice(shippingCost)} lei</>
+            ) : (
+              <span className="text-sage font-medium">Livrare gratuită</span>
+            )}
+          </p>
 
           {/* Seller */}
         <div className="mt-6 flex items-center gap-3 p-4 rounded-2xl bg-surface border-[1.5px] border-line-strong shadow-[4px_4px_0_0_var(--press-soft)]">

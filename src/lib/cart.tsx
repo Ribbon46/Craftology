@@ -15,6 +15,9 @@ export interface CartItem {
   image: string | null;
   sellerId: string;
   sellerName: string;
+  /** Seller's delivery cost for this item (charged once per order — the
+   *  highest among the items bought from that atelier). */
+  shipping?: number;
 }
 
 const KEY = 'craftzaar-cart';

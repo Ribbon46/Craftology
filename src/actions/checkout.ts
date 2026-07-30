@@ -27,12 +27,13 @@ export async function createCartCheckoutSession(listingIds: string[]) {
   const supabase = await createServerClient();
   const { data: rows, error } = await supabase
     .from('listings')
-    .select('id, title, price, image_urls, status, seller_id')
+    .select('id, title, price, shipping_price, image_urls, status, seller_id')
     .in('id', ids);
   if (error) return { error: 'Eroare la verificarea produselor. Încearcă din nou.' };
 
   const listings = (rows ?? []) as Array<{
-    id: string; title: string; price: number; image_urls: string[] | null; status: string; seller_id: string;
+    id: string; title: string; price: number; shipping_price: number | null;
+    image_urls: string[] | null; status: string; seller_id: string;
   }>;
   if (listings.length !== ids.length) {
     return { error: 'Unele produse nu mai sunt disponibile. Reîmprospătează coșul.' };
@@ -65,12 +66,32 @@ export async function createCartCheckoutSession(listingIds: string[]) {
       },
     },
   }));
-  const totalAmount = line_items.reduce((s, li) => s + li.price_data.unit_amount, 0);
+  const goodsAmount = line_items.reduce((s, li) => s + li.price_data.unit_amount, 0);
+  // One parcel per order → the highest delivery cost among the items, charged
+  // once. Computed from the DB, never from the client's cart.
+  const shippingAmount = listings.reduce(
+    (m, l) => Math.max(m, Math.round(Number(l.shipping_price ?? 0) * 100)),
+    0,
+  );
+  const totalAmount = goodsAmount + shippingAmount;
 
   try {
     const fulfilment = {
       shipping_address_collection: { allowed_countries: ['RO' as const] },
       phone_number_collection: { enabled: true },
+      ...(shippingAmount > 0
+        ? {
+            shipping_options: [
+              {
+                shipping_rate_data: {
+                  type: 'fixed_amount' as const,
+                  fixed_amount: { amount: shippingAmount, currency: 'ron' },
+                  display_name: 'Livrare',
+                },
+              },
+            ],
+          }
+        : {}),
     };
 
     const { data: vac } = await supabase
@@ -113,7 +134,9 @@ export async function createCartCheckoutSession(listingIds: string[]) {
         mode: 'payment',
         line_items,
         ...fulfilment,
-        payment_intent_data: { application_fee_amount: Math.round(totalAmount * COMMISSION_RATE) },
+        // Commission applies to the goods only — delivery is passed through to
+        // the seller, who pays the courier.
+        payment_intent_data: { application_fee_amount: Math.round(goodsAmount * COMMISSION_RATE) },
         metadata: orderMeta,
         success_url,
         cancel_url,

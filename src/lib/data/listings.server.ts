@@ -17,7 +17,7 @@ import type { ListingsPage } from '@/lib/data/listings';
 const PAGE_SIZE = 25;
 
 const SELECT =
-  'id, title, description, price, original_price, category, subcategory, image_urls, seller_id, status, created_at, ' +
+  'id, title, description, price, original_price, shipping_price, vat_mode, category, subcategory, image_urls, seller_id, status, created_at, ' +
   'profiles:profiles!listings_seller_id_fkey ( id, username, full_name, avatar_url, rating )';
 
 function isRealCategory(category?: string): category is string {

@@ -28,13 +28,16 @@ export default function CartPage() {
       if (!by.has(it.sellerId)) by.set(it.sellerId, { sellerName: it.sellerName, items: [] });
       by.get(it.sellerId)!.items.push(it);
     }
-    return [...by.entries()].map(([sellerId, g]) => ({
-      sellerId,
-      sellerName: g.sellerName,
-      items: g.items,
-      total: g.items.reduce((s, i) => s + i.price, 0),
-    }));
+    return [...by.entries()].map(([sellerId, g]) => {
+      const goods = g.items.reduce((s, i) => s + i.price, 0);
+      // One parcel per atelier → charge the highest delivery cost among its items.
+      const shipping = g.items.reduce((m, i) => Math.max(m, Number(i.shipping ?? 0)), 0);
+      return { sellerId, sellerName: g.sellerName, items: g.items, goods, shipping, total: goods + shipping };
+    });
   }, [items]);
+
+  const shippingTotal = groups.reduce((s, g) => s + g.shipping, 0);
+  const grandTotal = total + shippingTotal;
 
   const checkout = async (sellerId: string) => {
     const group = groups.find((g) => g.sellerId === sellerId);
@@ -134,7 +137,10 @@ export default function CartPage() {
 
             <div className="px-4 py-3 border-t border-line flex items-center justify-between gap-3 flex-wrap">
               <p className="text-sm text-ink-soft">
-                Subtotal atelier: <strong className="price text-ink">{fmt(g.total)} lei</strong>
+                Produse {fmt(g.goods)} lei ·{' '}
+                {g.shipping > 0 ? `livrare ${fmt(g.shipping)} lei` : 'livrare gratuită'}
+                <br />
+                <strong className="price text-ink">Total {fmt(g.total)} lei</strong>
               </p>
               <Button
                 className="rounded-full"
@@ -157,9 +163,20 @@ export default function CartPage() {
 
       {/* Total + terms gate */}
       <div className="mt-6 rounded-2xl border-[1.5px] border-line-strong bg-surface shadow-[4px_4px_0_0_var(--press-soft)] p-4">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-ink-soft">Total coș</span>
-          <span className="price text-2xl font-semibold text-ink">{fmt(total)} lei</span>
+        <div className="space-y-1.5 mb-3 text-sm">
+          <div className="flex items-center justify-between text-ink-soft">
+            <span>Produse</span>
+            <span className="price">{fmt(total)} lei</span>
+          </div>
+          <div className="flex items-center justify-between text-ink-soft">
+            <span>Livrare{groups.length > 1 ? ` (${groups.length} ateliere)` : ''}</span>
+            <span className="price">{shippingTotal > 0 ? `${fmt(shippingTotal)} lei` : 'gratuită'}</span>
+          </div>
+          <div className="flex items-center justify-between pt-2 border-t border-line">
+            <span className="text-ink">Total de plată</span>
+            <span className="price text-2xl font-semibold text-ink">{fmt(grandTotal)} lei</span>
+          </div>
+          <p className="text-xs text-ink-faint pt-0.5">Prețurile sunt finale, cu TVA inclus acolo unde se aplică.</p>
         </div>
 
         <label className="flex items-start gap-3 text-sm text-ink-soft cursor-pointer">

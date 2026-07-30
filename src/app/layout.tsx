@@ -52,7 +52,7 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
   // Status-bar / browser-chrome colour follows the device theme.
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#f6f0e4' },
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
     { media: '(prefers-color-scheme: dark)', color: '#17120f' },
   ],
 };
@@ -69,7 +69,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ro" className={`${fraunces.variable} ${hanken.variable}`} suppressHydrationWarning>
-      <body className="paper-grain min-h-screen bg-cream text-ink font-sans">
+      <body className="paper-grain min-h-screen bg-white dark:bg-cream text-ink font-sans">
         {/* Runs before paint → correct theme on first frame (no flash). */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
         <Providers>

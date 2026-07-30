@@ -1,6 +1,10 @@
 // Craft'zaar Application Configuration
 // Romanian language constants and branding settings
 
+/** Romanian standard VAT rate. Prices are always shown final (VAT-inclusive
+ *  when the seller charges it) — this is used only to break the amount down. */
+export const VAT_RATE = 0.21;
+
 export const APP_NAME = "Craft'zaar";
 export const APP_NAME_FULL = "Craft'zaar | Produse handmade românești";
 

@@ -169,7 +169,7 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
             <QRShare />
             {/* Owner requirement: a big, obvious return/refund entry point on the
                 home screen (consumer-rights visibility), not just in the account. */}
-            <div className="flex flex-col justify-center rounded-2xl border-[1.5px] border-line-strong bg-surface/70 shadow-[3px_3px_0_0_var(--press-soft)] p-4 max-w-sm">
+            <div className="flex flex-col justify-center rounded-2xl border-[1.5px] border-line-strong bg-surface shadow-[3px_3px_0_0_var(--press-soft)] p-4 max-w-sm">
               <p className="font-display text-ink leading-tight mb-0.5">Ai comandat ceva?</p>
               <p className="text-xs text-ink-soft mb-3">Ai drept de retur în 14 zile de la primire.</p>
               <a
@@ -184,7 +184,7 @@ export function HomeFeed({ initialPage }: { initialPage: ListingsPage }) {
             </div>
             {/* Seller CTA — compact card up top per the owner (was a large
                 section at the bottom of the feed). */}
-            <div className="flex flex-col justify-center rounded-2xl border-[1.5px] border-line-strong bg-surface/70 shadow-[3px_3px_0_0_var(--press-soft)] p-4 max-w-sm">
+            <div className="flex flex-col justify-center rounded-2xl border-[1.5px] border-line-strong bg-surface shadow-[3px_3px_0_0_var(--press-soft)] p-4 max-w-sm">
               <p className="font-display text-ink leading-tight mb-0.5">Vinzi produse handmade?</p>
               <p className="text-xs text-ink-soft mb-3">
                 Cont gratuit, aprobare rapidă, plăți direct în contul tău. Comision doar la vânzare.

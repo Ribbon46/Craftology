@@ -70,7 +70,7 @@ export function CheckoutSuccessClient({
     const res = await cancelOrderByBuyer({ sessionId }, reason.trim() || undefined);
     setPending(false);
     if ('error' in res) {
-      setError(res.error);
+      setError(res.error ?? 'Anularea nu a putut fi procesată. Încearcă din nou.');
       return;
     }
     setCancelled(true);

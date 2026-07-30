@@ -17,6 +17,10 @@ export interface Listing {
   price: number;
   /** When set and > price: the pre-discount price (UI shows strikethrough + % off). */
   original_price?: number | null;
+  /** Delivery cost in RON set by the seller (0 = free delivery). */
+  shipping_price?: number | null;
+  /** Whether the listed price includes 21% VAT, or the seller doesn't charge VAT. */
+  vat_mode?: 'included' | 'not_applicable' | null;
   category: string;
   subcategory?: string | null;
   image_urls: string[];

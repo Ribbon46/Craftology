@@ -77,10 +77,13 @@
   --radius: 0.9rem;
   color-scheme: light;
 
-  /* Atelier — light (warm cream / espresso). These feed the brand utilities. */
-  --cream: #f6f0e4;
-  --paper: #fbf6ec;
-  --surface: #fffdf7;
+  /* Atelier — light. The PAGE is white (owner request); the warmth stays in the
+     surfaces: cards are a soft cream so they still read against the white, and
+     --cream is the deeper tone for inner blocks, chips and image placeholders.
+     --paper is white because it doubles as the inverse text colour on clay. */
+  --cream: #f3ece0;
+  --paper: #ffffff;
+  --surface: #faf5ea;
   --ink: #2a211a;
   --ink-soft: #6f6153;
   --ink-faint: #7d6f5e; /* darkened to clear WCAG 4.5:1 on cream/surface */
@@ -103,11 +106,12 @@
   --focus-press: color-mix(in srgb, var(--clay) 30%, transparent);
 
   /* Map shadcn semantic tokens onto the Atelier palette */
-  --background: #f6f0e4;
+  --background: #ffffff;
   --foreground: #2a211a;
-  --card: #fffdf7;
+  /* Cards/popovers keep the warm tone so they stay visible on the white page. */
+  --card: #faf5ea;
   --card-foreground: #2a211a;
-  --popover: #fffdf7;
+  --popover: #faf5ea;
   --popover-foreground: #2a211a;
   --primary: #b9572f;
   --primary-foreground: #fbf6ec;
@@ -255,7 +259,8 @@
   inset: 0;
   z-index: 60;
   pointer-events: none;
-  opacity: 0.4;
+  /* Softer on the white page — at 0.4 the multiply blend greyed it visibly. */
+  opacity: 0.16;
   mix-blend-mode: multiply;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
 }

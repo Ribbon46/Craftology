@@ -13,7 +13,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Dropzone } from '@/components/ui/Dropzone';
-import { CATEGORIES, SUBCATEGORIES, type CategoryKey } from '@/config/app';
+import { CATEGORIES, SUBCATEGORIES, VAT_RATE, type CategoryKey } from '@/config/app';
 import { createListing } from '@/actions/listings';
 import { canSell, type SellEligibility } from '@/actions/seller';
 import { useSession } from '@/lib/hooks';
@@ -45,6 +45,9 @@ export default function SellPage() {
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState('');
   const [subcategory, setSubcategory] = useState('');
+  const [shippingPrice, setShippingPrice] = useState('');
+  const [freeShipping, setFreeShipping] = useState(false);
+  const [vatMode, setVatMode] = useState<'included' | 'not_applicable'>('included');
   const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -145,6 +148,8 @@ export default function SellPage() {
       formData.append('price', price);
       formData.append('category', category);
       formData.append('subcategory', subcategory);
+      formData.append('shipping_price', freeShipping ? '0' : shippingPrice || '0');
+      formData.append('vat_mode', vatMode);
 
       let compressed = await Promise.all(files.map(compressImage));
       // Adaptive second pass: with many photos the batch can still exceed the
@@ -368,6 +373,79 @@ export default function SellPage() {
                   <span className="absolute left-3 top-2.5 text-ink-soft">lei</span>
                 </div>
                 <p className="text-xs text-ink-soft">Prețul trebuie să fie cel puțin 1 leu</p>
+              </div>
+
+              {/* VAT status — a LABEL for the price above (the buyer always pays
+                  the listed price; Romanian law requires final prices). */}
+              <div className="space-y-2">
+                <span className="text-sm font-medium">TVA *</span>
+                <div className="space-y-2">
+                  <label className="flex items-start gap-3 text-sm text-ink-soft cursor-pointer">
+                    <input
+                      type="radio"
+                      name="vat"
+                      className="mt-1 w-4 h-4 accent-clay shrink-0"
+                      checked={vatMode === 'included'}
+                      onChange={() => setVatMode('included')}
+                    />
+                    <span>
+                      <strong className="text-ink">Preț cu TVA inclus</strong> (21%)
+                      {price && Number(price) > 0 && (
+                        <span className="block text-xs text-ink-faint">
+                          Din {Number(price).toFixed(2)} lei, TVA ≈{' '}
+                          {(Number(price) - Number(price) / (1 + VAT_RATE)).toFixed(2)} lei
+                        </span>
+                      )}
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-3 text-sm text-ink-soft cursor-pointer">
+                    <input
+                      type="radio"
+                      name="vat"
+                      className="mt-1 w-4 h-4 accent-clay shrink-0"
+                      checked={vatMode === 'not_applicable'}
+                      onChange={() => setVatMode('not_applicable')}
+                    />
+                    <span>
+                      <strong className="text-ink">Nu se aplică TVA</strong>
+                      <span className="block text-xs text-ink-faint">
+                        Alege această variantă dacă nu ești plătitor de TVA.
+                      </span>
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Delivery cost */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium" htmlFor="shipping">Cost livrare</label>
+                <div className="relative">
+                  <Input
+                    id="shipping"
+                    type="number"
+                    placeholder="Ex: 20"
+                    value={freeShipping ? '' : shippingPrice}
+                    onChange={(e) => setShippingPrice(e.target.value)}
+                    min="0"
+                    max="10000"
+                    step="0.01"
+                    disabled={freeShipping}
+                    className="pl-8"
+                  />
+                  <span className="absolute left-3 top-2.5 text-ink-soft">lei</span>
+                </div>
+                <label className="flex items-center gap-2.5 text-sm text-ink-soft cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 accent-clay"
+                    checked={freeShipping}
+                    onChange={(e) => setFreeShipping(e.target.checked)}
+                  />
+                  Livrare gratuită pentru acest produs
+                </label>
+                <p className="text-xs text-ink-soft">
+                  Se adaugă la plată, o singură dată pe comandă dacă un client cumpără mai multe produse de la tine.
+                </p>
               </div>
 
               {/* Description */}

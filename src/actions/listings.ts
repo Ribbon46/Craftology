@@ -55,6 +55,17 @@ export async function createListing(formData: FormData) {
     };
   }
 
+  // Delivery cost + VAT status (both seller-declared, validated server-side).
+  const shippingRaw = String(formData.get('shipping_price') ?? '0').replace(',', '.');
+  const shippingPrice = Math.round((Number(shippingRaw) || 0) * 100) / 100;
+  if (!Number.isFinite(shippingPrice) || shippingPrice < 0 || shippingPrice > 10000) {
+    return { error: 'Costul livrării trebuie să fie între 0 și 10.000 lei.' };
+  }
+  const vatMode = String(formData.get('vat_mode') ?? 'included');
+  if (vatMode !== 'included' && vatMode !== 'not_applicable') {
+    return { error: 'Opțiune TVA invalidă.' };
+  }
+
   // Get images from formData
   const images = formData.getAll('images') as File[];
 
@@ -132,6 +143,8 @@ export async function createListing(formData: FormData) {
       title: validatedData.data.title,
       description: validatedData.data.description,
       price: validatedData.data.price,
+      shipping_price: shippingPrice,
+      vat_mode: vatMode,
       category: validatedData.data.category,
       subcategory: validatedData.data.subcategory,
       image_urls: imageUrls,
@@ -231,6 +244,8 @@ export async function updateListing(
     category: string;
     subcategory: string;
     originalPrice: number | null;
+    shippingPrice: number;
+    vatMode: string;
   },
 ) {
   const supabase = await createServerClient();
@@ -258,6 +273,14 @@ export async function updateListing(
     originalPrice = Math.round(op * 100) / 100;
   }
 
+  const shippingPrice = Math.round((Number(fields.shippingPrice) || 0) * 100) / 100;
+  if (!Number.isFinite(shippingPrice) || shippingPrice < 0 || shippingPrice > 10000) {
+    return { error: 'Costul livrării trebuie să fie între 0 și 10.000 lei.' };
+  }
+  if (fields.vatMode !== 'included' && fields.vatMode !== 'not_applicable') {
+    return { error: 'Opțiune TVA invalidă.' };
+  }
+
   const { data: listing } = await supabase
     .from('listings')
     .select('seller_id')
@@ -277,6 +300,8 @@ export async function updateListing(
       category: validated.data.category,
       subcategory: validated.data.subcategory,
       original_price: originalPrice,
+      shipping_price: shippingPrice,
+      vat_mode: fields.vatMode,
     })
     .eq('id', listingId);
   if (updateError) {

@@ -567,3 +567,18 @@ alter table public.listings add constraint listings_discount_sane
 alter table public.orders drop constraint if exists orders_stripe_session_id_key;
 alter table public.orders
   add constraint orders_session_listing_key unique (stripe_session_id, listing_id);
+
+-- ============ Shipping cost + VAT mode (iul 2026) =========================
+-- The seller sets the delivery price per product and declares whether the
+-- listed price includes VAT (21% standard RO rate) or VAT does not apply
+-- (e.g. a seller under the VAT-registration threshold). Prices are ALWAYS
+-- shown final to the buyer; vat_mode only changes the wording + breakdown.
+-- At checkout the order is charged one delivery fee: the highest
+-- shipping_price among the items, since an atelier ships one parcel.
+alter table public.listings
+  add column if not exists shipping_price numeric(10,2) not null default 0,
+  add column if not exists vat_mode text not null default 'included';
+alter table public.listings add constraint listings_vat_mode_check
+  check (vat_mode in ('included','not_applicable'));
+alter table public.listings add constraint listings_shipping_sane
+  check (shipping_price >= 0 and shipping_price <= 10000);

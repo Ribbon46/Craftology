@@ -50,6 +50,8 @@ export default function EditListingPage() {
   const [category, setCategory] = useState('');
   const [subcategory, setSubcategory] = useState('');
   const [discountPct, setDiscountPct] = useState(''); // '' = no discount
+  const [shippingPrice, setShippingPrice] = useState('0');
+  const [vatMode, setVatMode] = useState<'included' | 'not_applicable'>('included');
   const [keepUrls, setKeepUrls] = useState<string[]>([]);
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const originalUrls = useRef<string[]>([]);
@@ -76,6 +78,8 @@ export default function EditListingPage() {
           } else {
             setPrice(String(l.price));
           }
+          setShippingPrice(String(l.shipping_price ?? 0));
+          setVatMode(l.vat_mode === 'not_applicable' ? 'not_applicable' : 'included');
           setKeepUrls(l.image_urls ?? []);
           originalUrls.current = l.image_urls ?? [];
         }
@@ -112,6 +116,8 @@ export default function EditListingPage() {
         category,
         subcategory,
         originalPrice: pct > 0 ? priceNum : null,
+        shippingPrice: Number(shippingPrice) || 0,
+        vatMode,
       });
       if (res && 'error' in res && res.error) {
         const details = 'details' in res && res.details ? Object.values(res.details as Record<string, string[]>).flat() : [];
@@ -258,6 +264,33 @@ export default function EditListingPage() {
                   Elimină discountul
                 </button>
               )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Cost livrare (lei)</label>
+              <Input
+                type="number"
+                min="0"
+                max="10000"
+                step="0.01"
+                value={shippingPrice}
+                onChange={(e) => setShippingPrice(e.target.value)}
+              />
+              <p className="text-xs text-ink-faint">0 = livrare gratuită</p>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">TVA</label>
+              <select
+                className={selectCls}
+                value={vatMode}
+                onChange={(e) => setVatMode(e.target.value as 'included' | 'not_applicable')}
+              >
+                <option value="included">Preț cu TVA inclus (21%)</option>
+                <option value="not_applicable">Nu se aplică TVA</option>
+              </select>
+              <p className="text-xs text-ink-faint">Etichetă pentru prețul de mai sus</p>
             </div>
           </div>
 

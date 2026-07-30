@@ -1,0 +1,15 @@
+import { chromium, devices } from 'playwright';
+import { mkdirSync } from 'node:fs';
+mkdirSync('.design-audit', { recursive: true });
+const b = await chromium.launch();
+const p = await (await b.newContext({ ...devices['iPhone 13'] })).newPage();
+await p.goto('https://craftology-peach.vercel.app/?cb=' + Math.floor(Math.random() * 1e9), { waitUntil: 'networkidle', timeout: 60000 });
+await p.waitForTimeout(1500);
+const heroSub = (await p.locator('p').allTextContents()).find((t) => t.includes('creatori români')) ?? null;
+const banner = await p.locator('text=Folosim cookie-uri').count();
+const accept = await p.getByRole('button', { name: /^Accept$/ }).count();
+const essential = await p.getByRole('button', { name: /Doar necesare/ }).count();
+console.log('heroSub:', JSON.stringify(heroSub));
+console.log('cookie banner:', banner, '| Accept:', accept, '| Doar necesare:', essential);
+await p.screenshot({ path: '.design-audit/live-home.png' });
+await b.close();
