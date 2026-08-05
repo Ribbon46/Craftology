@@ -1,8 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import type Stripe from 'stripe';
 import { stripe, isStripeConfigured } from '@/lib/stripe';
+import { sendEmail, escapeHtml, isEmailConfigured } from '@/lib/email';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://craftology-peach.vercel.app';
+const money = (bani: number) => (bani / 100).toLocaleString('ro-RO', { minimumFractionDigits: 2 }) + ' lei';
 
 // Stripe webhook. On a paid checkout it RECORDS AN ORDER (source of truth for
 // money/refunds) and marks the listing sold. On a refund (charge.refunded) it
@@ -18,6 +22,128 @@ function admin() {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !serviceKey) return null;
   return createClient(url, serviceKey);
+}
+
+/**
+ * Emails the seller that an order came in, with everything they need to fulfil
+ * it: what was bought, what they'll be paid, and the buyer's delivery address
+ * plus invoicing details. Since we stopped asking Stripe to collect the address
+ * (the buyer types it on our checkout step instead), this email is how a seller
+ * gets it without opening the app.
+ *
+ * Idempotent across Stripe's webhook retries: the seller_notified_at stamp is
+ * CLAIMED first, and only the caller that actually claimed rows sends mail.
+ */
+async function notifySellerOfOrder(db: SupabaseClient, sessionId: string) {
+  if (!isEmailConfigured()) return;
+  try {
+    const { data: claimedRaw } = await db
+      .from('orders')
+      .update({ seller_notified_at: new Date().toISOString() })
+      .eq('stripe_session_id', sessionId)
+      .is('seller_notified_at', null)
+      .select(
+        'listing_id, seller_id, amount_total, buyer_email, buyer_name, buyer_phone, buyer_type, ' +
+          'company_name, company_cui, company_address, shipping_address',
+      );
+    const claimed = (claimedRaw ?? []) as unknown as Array<{
+      listing_id: string; seller_id: string; amount_total: number;
+      buyer_email: string | null; buyer_name: string | null; buyer_phone: string | null;
+      buyer_type: string | null; company_name: string | null; company_cui: string | null;
+      company_address: string | null; shipping_address: string | null;
+    }>;
+    if (claimed.length === 0) return; // already mailed
+
+    const sellerId = claimed[0].seller_id as string;
+    const { data: seller } = await db.auth.admin.getUserById(sellerId);
+    const { data: sellerRow } = await db
+      .from('sellers')
+      .select('contact_email, company_name')
+      .eq('id', sellerId)
+      .maybeSingle();
+    const to = sellerRow?.contact_email || seller?.user?.email;
+    if (!to) return;
+
+    const { data: titles } = await db
+      .from('listings')
+      .select('id, title')
+      .in('id', claimed.map((o) => o.listing_id));
+    const titleById = new Map(((titles ?? []) as Array<{ id: string; title: string }>).map((l) => [l.id, l.title]));
+
+    const b = claimed[0];
+    const total = claimed.reduce((s, o) => s + Number(o.amount_total ?? 0), 0);
+    const lines = claimed.map((o) => `${titleById.get(o.listing_id) ?? 'Produs'} — ${money(Number(o.amount_total ?? 0))}`);
+    const billing =
+      b.buyer_type === 'company'
+        ? [`Firmă: ${b.company_name}`, `CUI: ${b.company_cui}`, `Sediu: ${b.company_address}`]
+        : ['Persoană fizică'];
+    const contact = [b.buyer_name, b.buyer_phone, b.buyer_email].filter(Boolean) as string[];
+
+    const rows = (label: string, values: string[]) =>
+      values.length
+        ? `<tr><td style="padding:6px 12px 6px 0;color:#6b5c4c;vertical-align:top;white-space:nowrap">${label}</td>
+             <td style="padding:6px 0">${values.map((v) => escapeHtml(v)).join('<br>')}</td></tr>`
+        : '';
+
+    await sendEmail({
+      to,
+      replyTo: (b.buyer_email as string) ?? undefined,
+      subject: `Comandă nouă · ${money(total)} · Craft'zaar`,
+      text: [
+        'Ai primit o comandă nouă pe Craft\'zaar.',
+        '',
+        ...lines,
+        `TOTAL ÎNCASAT: ${money(total)}`,
+        '',
+        'CLIENT: ' + contact.join(' · '),
+        'FACTURARE: ' + billing.join(' · '),
+        'LIVRARE: ' + (b.shipping_address ?? '—'),
+        '',
+        `Comenzile tale: ${SITE_URL}/seller/dashboard`,
+      ].join('\n'),
+      html: `
+        <div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:560px;margin:0 auto;color:#2a211a">
+          <h2 style="font-size:19px;margin:0 0 4px">Comandă nouă</h2>
+          <p style="margin:0 0 18px;color:#6b5c4c">Ai primit o comandă pe Craft'zaar. Iată ce trebuie expediat.</p>
+
+          <table style="width:100%;border-collapse:collapse;background:#faf5ea;border:1px solid #d8c9ad;border-radius:10px">
+            <tbody>
+              ${claimed
+                .map(
+                  (o) => `<tr>
+                    <td style="padding:10px 14px">${escapeHtml(titleById.get(o.listing_id) ?? 'Produs')}</td>
+                    <td style="padding:10px 14px;text-align:right;white-space:nowrap">${money(Number(o.amount_total ?? 0))}</td>
+                  </tr>`,
+                )
+                .join('')}
+              <tr>
+                <td style="padding:10px 14px;border-top:1px solid #d8c9ad"><strong>Total încasat</strong></td>
+                <td style="padding:10px 14px;border-top:1px solid #d8c9ad;text-align:right"><strong>${money(total)}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <table style="width:100%;border-collapse:collapse;margin-top:18px;font-size:14px">
+            <tbody>
+              ${rows('Client', contact)}
+              ${rows('Facturare', billing)}
+              ${rows('Adresa de livrare', [(b.shipping_address as string) ?? '—'])}
+            </tbody>
+          </table>
+
+          <p style="margin-top:22px">
+            <a href="${SITE_URL}/seller/dashboard" style="display:inline-block;background:#b8562f;color:#fff;padding:10px 20px;border-radius:999px;text-decoration:none">
+              Vezi comenzile
+            </a>
+          </p>
+          <p style="font-size:13px;color:#6b5c4c">
+            Poți răspunde direct la acest email ca să iei legătura cu clientul. Clientul are drept de retur 14 zile.
+          </p>
+        </div>`,
+    });
+  } catch (e) {
+    console.error('seller order notification failed:', e);
+  }
 }
 
 /**
@@ -198,6 +324,11 @@ export async function POST(req: NextRequest) {
       // Buyer asked for an account at checkout → create it now that they've
       // paid, and email them a link to set a password.
       await createAccountIfRequested(db, session.id);
+
+      // Tell the seller what to ship and where. Runs after the 200 so a slow
+      // SMTP handshake can't push Stripe into retrying the whole webhook.
+      const sessionId = session.id;
+      after(() => notifySellerOfOrder(db, sessionId));
     }
   }
 

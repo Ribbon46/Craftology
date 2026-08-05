@@ -649,3 +649,9 @@ alter table public.orders
 -- ship the parcel and issue the invoice.
 grant select (buyer_name, buyer_phone, buyer_type, company_name, company_cui, company_address, shipping_address)
   on public.orders to authenticated;
+
+-- ============ Seller "new order" notification (aug 2026) ==================
+-- Stamped when the seller has been emailed about an order. Claiming it before
+-- sending makes the notification idempotent across Stripe's webhook retries.
+alter table public.orders
+  add column if not exists seller_notified_at timestamptz;
