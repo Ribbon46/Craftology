@@ -21,6 +21,8 @@ export interface Listing {
   shipping_price?: number | null;
   /** Whether the listed price includes 21% VAT, or the seller doesn't charge VAT. */
   vat_mode?: 'included' | 'not_applicable' | null;
+  /** Pieces available. Decremented on each sale; at 0 the listing flips to sold. */
+  stock?: number | null;
   category: string;
   subcategory?: string | null;
   image_urls: string[];

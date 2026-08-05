@@ -1,8 +1,79 @@
 'use server';
 
+import { after } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
+import { createServiceClient, isServiceConfigured } from '@/lib/supabase/admin';
 import { checkRateLimit } from '@/lib/ratelimit';
+import { sendEmail, escapeHtml, isEmailConfigured } from '@/lib/email';
 import { revalidatePath } from 'next/cache';
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://craftology-peach.vercel.app';
+
+/**
+ * Emails the other participant that they have a new message, so a seller
+ * doesn't have to sit in the app to notice one (owner request). The email
+ * carries the message text and a link straight into the conversation; its
+ * Reply-To is the sender's own address, so hitting Reply in a mail client
+ * reaches them directly.
+ *
+ * Runs after the response via `after()` — a slow SMTP handshake must never
+ * delay the message appearing in the sender's thread. Needs the service role
+ * to look up the recipient's email (auth.users is not readable via RLS).
+ */
+async function notifyNewMessage(opts: {
+  recipientId: string;
+  senderId: string;
+  conversationId: string;
+  text: string;
+}) {
+  if (!isEmailConfigured() || !isServiceConfigured()) return;
+  try {
+    const svc = createServiceClient();
+    const [{ data: recipient }, { data: sender }] = await Promise.all([
+      svc.auth.admin.getUserById(opts.recipientId),
+      svc.auth.admin.getUserById(opts.senderId),
+    ]);
+    const to = recipient?.user?.email;
+    if (!to) return;
+
+    const { data: senderProfile } = await svc
+      .from('profiles')
+      .select('username, full_name')
+      .eq('id', opts.senderId)
+      .maybeSingle();
+    const senderName = senderProfile?.full_name || senderProfile?.username || 'Un utilizator';
+    const link = `${SITE_URL}/messages?c=${opts.conversationId}`;
+    const excerpt = opts.text.slice(0, 600);
+
+    await sendEmail({
+      to,
+      // Replying in a mail client reaches the sender directly; replying in the
+      // app keeps the thread on Craft'zaar. Both work.
+      replyTo: sender?.user?.email ?? undefined,
+      subject: `Mesaj nou de la ${senderName} · Craft'zaar`,
+      text: `${senderName} ți-a trimis un mesaj:\n\n${excerpt}\n\nRăspunde în aplicație: ${link}\n(Poți răspunde și direct la acest email.)`,
+      html: `
+        <div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:520px;margin:0 auto;color:#2a211a">
+          <p style="font-size:15px">
+            <strong>${escapeHtml(senderName)}</strong> ți-a trimis un mesaj pe Craft'zaar:
+          </p>
+          <blockquote style="margin:16px 0;padding:12px 16px;border-left:3px solid #d8c9ad;background:#faf5ea;white-space:pre-line">
+            ${escapeHtml(excerpt)}
+          </blockquote>
+          <p>
+            <a href="${link}" style="display:inline-block;background:#b8562f;color:#fff;padding:10px 20px;border-radius:999px;text-decoration:none">
+              Răspunde în aplicație
+            </a>
+          </p>
+          <p style="font-size:13px;color:#6b5c4c">
+            Poți răspunde și direct la acest email — mesajul ajunge la ${escapeHtml(senderName)}.
+          </p>
+        </div>`,
+    });
+  } catch (e) {
+    console.error('message notification failed:', e);
+  }
+}
 
 export async function createConversation(listingId: string) {
   const supabase = await createServerClient();
@@ -111,6 +182,10 @@ export async function createMessage(conversationId: string, text: string) {
     .from('conversations')
     .update({ updated_at: new Date().toISOString() })
     .eq('id', conversationId);
+
+  // Tell the other side by email — sellers shouldn't have to poll the app.
+  const recipientId = conversation.buyer_id === user.id ? conversation.seller_id : conversation.buyer_id;
+  after(() => notifyNewMessage({ recipientId, senderId: user.id, conversationId, text: trimmed }));
 
   revalidatePath('/messages');
   return { success: true, message: newMessage };

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Tag, Check, Eye, X, ImagePlus } from 'lucide-react';
+import { ArrowLeft, Tag, Check, Eye, X, ImagePlus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -35,8 +35,17 @@ async function compressPhoto(file: File): Promise<File> {
   return file;
 }
 
-// Owner-only listing editor: modify title/description/price/category and offer
-// a discount ("oferă discount"). Photos aren't editable in v1.
+/** Swaps two entries — drives the photo-reorder arrows. */
+function swap<T>(arr: T[], a: number, b: number): T[] {
+  if (b < 0 || b >= arr.length) return arr;
+  const next = [...arr];
+  [next[a], next[b]] = [next[b], next[a]];
+  return next;
+}
+
+// Owner-only listing editor: title/description/price/category, discounts
+// ("oferă discount"), delivery + VAT, stock, and the photo gallery (add,
+// remove, reorder).
 export default function EditListingPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -52,6 +61,7 @@ export default function EditListingPage() {
   const [discountPct, setDiscountPct] = useState(''); // '' = no discount
   const [shippingPrice, setShippingPrice] = useState('0');
   const [vatMode, setVatMode] = useState<'included' | 'not_applicable'>('included');
+  const [stock, setStock] = useState('1');
   const [keepUrls, setKeepUrls] = useState<string[]>([]);
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const originalUrls = useRef<string[]>([]);
@@ -80,6 +90,7 @@ export default function EditListingPage() {
           }
           setShippingPrice(String(l.shipping_price ?? 0));
           setVatMode(l.vat_mode === 'not_applicable' ? 'not_applicable' : 'included');
+          setStock(String(l.stock ?? (l.status === 'sold' ? 0 : 1)));
           setKeepUrls(l.image_urls ?? []);
           originalUrls.current = l.image_urls ?? [];
         }
@@ -118,6 +129,7 @@ export default function EditListingPage() {
         originalPrice: pct > 0 ? priceNum : null,
         shippingPrice: Number(shippingPrice) || 0,
         vatMode,
+        stock: Math.max(0, Math.trunc(Number(stock) || 0)),
       });
       if (res && 'error' in res && res.error) {
         const details = 'details' in res && res.details ? Object.values(res.details as Record<string, string[]>).flat() : [];
@@ -294,6 +306,24 @@ export default function EditListingPage() {
             </div>
           </div>
 
+          {/* Stock — the seller's inventory counter for this piece. */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium">Bucăți disponibile</label>
+            <Input
+              type="number"
+              min="0"
+              max="9999"
+              step="1"
+              value={stock}
+              onChange={(e) => setStock(e.target.value)}
+              className="max-w-[140px]"
+            />
+            <p className="text-xs text-ink-faint">
+              Scade automat la fiecare vânzare. 0 = produsul apare ca vândut; pune un număr mai mare ca să-l repui în
+              vânzare.
+            </p>
+          </div>
+
           <div className="space-y-1.5">
             <label className="text-sm font-medium">Descriere *</label>
             <Textarea rows={7} value={description} onChange={(e) => setDescription(e.target.value)} maxLength={3000} className="resize-none" />
@@ -306,9 +336,14 @@ export default function EditListingPage() {
               Fotografii ({keepUrls.length + newFiles.length}/10)
             </label>
             <div className="flex flex-wrap gap-2">
-              {keepUrls.map((url) => (
+              {keepUrls.map((url, i) => (
                 <div key={url} className="relative w-20 h-20 rounded-xl overflow-hidden border border-line bg-cream">
                   <Image src={url} alt="" fill sizes="80px" className="object-cover" />
+                  {i === 0 && (
+                    <span className="absolute bottom-0 inset-x-0 bg-ink/70 text-paper text-[9px] text-center py-0.5">
+                      Principală
+                    </span>
+                  )}
                   <button
                     type="button"
                     aria-label="Elimină fotografia"
@@ -316,6 +351,25 @@ export default function EditListingPage() {
                     className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-ink/70 text-paper grid place-items-center hover:bg-destructive"
                   >
                     <X className="w-3 h-3" />
+                  </button>
+                  {/* Reorder: the first photo is the one buyers see in the feed. */}
+                  <button
+                    type="button"
+                    aria-label="Mută fotografia mai devreme"
+                    disabled={i === 0}
+                    onClick={() => setKeepUrls((prev) => swap(prev, i, i - 1))}
+                    className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-ink/70 text-paper grid place-items-center hover:bg-clay disabled:opacity-0 disabled:pointer-events-none"
+                  >
+                    <ChevronLeft className="w-3 h-3" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Mută fotografia mai târziu"
+                    disabled={i === keepUrls.length - 1}
+                    onClick={() => setKeepUrls((prev) => swap(prev, i, i + 1))}
+                    className="absolute bottom-0.5 right-0.5 w-5 h-5 rounded-full bg-ink/70 text-paper grid place-items-center hover:bg-clay disabled:opacity-0 disabled:pointer-events-none"
+                  >
+                    <ChevronRight className="w-3 h-3" />
                   </button>
                 </div>
               ))}

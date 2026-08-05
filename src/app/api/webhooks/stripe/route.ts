@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import type Stripe from 'stripe';
 import { stripe, isStripeConfigured } from '@/lib/stripe';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 // Stripe webhook. On a paid checkout it RECORDS AN ORDER (source of truth for
 // money/refunds) and marks the listing sold. On a refund (charge.refunded) it
@@ -18,6 +18,48 @@ function admin() {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !serviceKey) return null;
   return createClient(url, serviceKey);
+}
+
+/**
+ * "Creează-mi cont" at checkout: once the payment lands, create the Supabase
+ * account for that email and mail them a link to set a password. Idempotent —
+ * the `account_created` flag stops Stripe retries from re-sending the invite,
+ * and an email that already has an account is simply skipped.
+ */
+async function createAccountIfRequested(db: SupabaseClient, sessionId: string) {
+  const { data: cd } = await db
+    .from('checkout_details')
+    .select('email, full_name, create_account, account_created')
+    .eq('stripe_session_id', sessionId)
+    .maybeSingle();
+  if (!cd?.create_account || cd.account_created || !cd.email) return;
+
+  // Claim it first: a concurrent retry that loses this race sees the flag set
+  // and bails, so the buyer never gets two invitations.
+  const { data: claimed } = await db
+    .from('checkout_details')
+    .update({ account_created: true })
+    .eq('stripe_session_id', sessionId)
+    .eq('account_created', false)
+    .select('stripe_session_id');
+  if (!claimed || claimed.length === 0) return;
+
+  try {
+    const origin = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://craftology-peach.vercel.app';
+    const { error } = await db.auth.admin.inviteUserByEmail(cd.email, {
+      data: { full_name: cd.full_name ?? null },
+      redirectTo: `${origin}/profile/edit`,
+    });
+    // "already registered" is a success from the buyer's point of view — they
+    // have an account, which is all they asked for.
+    if (error && !/already/i.test(error.message)) {
+      console.error('checkout account creation failed:', error.message);
+      await db.from('checkout_details').update({ account_created: false }).eq('stripe_session_id', sessionId);
+    }
+  } catch (e) {
+    console.error('checkout account creation threw:', e);
+    await db.from('checkout_details').update({ account_created: false }).eq('stripe_session_id', sessionId);
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -97,13 +139,29 @@ export async function POST(req: NextRequest) {
         assigned += share;
       });
 
+      // Invoicing/delivery details the buyer filled in on our checkout step
+      // (individual vs company, company CUI, addresses) — captured before the
+      // redirect and stamped onto every order row of this session.
+      const { data: cd } = await db
+        .from('checkout_details')
+        .select('email, full_name, phone, buyer_type, company_name, company_cui, company_address, shipping_address')
+        .eq('stripe_session_id', session.id)
+        .maybeSingle();
+
       // We charge a 10% application fee on marketplace (connected-account) sales
       // (must match COMMISSION_RATE in checkout.ts); platform-owned listings take none.
       const rows = listingIds.map((id) => ({
         listing_id: id,
         seller_id: sellerId,
         buyer_id: buyerId,
-        buyer_email: session.customer_details?.email ?? null,
+        buyer_email: cd?.email ?? session.customer_details?.email ?? null,
+        buyer_name: cd?.full_name ?? session.customer_details?.name ?? null,
+        buyer_phone: cd?.phone ?? session.customer_details?.phone ?? null,
+        buyer_type: cd?.buyer_type ?? 'individual',
+        company_name: cd?.company_name ?? null,
+        company_cui: cd?.company_cui ?? null,
+        company_address: cd?.company_address ?? null,
+        shipping_address: cd?.shipping_address ?? null,
         stripe_session_id: session.id,
         payment_intent_id: String(session.payment_intent ?? ''),
         stripe_account_id: stripeAccountId,
@@ -119,9 +177,9 @@ export async function POST(req: NextRequest) {
         .upsert(rows, { onConflict: 'stripe_session_id,listing_id', ignoreDuplicates: true });
       if (insErr) console.error('order upsert error:', insErr.message);
 
-      // Only mark sold the items whose order is still 'paid'. A late/duplicate
-      // retry arriving AFTER a refund (which re-listed the item) must NOT flip
-      // it back to 'sold'.
+      // Only touch inventory for items whose order is still 'paid'. A late or
+      // duplicate retry arriving AFTER a refund (which re-listed the item) must
+      // NOT consume stock again.
       const { data: ords } = await db
         .from('orders')
         .select('listing_id, status')
@@ -130,10 +188,16 @@ export async function POST(req: NextRequest) {
         .filter((o) => o.status === 'paid')
         .map((o) => o.listing_id);
       if (stillPaid.length > 0) {
-        await db.from('listings').update({ status: 'sold' }).in('id', stillPaid).eq('status', 'active');
+        // Sellers can stock several copies of a piece, so a sale decrements
+        // rather than flips: only the last one taken marks the listing sold.
+        await db.rpc('consume_listing_stock', { p_listing_ids: stillPaid });
         revalidatePath('/');
         stillPaid.forEach((id) => revalidatePath(`/listings/${id}`));
       }
+
+      // Buyer asked for an account at checkout → create it now that they've
+      // paid, and email them a link to set a password.
+      await createAccountIfRequested(db, session.id);
     }
   }
 
@@ -163,7 +227,7 @@ export async function POST(req: NextRequest) {
           for (const o of rows) {
             await db.from('orders').update({ amount_refunded: o.amount_total }).eq('id', o.id);
           }
-          await db.from('listings').update({ status: 'active' }).in('id', listingIds);
+          await db.rpc('restore_listing_stock', { p_listing_ids: listingIds });
           revalidatePath('/');
           listingIds.forEach((id) => revalidatePath(`/listings/${id}`));
         }

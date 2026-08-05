@@ -68,6 +68,8 @@ export function ListingDetailClient({
 
   const sold = listing.status !== 'active';
   const shippingCost = Number(listing.shipping_price ?? 0);
+  // Legacy rows predate the column; treat a missing value as a single piece.
+  const stock = Number(listing.stock ?? 1);
   // Owner sees a management view (no buy/message/save on their own product);
   // ?preview=1 shows them the buyer view instead (opened from the editor).
   const [preview, setPreview] = useState(false);
@@ -269,17 +271,41 @@ export function ListingDetailClient({
             )}
           </p>
 
-          {/* Seller */}
+          {/* Stock, kept up to date automatically as orders come in. */}
+          {listing.status === 'active' && stock > 0 && (
+            <p className="text-sm mt-1">
+              {stock === 1 ? (
+                <span className="text-clay font-medium">Ultima bucată disponibilă</span>
+              ) : stock <= 3 ? (
+                <span className="text-clay font-medium">Doar {stock} bucăți disponibile</span>
+              ) : (
+                <span className="text-sage font-medium">{stock} bucăți disponibile</span>
+              )}
+            </p>
+          )}
+
+          {/* Seller — the brand name links through to the artisan's page
+              (owner request: "sa poata fi clickat si sa se vada detalii"). */}
         <div className="mt-6 flex items-center gap-3 p-4 rounded-2xl bg-surface border-[1.5px] border-line-strong shadow-[4px_4px_0_0_var(--press-soft)]">
-          <div className="relative w-11 h-11 rounded-full overflow-hidden bg-cream ring-1 ring-line grid place-items-center flex-shrink-0">
+          <Link
+            href={seller?.id ? `/atelier/${seller.id}` : '#'}
+            className="relative w-11 h-11 rounded-full overflow-hidden bg-cream ring-1 ring-line grid place-items-center flex-shrink-0"
+          >
             {seller?.avatar_url ? (
               <Image src={seller.avatar_url} alt={seller.username} fill sizes="44px" className="object-cover" />
             ) : (
               <span className="font-display text-lg text-ink-soft">{seller?.username?.charAt(0).toUpperCase() ?? 'V'}</span>
             )}
-          </div>
+          </Link>
           <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-ink truncate">{seller?.full_name ?? seller?.username ?? 'Vânzător'}</h3>
+            <h3 className="font-medium text-ink truncate">
+              <Link
+                href={seller?.id ? `/atelier/${seller.id}` : '#'}
+                className="hover:text-clay underline decoration-line-strong underline-offset-4 hover:decoration-clay transition-colors"
+              >
+                {sellerContact?.company_name ?? seller?.full_name ?? seller?.username ?? 'Vânzător'}
+              </Link>
+            </h3>
             {sellerContact ? (
               <p className="flex items-center gap-1 text-xs text-sage">
                 <BadgeCheck className="w-3.5 h-3.5" />
@@ -288,6 +314,9 @@ export function ListingDetailClient({
             ) : (
               seller?.username && <p className="text-xs text-ink-faint truncate">@{seller.username}</p>
             )}
+            <Link href={seller?.id ? `/atelier/${seller.id}` : '#'} className="text-xs text-clay hover:underline">
+              Vezi atelierul și celelalte produse →
+            </Link>
           </div>
           {seller?.id && <FollowButton sellerId={seller.id} className="flex-shrink-0" />}
         </div>

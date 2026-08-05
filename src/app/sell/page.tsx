@@ -48,6 +48,7 @@ export default function SellPage() {
   const [shippingPrice, setShippingPrice] = useState('');
   const [freeShipping, setFreeShipping] = useState(false);
   const [vatMode, setVatMode] = useState<'included' | 'not_applicable'>('included');
+  const [stock, setStock] = useState('1');
   const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -150,6 +151,7 @@ export default function SellPage() {
       formData.append('subcategory', subcategory);
       formData.append('shipping_price', freeShipping ? '0' : shippingPrice || '0');
       formData.append('vat_mode', vatMode);
+      formData.append('stock', String(Math.max(1, Math.trunc(Number(stock) || 1))));
 
       let compressed = await Promise.all(files.map(compressImage));
       // Adaptive second pass: with many photos the batch can still exceed the
@@ -445,6 +447,25 @@ export default function SellPage() {
                 </label>
                 <p className="text-xs text-ink-soft">
                   Se adaugă la plată, o singură dată pe comandă dacă un client cumpără mai multe produse de la tine.
+                </p>
+              </div>
+
+              {/* Stock */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium" htmlFor="stock">Bucăți disponibile *</label>
+                <Input
+                  id="stock"
+                  type="number"
+                  value={stock}
+                  onChange={(e) => setStock(e.target.value)}
+                  min="1"
+                  max="9999"
+                  step="1"
+                  className="max-w-[140px]"
+                />
+                <p className="text-xs text-ink-soft">
+                  Scade automat la fiecare vânzare. Când ajunge la 0, produsul se marchează ca vândut — îl poți
+                  reactiva oricând mărind numărul din pagina produsului.
                 </p>
               </div>
 

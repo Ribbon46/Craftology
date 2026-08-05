@@ -1,12 +1,14 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ShoppingBag, Trash2, ArrowLeft, Store, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/lib/cart';
+import { useSession } from '@/lib/hooks';
 import { createCartCheckoutSession } from '@/actions/checkout';
+import { CheckoutDetailsForm, EMPTY_DETAILS, type DetailsState } from '@/components/CheckoutDetailsForm';
 
 const fmt = (n: number) => new Intl.NumberFormat('ro-RO', { maximumFractionDigits: 0 }).format(n);
 
@@ -18,9 +20,16 @@ const fmt = (n: number) => new Intl.NumberFormat('ro-RO', { maximumFractionDigit
  */
 export default function CartPage() {
   const { items, total, remove, clear, ready } = useCart();
+  const { user } = useSession();
   const [accepted, setAccepted] = useState(false);
   const [busySeller, setBusySeller] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [details, setDetails] = useState<DetailsState>(EMPTY_DETAILS);
+
+  // Prefill the email of a signed-in buyer (they can still change it).
+  useEffect(() => {
+    if (user?.email) setDetails((d) => (d.email ? d : { ...d, email: user.email! }));
+  }, [user]);
 
   const groups = useMemo(() => {
     const by = new Map<string, { sellerName: string; items: typeof items }>();
@@ -45,7 +54,7 @@ export default function CartPage() {
     setError(null);
     setBusySeller(sellerId);
     try {
-      const res = await createCartCheckoutSession(group.items.map((i) => i.id));
+      const res = await createCartCheckoutSession(group.items.map((i) => i.id), details);
       if ('url' in res && res.url) {
         window.location.href = res.url;
         return; // navigating to Stripe — keep the loading state
@@ -135,20 +144,15 @@ export default function CartPage() {
               ))}
             </ul>
 
-            <div className="px-4 py-3 border-t border-line flex items-center justify-between gap-3 flex-wrap">
+            {/* Subtotal only — paying happens at the bottom, after the buyer
+                has filled in their details and accepted the terms. */}
+            <div className="px-4 py-3 border-t border-line">
               <p className="text-sm text-ink-soft">
                 Produse {fmt(g.goods)} lei ·{' '}
                 {g.shipping > 0 ? `livrare ${fmt(g.shipping)} lei` : 'livrare gratuită'}
                 <br />
                 <strong className="price text-ink">Total {fmt(g.total)} lei</strong>
               </p>
-              <Button
-                className="rounded-full"
-                disabled={!accepted || busySeller !== null}
-                onClick={() => checkout(g.sellerId)}
-              >
-                {busySeller === g.sellerId ? 'Se deschide plata…' : `Finalizează comanda · ${fmt(g.total)} lei`}
-              </Button>
             </div>
           </section>
         ))}
@@ -161,8 +165,13 @@ export default function CartPage() {
         </p>
       )}
 
+      {/* Buyer details — filled once, used for every atelier in the basket */}
+      <div className="mt-6">
+        <CheckoutDetailsForm value={details} onChange={setDetails} signedIn={!!user} />
+      </div>
+
       {/* Total + terms gate */}
-      <div className="mt-6 rounded-2xl border-[1.5px] border-line-strong bg-surface shadow-[4px_4px_0_0_var(--press-soft)] p-4">
+      <div className="mt-4 rounded-2xl border-[1.5px] border-line-strong bg-surface shadow-[4px_4px_0_0_var(--press-soft)] p-4">
         <div className="space-y-1.5 mb-3 text-sm">
           <div className="flex items-center justify-between text-ink-soft">
             <span>Produse</span>
@@ -207,6 +216,25 @@ export default function CartPage() {
             Bifează căsuța de mai sus pentru a putea finaliza comanda.
           </p>
         )}
+
+        {/* One payment per atelier — each artisan is paid on their own account. */}
+        <div className="mt-4 space-y-2">
+          {groups.map((g) => (
+            <Button
+              key={g.sellerId}
+              className="w-full rounded-full"
+              disabled={!accepted || busySeller !== null}
+              onClick={() => checkout(g.sellerId)}
+            >
+              {busySeller === g.sellerId
+                ? 'Se deschide plata…'
+                : groups.length > 1
+                  ? `Plătește ${g.sellerName} · ${fmt(g.total)} lei`
+                  : `Finalizează comanda · ${fmt(g.total)} lei`}
+            </Button>
+          ))}
+        </div>
+
         <p className="flex items-center gap-1.5 text-xs text-ink-faint mt-3">
           <ShieldCheck className="w-3.5 h-3.5 text-sage" />
           Plată securizată prin Stripe · Drept de retur în 14 zile

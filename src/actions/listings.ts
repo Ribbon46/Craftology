@@ -66,6 +66,12 @@ export async function createListing(formData: FormData) {
     return { error: 'Opțiune TVA invalidă.' };
   }
 
+  // Pieces available. Defaults to 1 (a one-off piece) when the field is absent.
+  const stock = Math.trunc(Number(formData.get('stock') ?? 1));
+  if (!Number.isFinite(stock) || stock < 1 || stock > 9999) {
+    return { error: 'Numărul de bucăți trebuie să fie între 1 și 9999.' };
+  }
+
   // Get images from formData
   const images = formData.getAll('images') as File[];
 
@@ -145,6 +151,7 @@ export async function createListing(formData: FormData) {
       price: validatedData.data.price,
       shipping_price: shippingPrice,
       vat_mode: vatMode,
+      stock,
       category: validatedData.data.category,
       subcategory: validatedData.data.subcategory,
       image_urls: imageUrls,
@@ -246,6 +253,7 @@ export async function updateListing(
     originalPrice: number | null;
     shippingPrice: number;
     vatMode: string;
+    stock: number;
   },
 ) {
   const supabase = await createServerClient();
@@ -281,6 +289,11 @@ export async function updateListing(
     return { error: 'Opțiune TVA invalidă.' };
   }
 
+  const stock = Math.trunc(Number(fields.stock ?? 1));
+  if (!Number.isFinite(stock) || stock < 0 || stock > 9999) {
+    return { error: 'Numărul de bucăți trebuie să fie între 0 și 9999.' };
+  }
+
   const { data: listing } = await supabase
     .from('listings')
     .select('seller_id')
@@ -302,6 +315,10 @@ export async function updateListing(
       original_price: originalPrice,
       shipping_price: shippingPrice,
       vat_mode: fields.vatMode,
+      stock,
+      // Restocking a sold-out piece puts it back on sale; setting stock to 0
+      // takes it off without deleting it.
+      status: stock > 0 ? 'active' : 'sold',
     })
     .eq('id', listingId);
   if (updateError) {

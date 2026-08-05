@@ -102,6 +102,15 @@ export default function MessagesPage() {
     };
   }, [live, user, sessionLoading]);
 
+  // `/messages?c=<id>` — the deep link in the "you have a new message" email
+  // opens straight into that thread once the list has loaded.
+  useEffect(() => {
+    if (loadingConvs || selectedConversation) return;
+    const wanted = new URLSearchParams(window.location.search).get('c');
+    if (wanted && conversations.some((c) => c.id === wanted)) handleConversationSelect(wanted);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadingConvs, conversations]);
+
   const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   useEffect(() => {
     scrollToBottom();

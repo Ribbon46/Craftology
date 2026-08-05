@@ -582,3 +582,70 @@ alter table public.listings add constraint listings_vat_mode_check
   check (vat_mode in ('included','not_applicable'));
 alter table public.listings add constraint listings_shipping_sane
   check (shipping_price >= 0 and shipping_price <= 10000);
+
+-- ============ Stock + buyer invoicing details (aug 2026) ==================
+-- Per-product stock. Handmade listings are usually one-offs, so 1 is the right
+-- default; a sale decrements it and the listing flips to 'sold' only at zero.
+alter table public.listings
+  add column if not exists stock integer not null default 1;
+alter table public.listings drop constraint if exists listings_stock_sane;
+alter table public.listings add constraint listings_stock_sane
+  check (stock >= 0 and stock <= 9999);
+grant select (stock) on public.listings to anon, authenticated;
+
+-- Stock movements run as SQL so two buyers can't both read stock=1 and both win.
+create or replace function public.consume_listing_stock(p_listing_ids uuid[])
+returns void language sql security definer set search_path = public as $$
+  update public.listings
+     set stock  = greatest(stock - 1, 0),
+         status = case when stock - 1 <= 0 then 'sold' else status end
+   where id = any(p_listing_ids) and status = 'active';
+$$;
+create or replace function public.restore_listing_stock(p_listing_ids uuid[])
+returns void language sql security definer set search_path = public as $$
+  update public.listings
+     set stock = least(stock + 1, 9999), status = 'active'
+   where id = any(p_listing_ids);
+$$;
+revoke all on function public.consume_listing_stock(uuid[]) from public, anon, authenticated;
+revoke all on function public.restore_listing_stock(uuid[]) from public, anon, authenticated;
+grant execute on function public.consume_listing_stock(uuid[]) to service_role;
+grant execute on function public.restore_listing_stock(uuid[]) to service_role;
+
+-- Invoicing/delivery details captured on OUR checkout step (Stripe Checkout
+-- allows only three custom fields, not enough for the company branch) and
+-- copied onto the order rows by the webhook. Service-role only.
+create table if not exists public.checkout_details (
+  stripe_session_id text primary key,
+  email             text not null,
+  full_name         text,
+  phone             text,
+  buyer_type        text not null default 'individual',
+  company_name      text,
+  company_cui       text,
+  company_address   text,
+  shipping_address  text not null,
+  create_account    boolean not null default false,
+  account_created   boolean not null default false,
+  created_at        timestamptz not null default now(),
+  constraint checkout_details_buyer_type_check check (buyer_type in ('individual','company')),
+  constraint checkout_details_company_complete check (
+    buyer_type <> 'company'
+    or (coalesce(company_name,'') <> '' and coalesce(company_cui,'') <> '' and coalesce(company_address,'') <> '')
+  )
+);
+alter table public.checkout_details enable row level security;
+revoke all on public.checkout_details from anon, authenticated;
+
+alter table public.orders
+  add column if not exists buyer_name       text,
+  add column if not exists buyer_phone      text,
+  add column if not exists buyer_type       text,
+  add column if not exists company_name     text,
+  add column if not exists company_cui      text,
+  add column if not exists company_address  text,
+  add column if not exists shipping_address text;
+-- Rows stay participant-scoped by RLS; these carry what the seller needs to
+-- ship the parcel and issue the invoice.
+grant select (buyer_name, buyer_phone, buyer_type, company_name, company_cui, company_address, shipping_address)
+  on public.orders to authenticated;

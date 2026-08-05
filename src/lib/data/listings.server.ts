@@ -17,7 +17,7 @@ import type { ListingsPage } from '@/lib/data/listings';
 const PAGE_SIZE = 25;
 
 const SELECT =
-  'id, title, description, price, original_price, shipping_price, vat_mode, category, subcategory, image_urls, seller_id, status, created_at, ' +
+  'id, title, description, price, original_price, shipping_price, vat_mode, stock, category, subcategory, image_urls, seller_id, status, created_at, ' +
   'profiles:profiles!listings_seller_id_fkey ( id, username, full_name, avatar_url, rating )';
 
 function isRealCategory(category?: string): category is string {
@@ -75,14 +75,36 @@ export async function fetchListingsPageServer(
   return { data: slice, nextCursor: offset + PAGE_SIZE < filtered.length ? offset + PAGE_SIZE : null, total: filtered.length };
 }
 
+/** An artisan's active listings, newest first — for their public atelier page. */
+export async function fetchSellerListingsServer(sellerId: string, limit = 60): Promise<Listing[]> {
+  if (isSupabaseConfigured()) {
+    try {
+      const { data, error } = await anon()
+        .from('listings')
+        .select(SELECT)
+        .eq('seller_id', sellerId)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+      if (!error && data) return data as unknown as Listing[];
+    } catch {
+      // fall through
+    }
+  }
+  return MOCK_LISTINGS.filter((l) => l.seller_id === sellerId);
+}
+
 export interface SellerPublic {
   id: string;
   company_name: string | null;
   contact_email: string | null;
   contact_phone: string | null;
   contact_other: string | null;
+  /** The artisan's own short description of their workshop, shown on /atelier. */
+  workshop_description: string | null;
   status: string;
   vacation_until: string | null;
+  created_at?: string | null;
 }
 
 /** Public seller info (company + contact methods) for buyer display on a
@@ -92,7 +114,7 @@ export async function fetchSellerPublicById(id: string): Promise<SellerPublic | 
     try {
       const { data, error } = await anon()
         .from('sellers')
-        .select('id, company_name, contact_email, contact_phone, contact_other, status, vacation_until')
+        .select('id, company_name, contact_email, contact_phone, contact_other, workshop_description, status, vacation_until, created_at')
         .eq('id', id)
         .maybeSingle();
       if (!error && data) return data as SellerPublic;
