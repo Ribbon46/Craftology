@@ -70,7 +70,7 @@ export function InstallPrompt() {
 
   if (!show || !consented) return null;
   return (
-    <div className="fixed inset-x-0 bottom-36 lg:bottom-20 z-[61] px-3">
+    <div className="no-print fixed inset-x-0 bottom-36 lg:bottom-20 z-[61] px-3">
       <div className="mx-auto max-w-md rounded-2xl border-[1.5px] border-line-strong bg-surface/95 backdrop-blur-md shadow-[4px_4px_0_0_var(--press-soft)] p-3.5 flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-clay grid place-items-center shrink-0">
           <Download className="w-5 h-5 text-paper" />

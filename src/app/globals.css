@@ -378,3 +378,60 @@
   font-family: var(--font-display);
   font-feature-settings: "tnum" 1;
 }
+
+/* =====================================================================
+   Print — the seller's inventory report is meant to come out on paper
+   (owner request). App chrome, floating widgets and controls carry
+   `.no-print`; what's left is the report itself on white.
+   ===================================================================== */
+@media print {
+  .no-print,
+  .no-print * {
+    display: none !important;
+  }
+  /* The grain overlay is a fixed pseudo-element — it would tile onto every
+     printed page and eat toner. */
+  .paper-grain::after {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  main {
+    padding-bottom: 0 !important;
+  }
+  .print-area {
+    margin: 0 !important;
+  }
+  /* Flat on paper: the hard offset shadows and tints only read on screen. */
+  .print-area * {
+    box-shadow: none !important;
+  }
+  .print-area table {
+    width: 100% !important;
+    font-size: 11pt;
+  }
+  .print-area thead {
+    display: table-header-group; /* repeat the header on every page */
+  }
+  .print-area tr {
+    break-inside: avoid;
+  }
+  /* Number inputs print as plain text — no spinners, no boxes. */
+  .print-area input[type='number'] {
+    border: 0 !important;
+    background: transparent !important;
+    padding: 0 !important;
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+  .print-area input[type='number']::-webkit-outer-spin-button,
+  .print-area input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  @page {
+    margin: 14mm;
+  }
+}

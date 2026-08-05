@@ -61,14 +61,14 @@ export function HelpWidget() {
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-label={open ? 'Închide ajutorul' : 'Deschide ajutorul'}
-        className="fixed right-4 bottom-24 lg:bottom-6 z-[55] inline-flex items-center gap-1.5 rounded-full bg-ink text-paper pl-3 pr-4 py-2.5 text-sm font-medium border-[1.5px] border-edge shadow-[3px_3px_0_0_var(--press)] hover:-translate-y-px transition-transform"
+        className="no-print fixed right-4 bottom-24 lg:bottom-6 z-[55] inline-flex items-center gap-1.5 rounded-full bg-ink text-paper pl-3 pr-4 py-2.5 text-sm font-medium border-[1.5px] border-edge shadow-[3px_3px_0_0_var(--press)] hover:-translate-y-px transition-transform"
       >
         {open ? <X className="w-4 h-4" /> : <HelpCircle className="w-4 h-4" />}
         Ajutor
       </button>
 
       {open && (
-        <div className="fixed right-4 bottom-36 lg:bottom-[4.5rem] z-[55] w-[calc(100vw-2rem)] max-w-sm rounded-2xl border-[1.5px] border-line-strong bg-surface shadow-[5px_5px_0_0_var(--press-soft)] overflow-hidden">
+        <div className="no-print fixed right-4 bottom-36 lg:bottom-[4.5rem] z-[55] w-[calc(100vw-2rem)] max-w-sm rounded-2xl border-[1.5px] border-line-strong bg-surface shadow-[5px_5px_0_0_var(--press-soft)] overflow-hidden">
           <div className="bg-clay-soft/50 border-b border-line px-4 py-3">
             <p className="font-display text-lg text-ink leading-tight">Ai nevoie de ajutor?</p>
             <p className="text-xs text-ink-soft">Răspunsuri rapide sau contact direct.</p>

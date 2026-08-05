@@ -446,3 +446,36 @@ export async function updateListingStatus(listingId: string, status: 'active' | 
   revalidatePath(`/listings/${listingId}`);
   return { success: true };
 }
+/**
+ * Bulk stock edit from the seller's inventory report — the one place a seller
+ * can correct quantities across their whole catalogue without opening each
+ * product. Only their own listings are touched; the ownership filter is part
+ * of the UPDATE, so a forged id simply matches nothing.
+ */
+export async function updateInventory(items: Array<{ id: string; stock: number }>) {
+  const supabase = await createServerClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) return { error: 'Autentificare necesară' };
+
+  const clean = (items ?? [])
+    .filter((i) => i && typeof i.id === 'string' && i.id.length > 0)
+    .map((i) => ({ id: i.id, stock: Math.trunc(Number(i.stock)) }))
+    .filter((i) => Number.isFinite(i.stock) && i.stock >= 0 && i.stock <= 9999);
+  if (clean.length === 0) return { error: 'Nu există modificări valide de salvat.' };
+  if (clean.length > 500) return { error: 'Prea multe produse odată. Salvează în reprize mai mici.' };
+
+  for (const { id, stock } of clean) {
+    const { error } = await supabase
+      .from('listings')
+      // Stock and availability move together: 0 reads as sold, anything above
+      // puts the piece back on sale.
+      .update({ stock, status: stock > 0 ? 'active' : 'sold' })
+      .eq('id', id)
+      .eq('seller_id', user.id);
+    if (error) return { error: `Eroare la salvare: ${error.message}` };
+    revalidatePath(`/listings/${id}`);
+  }
+
+  revalidatePath('/');
+  return { success: true, updated: clean.length };
+}

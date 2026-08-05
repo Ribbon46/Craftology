@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Store, CreditCard, PackageOpen, Plus } from 'lucide-react';
+import { ArrowLeft, Store, CreditCard, PackageOpen, Plus, ClipboardList, LayoutGrid } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useSession } from '@/lib/hooks';
@@ -16,6 +16,7 @@ import { SellerOrders } from '@/components/SellerOrders';
 import { CloseShopButton } from '@/components/CloseShopButton';
 import { VacationCard } from '@/components/VacationCard';
 import { ImportCatalogCard } from '@/components/ImportCatalogCard';
+import { InventoryReport } from '@/components/InventoryReport';
 import { Listing } from '@/lib/mock';
 
 export default function SellerDashboardPage() {
@@ -27,6 +28,7 @@ export default function SellerDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [opening, setOpening] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tab, setTab] = useState<'panou' | 'inventar'>('panou');
 
   useEffect(() => {
     if (sessionLoading) return;
@@ -95,7 +97,30 @@ export default function SellerDashboardPage() {
         <Store className="w-6 h-6 text-clay" />
         <h1 className="font-display text-2xl text-ink">{seller.company_name}</h1>
       </div>
-      <p className="text-ink-soft mb-6">Panoul tău de vânzător</p>
+      <p className="text-ink-soft mb-5">Panoul tău de vânzător</p>
+
+      {/* Tabs: the day-to-day panel vs the printable stock report */}
+      <div className="flex gap-1.5 mb-5 no-print">
+        {(
+          [
+            { id: 'panou', label: 'Panou', icon: LayoutGrid },
+            { id: 'inventar', label: 'Inventar', icon: ClipboardList },
+          ] as const
+        ).map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            onClick={() => setTab(id)}
+            className={`inline-flex items-center gap-1.5 rounded-full border-[1.5px] px-4 py-2 text-sm font-medium transition-colors ${
+              tab === id
+                ? 'border-clay bg-clay text-paper shadow-[2px_2px_0_0_var(--press)]'
+                : 'border-line-strong text-ink-soft hover:border-clay/50 hover:text-clay'
+            }`}
+          >
+            <Icon className="w-4 h-4" />
+            {label}
+          </button>
+        ))}
+      </div>
 
       {error && (
         <div className="mb-4 p-3 rounded-xl bg-destructive/10 border border-destructive/25 text-destructive text-sm">
@@ -103,6 +128,10 @@ export default function SellerDashboardPage() {
         </div>
       )}
 
+      {tab === 'inventar' ? (
+        <InventoryReport listings={listings} shopName={seller.company_name} />
+      ) : (
+      <>
       {/* Stats + payouts */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
         <Stat label="Active" value={active.length} />
@@ -169,6 +198,8 @@ export default function SellerDashboardPage() {
       )}
 
       <CloseShopButton />
+      </>
+      )}
     </div>
   );
 }

@@ -7,7 +7,7 @@ import { AnpcBadges } from '@/components/AnpcBadges';
 // mobile users see the consumer-protection notices too.
 export function SiteFooter() {
   return (
-    <footer className="border-t-2 border-dashed border-line-strong bg-paper mt-10 lg:mt-20">
+    <footer className="no-print border-t-2 border-dashed border-line-strong bg-paper mt-10 lg:mt-20">
       <div className="hidden lg:grid mx-auto w-full max-w-6xl px-8 py-14 grid-cols-[1.5fr_1fr_1fr_1fr] gap-10">
         <div className="max-w-xs">
           <p className="font-display text-2xl text-ink">{APP_NAME}</p>
