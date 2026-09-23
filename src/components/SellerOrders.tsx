@@ -14,9 +14,9 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { cancelOrderAsSeller, type SellerOrderRow } from '@/actions/orders';
 import {
-  COMPANY,
+  COMMISSION_REFUND_WINDOW_HOURS,
   SELLER_CANCEL_REASONS,
-  SELLER_CANCEL_WINDOW_HOURS,
+  commissionRefundable,
   type SellerCancelReasonCode,
 } from '@/config/app';
 import { cn } from '@/lib/utils';
@@ -40,16 +40,16 @@ const lei = (bani: number) =>
     maximumFractionDigits: 2,
   }).format(bani / 100) + ' lei';
 
-const WINDOW_MS = SELLER_CANCEL_WINDOW_HOURS * 3_600_000;
+const WINDOW_MS = COMMISSION_REFUND_WINDOW_HOURS * 3_600_000;
 
-/** Milliseconds left in the seller's cancel window (≤ 0 once it has closed). */
-export function cancelWindowLeft(order: { created_at: string }, now = Date.now()) {
+/** Milliseconds left in which cancelling still returns the commission (≤ 0 once closed). */
+function commissionWindowLeft(order: { created_at: string }, now = Date.now()) {
   return new Date(order.created_at).getTime() + WINDOW_MS - now;
 }
 
-/** Paid orders still inside the cancel window — the ones awaiting a decision. */
+/** Paid orders from the last COMMISSION_REFUND_WINDOW_HOURS — the dashboard's "new" orders. */
 export function countNewOrders(orders: SellerOrderRow[], now = Date.now()) {
-  return orders.filter((o) => o.status === 'paid' && cancelWindowLeft(o, now) > 0).length;
+  return orders.filter((o) => o.status === 'paid' && commissionWindowLeft(o, now) > 0).length;
 }
 
 const leftLabel = (ms: number) => {
@@ -61,9 +61,10 @@ type Filter = 'toate' | 'active' | 'anulate';
 
 /**
  * The seller's "Comenzi" tab: every order with the buyer's contact, delivery
- * and invoicing details and the payment breakdown. Within the first
- * SELLER_CANCEL_WINDOW_HOURS the seller can refuse an order with a reason —
- * the buyer is refunded automatically and emailed the reason.
+ * and invoicing details and the payment breakdown. The seller can refuse an
+ * order at any time with a reason — the buyer is refunded automatically and
+ * emailed the reason. Craft'zaar's commission comes back to the seller only
+ * if they cancel within COMMISSION_REFUND_WINDOW_HOURS.
  */
 export function SellerOrders({
   orders,
@@ -140,12 +141,17 @@ export function SellerOrders({
   const cancelled = orders.filter((o) => o.status !== 'paid');
   const shown = filter === 'active' ? active : filter === 'anulate' ? cancelled : orders;
   const needsText = code === 'other';
+  // Platform-owned orders carry no commission, so the fee rule only applies to marketplace sellers.
+  const hasCommission = orders.some((o) => Number(o.application_fee_amount ?? 0) > 0);
+  const dialogFee = cancelling ? Number(cancelling.application_fee_amount ?? 0) : 0;
 
   return (
     <section>
       <p className="text-sm text-ink-soft mb-4 leading-relaxed">
-        Dacă nu poți onora o comandă, o poți anula în primele {SELLER_CANCEL_WINDOW_HOURS} de ore de la plasare.
-        Clientul primește automat banii înapoi și un email cu motivul ales.
+        Dacă nu poți onora o comandă, o poți anula oricând. Clientul primește automat banii înapoi și un email cu
+        motivul ales.
+        {hasCommission &&
+          ` Dacă anulezi în primele ${COMMISSION_REFUND_WINDOW_HOURS} de ore de la plasare, îți returnăm și comisionul Craft'zaar; după aceea comisionul nu se mai returnează.`}
       </p>
 
       <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar">
@@ -173,11 +179,16 @@ export function SellerOrders({
         <div className="space-y-3">
           {shown.map((o) => {
             const badge = STATUS[o.status];
-            const left = cancelWindowLeft(o, now);
-            const canCancel = o.status === 'paid' && left > 0;
+            const left = commissionWindowLeft(o, now);
+            const canCancel = o.status === 'paid';
             const expanded = open.has(o.id);
             const thumb = o.listings?.image_urls?.[0];
             const fee = Number(o.application_fee_amount ?? 0);
+            // For a cancelled order: did the seller get the commission back? Only
+            // known for app cancellations (cancelled_by set) — same rule refundOrder used.
+            const feeKept =
+              o.status !== 'paid' && fee > 0 && !!o.cancelled_by && !!o.refunded_at &&
+              !commissionRefundable(o.created_at, new Date(o.refunded_at).getTime());
             return (
               <div
                 key={o.id}
@@ -207,9 +218,9 @@ export function SellerOrders({
                       {o.buyer_name || o.buyer_email || 'Client'} ·{' '}
                       <span className="price font-medium text-ink">{lei(o.amount_total)}</span>
                     </p>
-                    {canCancel && (
+                    {canCancel && fee > 0 && left > 0 && (
                       <p className="inline-flex items-center gap-1 mt-2 rounded-full bg-gold/12 border border-gold/35 px-2.5 py-0.5 text-[11px] text-ink">
-                        <Clock className="w-3 h-3" /> Poți anula încă {leftLabel(left)}
+                        <Clock className="w-3 h-3" /> Anulare fără comision încă {leftLabel(left)}
                       </p>
                     )}
                   </div>
@@ -294,6 +305,17 @@ export function SellerOrders({
                             value={lei(Number(o.amount_refunded || o.amount_total))}
                           />
                         )}
+                        {o.status !== 'paid' && fee > 0 && !!o.cancelled_by && (
+                          feeKept ? (
+                            <Money
+                              label="Comision Craft'zaar reținut"
+                              hint={`anulare după ${COMMISSION_REFUND_WINDOW_HOURS} de ore`}
+                              value={`−${lei(fee)}`}
+                            />
+                          ) : (
+                            <Money label="Comision Craft'zaar" value="returnat" />
+                          )
+                        )}
                       </dl>
                     </Detail>
 
@@ -306,13 +328,6 @@ export function SellerOrders({
                       </Detail>
                     )}
 
-                    {o.status === 'paid' && !canCancel && (
-                      <p className="text-xs text-ink-faint leading-relaxed">
-                        Termenul de {SELLER_CANCEL_WINDOW_HOURS} de ore pentru anulare a trecut. Dacă totuși nu poți
-                        onora comanda, scrie-ne la{' '}
-                        <a href={`mailto:${COMPANY.email}`} className="text-clay hover:underline">{COMPANY.email}</a>.
-                      </p>
-                    )}
                   </div>
                 )}
               </div>
@@ -335,6 +350,18 @@ export function SellerOrders({
               Acțiunea nu poate fi anulată.
             </DialogDescription>
           </DialogHeader>
+
+          {cancelling && dialogFee > 0 && (
+            commissionRefundable(cancelling.created_at, now) ? (
+              <p className="rounded-xl border border-sage/35 bg-sage/10 px-3 py-2 text-sm text-ink">
+                {`Anulezi în primele ${COMMISSION_REFUND_WINDOW_HOURS} de ore, așa că îți returnăm și comisionul Craft'zaar (${lei(dialogFee)}).`}
+              </p>
+            ) : (
+              <p className="rounded-xl border border-gold/40 bg-gold/10 px-3 py-2 text-sm text-ink">
+                {`Au trecut peste ${COMMISSION_REFUND_WINDOW_HOURS} de ore de la comandă, așa că comisionul Craft'zaar (${lei(dialogFee)}) nu se mai returnează.`}
+              </p>
+            )
+          )}
 
           <fieldset>
             <legend className="text-sm font-medium text-ink mb-2">Motivul anulării</legend>

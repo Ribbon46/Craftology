@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,8 +20,36 @@ import { getMyWishlist, toggleWishlist, type WishlistItem } from '@/actions/wish
 import { getMyFollows, toggleFollow, type FollowedArtisan } from '@/actions/follow';
 import { BuyerOrders } from '@/components/BuyerOrders';
 
+const TABS = ['produse', 'favorite', 'urmariti', 'recenzii', 'tranzactii'] as const;
+type ProfileTab = (typeof TABS)[number];
+
+// useSearchParams (the header's Urmăriți button links to ?tab=urmariti) needs a
+// Suspense boundary on a statically rendered page.
 export default function ProfilePage() {
-  const [activeTab, setActiveTab] = useState('listings');
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center h-[60vh]">
+          <div className="w-6 h-6 border-2 border-clay border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <ProfileContent />
+    </Suspense>
+  );
+}
+
+function ProfileContent() {
+  // The open tab lives in the URL (?tab=…), so links can land on a tab and a
+  // refresh keeps it. Next keeps useSearchParams in sync with replaceState.
+  const tabParam = useSearchParams().get('tab');
+  const activeTab: ProfileTab = TABS.find((t) => t === tabParam) ?? 'produse';
+  const setActiveTab = (t: string) => {
+    const url = new URL(window.location.href);
+    if (t === 'produse') url.searchParams.delete('tab');
+    else url.searchParams.set('tab', t);
+    window.history.replaceState(null, '', url);
+  };
   const router = useRouter();
   const { user, loading: sessionLoading } = useSession();
   const { setOpen } = useAuthModal();
@@ -206,14 +234,14 @@ export default function ProfilePage() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           {/* Five tabs don't fit a phone's width as a grid — scroll sideways there instead. */}
           <TabsList className="flex w-full justify-start overflow-x-auto no-scrollbar bg-surface">
-            <TabsTrigger value="listings" className="text-[13px] sm:text-sm sm:px-2.5">Produse</TabsTrigger>
-            <TabsTrigger value="wishlist" className="text-[13px] sm:text-sm sm:px-2.5">Favorite</TabsTrigger>
-            <TabsTrigger value="following" className="text-[13px] sm:text-sm sm:px-2.5">Urmăriți</TabsTrigger>
-            <TabsTrigger value="reviews" className="text-[13px] sm:text-sm sm:px-2.5">Recenzii</TabsTrigger>
-            <TabsTrigger value="transactions" className="text-[13px] sm:text-sm sm:px-2.5">Tranzacții</TabsTrigger>
+            <TabsTrigger value="produse" className="text-[13px] sm:text-sm sm:px-2.5">Produse</TabsTrigger>
+            <TabsTrigger value="favorite" className="text-[13px] sm:text-sm sm:px-2.5">Favorite</TabsTrigger>
+            <TabsTrigger value="urmariti" className="text-[13px] sm:text-sm sm:px-2.5">Urmăriți</TabsTrigger>
+            <TabsTrigger value="recenzii" className="text-[13px] sm:text-sm sm:px-2.5">Recenzii</TabsTrigger>
+            <TabsTrigger value="tranzactii" className="text-[13px] sm:text-sm sm:px-2.5">Tranzacții</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="following" className="space-y-3 pt-4">
+          <TabsContent value="urmariti" className="space-y-3 pt-4">
             {follows.length === 0 ? (
               <div className="flex flex-col items-center text-center py-10">
                 <Heart className="w-10 h-10 text-ink-faint mb-3" />
@@ -279,7 +307,7 @@ export default function ProfilePage() {
             )}
           </TabsContent>
 
-          <TabsContent value="wishlist" className="space-y-3 pt-4">
+          <TabsContent value="favorite" className="space-y-3 pt-4">
             {wishlist.length === 0 ? (
               <div className="flex flex-col items-center text-center py-10">
                 <Star className="w-10 h-10 text-ink-faint mb-3" />
@@ -343,7 +371,7 @@ export default function ProfilePage() {
             )}
           </TabsContent>
 
-          <TabsContent value="listings" className="space-y-3 pt-4">
+          <TabsContent value="produse" className="space-y-3 pt-4">
             {deleteError && (
               <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/25 text-destructive text-sm">
                 {deleteError}
@@ -436,7 +464,7 @@ export default function ProfilePage() {
             )}
           </TabsContent>
 
-          <TabsContent value="reviews" className="space-y-3 pt-4">
+          <TabsContent value="recenzii" className="space-y-3 pt-4">
             {reviews.length === 0 ? (
               <div className="flex flex-col items-center text-center py-10">
                 <Star className="w-10 h-10 text-ink-faint mb-3" />
@@ -467,7 +495,7 @@ export default function ProfilePage() {
             )}
           </TabsContent>
 
-          <TabsContent value="transactions" className="pt-4">
+          <TabsContent value="tranzactii" className="pt-4">
             <BuyerOrders />
           </TabsContent>
         </Tabs>

@@ -3,7 +3,7 @@ import { revalidatePath } from 'next/cache';
 import type Stripe from 'stripe';
 import { stripe, isStripeConfigured } from '@/lib/stripe';
 import { sendEmail, escapeHtml, isEmailConfigured } from '@/lib/email';
-import { SELLER_CANCEL_WINDOW_HOURS } from '@/config/app';
+import { COMMISSION_REFUND_WINDOW_HOURS } from '@/config/app';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://craftology-peach.vercel.app';
@@ -44,11 +44,11 @@ async function notifySellerOfOrder(db: SupabaseClient, sessionId: string) {
       .eq('stripe_session_id', sessionId)
       .is('seller_notified_at', null)
       .select(
-        'listing_id, seller_id, amount_total, buyer_email, buyer_name, buyer_phone, buyer_type, ' +
-          'company_name, company_cui, company_address, shipping_address',
+        'listing_id, seller_id, amount_total, application_fee_amount, buyer_email, buyer_name, buyer_phone, ' +
+          'buyer_type, company_name, company_cui, company_address, shipping_address',
       );
     const claimed = (claimedRaw ?? []) as unknown as Array<{
-      listing_id: string; seller_id: string; amount_total: number;
+      listing_id: string; seller_id: string; amount_total: number; application_fee_amount: number | null;
       buyer_email: string | null; buyer_name: string | null; buyer_phone: string | null;
       buyer_type: string | null; company_name: string | null; company_cui: string | null;
       company_address: string | null; shipping_address: string | null;
@@ -79,6 +79,13 @@ async function notifySellerOfOrder(db: SupabaseClient, sessionId: string) {
         ? [`Firmă: ${b.company_name}`, `CUI: ${b.company_cui}`, `Sediu: ${b.company_address}`]
         : ['Persoană fizică'];
     const contact = [b.buyer_name, b.buyer_phone, b.buyer_email].filter(Boolean) as string[];
+    // Only marketplace sellers pay commission, so only they hear about the fee rule.
+    const paysCommission = claimed.some((o) => Number(o.application_fee_amount ?? 0) > 0);
+    const cancelNote =
+      'Dacă nu poți onora comanda, o poți anula din panou — clientul primește automat banii înapoi.' +
+      (paysCommission
+        ? ` Dacă anulezi în primele ${COMMISSION_REFUND_WINDOW_HOURS} de ore, îți returnăm și comisionul Craft'zaar.`
+        : '');
 
     const rows = (label: string, values: string[]) =>
       values.length
@@ -138,7 +145,7 @@ async function notifySellerOfOrder(db: SupabaseClient, sessionId: string) {
             </a>
           </p>
           <p style="font-size:13px;color:#6b5c4c">
-            Poți răspunde direct la acest email ca să iei legătura cu clientul. Dacă nu poți onora comanda, o poți anula din panou în primele ${SELLER_CANCEL_WINDOW_HOURS} de ore — clientul primește automat banii înapoi. Clientul are drept de retur 14 zile.
+            Poți răspunde direct la acest email ca să iei legătura cu clientul. ${escapeHtml(cancelNote)} Clientul are drept de retur 14 zile.
           </p>
         </div>`,
     });

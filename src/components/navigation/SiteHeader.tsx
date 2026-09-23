@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { Search, Plus, Sun, Moon, LogIn, ShoppingBag } from 'lucide-react';
+import { Search, Plus, Sun, Moon, LogIn, ShoppingBag, Heart } from 'lucide-react';
 import { APP_NAME } from '@/config/app';
 import { cn } from '@/lib/utils';
 import { useCart } from '@/lib/cart';
@@ -94,7 +94,7 @@ export function SiteHeader() {
           <Link
             href="/cart"
             aria-label={count > 0 ? `Coșul meu (${count} produse)` : 'Coșul meu'}
-            className="relative grid place-items-center w-10 h-10 shrink-0 rounded-full border border-line bg-surface text-ink-soft hover:text-clay hover:border-clay/40 transition-colors"
+            className="relative grid place-items-center w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-full border border-line bg-surface text-ink-soft hover:text-clay hover:border-clay/40 transition-colors"
           >
             <ShoppingBag className="w-[18px] h-[18px]" />
             {count > 0 && (
@@ -104,13 +104,36 @@ export function SiteHeader() {
             )}
           </Link>
 
+          {/* Followed artisans, next to the cart (owner request). Following needs
+              an account, so a guest gets the sign-in modal instead. */}
+          {user ? (
+            <Link
+              href="/profile?tab=urmariti"
+              aria-label="Artizani urmăriți"
+              title="Artizani urmăriți"
+              className="relative grid place-items-center w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-full border border-line bg-surface text-ink-soft hover:text-clay hover:border-clay/40 transition-colors"
+            >
+              <Heart className="w-[18px] h-[18px]" />
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              aria-label="Artizani urmăriți"
+              title="Artizani urmăriți"
+              className="relative grid place-items-center w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-full border border-line bg-surface text-ink-soft hover:text-clay hover:border-clay/40 transition-colors"
+            >
+              <Heart className="w-[18px] h-[18px]" />
+            </button>
+          )}
+
           {/* Theme toggle — icons are pure CSS off the .dark class (no hydration flash) */}
           <button
             type="button"
             onClick={toggle}
             aria-label="Comută tema"
             title="Comută tema deschisă / întunecată"
-            className="grid place-items-center w-10 h-10 shrink-0 rounded-full border border-line bg-surface text-ink-soft hover:text-clay hover:border-clay/40 transition-colors"
+            className="grid place-items-center w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-full border border-line bg-surface text-ink-soft hover:text-clay hover:border-clay/40 transition-colors"
           >
             <Moon className="w-[18px] h-[18px] dark:hidden" />
             <Sun className="w-[18px] h-[18px] hidden dark:block" />
@@ -131,7 +154,7 @@ export function SiteHeader() {
             <Link
               href="/profile"
               aria-label="Contul meu"
-              className="grid place-items-center w-10 h-10 shrink-0 rounded-full bg-clay text-paper font-display text-sm font-semibold ring-1 ring-clay/40 hover:bg-clay-deep transition-colors"
+              className="grid place-items-center w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-full bg-clay text-paper font-display text-sm font-semibold ring-1 ring-clay/40 hover:bg-clay-deep transition-colors"
             >
               {initial.toUpperCase()}
             </Link>
@@ -142,7 +165,7 @@ export function SiteHeader() {
               aria-label="Conectează-te"
               /* Icon-only on narrow phones — the full label needs ~136px and was
                  pushing the header past the viewport. */
-              className="inline-flex items-center justify-center gap-1.5 shrink-0 w-10 h-10 sm:w-auto sm:h-auto rounded-full border border-clay/45 text-clay sm:px-3.5 sm:py-2 text-sm font-medium hover:bg-clay hover:text-paper hover:border-clay transition-colors"
+              className="inline-flex items-center justify-center gap-1.5 shrink-0 w-9 h-9 sm:w-auto sm:h-auto rounded-full border border-clay/45 text-clay sm:px-3.5 sm:py-2 text-sm font-medium hover:bg-clay hover:text-paper hover:border-clay transition-colors"
             >
               <LogIn className="w-4 h-4 shrink-0" />
               <span className="hidden sm:inline">Conectează-te</span>

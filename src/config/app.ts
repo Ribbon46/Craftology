@@ -20,11 +20,18 @@ export const COMPANY = {
   legalUpdated: "2 iulie 2026",
 } as const;
 
-/** A seller can refuse/cancel an order from their panel — with an automatic
- *  full refund to the buyer — only within this many hours of it being placed.
- *  After that the parcel is presumed on its way, so cancelling goes through
- *  the Craft'zaar team (admin → Comenzi). */
-export const SELLER_CANCEL_WINDOW_HOURS = 24;
+/** The buyer is always refunded in full when an order is cancelled (by anyone,
+ *  at any time). Craft'zaar's commission on a marketplace order goes back to
+ *  the seller only when the cancellation happens within this many hours of
+ *  the order; after that the platform keeps it (owner's rule, sep 2026).
+ *  The seller dashboard also counts orders this recent as "new". */
+export const COMMISSION_REFUND_WINDOW_HOURS = 48;
+
+/** Whether cancelling an order placed at `createdAt` returns the commission,
+ *  judged at `at` (now by default). */
+export function commissionRefundable(createdAt: string, at: number = Date.now()): boolean {
+  return at - new Date(createdAt).getTime() <= COMMISSION_REFUND_WINDOW_HOURS * 3_600_000;
+}
 
 /** Why a seller refuses an order. The label is what the buyer reads in the
  *  cancellation email; "other" requires the seller to write the reason. */

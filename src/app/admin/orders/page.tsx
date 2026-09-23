@@ -13,6 +13,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { listAllOrders } from '@/actions/admin';
 import { cancelOrderAsAdmin } from '@/actions/orders';
+import { COMMISSION_REFUND_WINDOW_HOURS } from '@/config/app';
 
 interface AdminOrder {
   id: string;
@@ -114,7 +115,9 @@ export default function AdminOrdersPage() {
           <DialogHeader className="pr-6">
             <DialogTitle className="font-display text-xl">Anulează comanda</DialogTitle>
             <DialogDescription>
-              Cumpărătorul primește rambursarea completă, iar produsul revine la vânzare. Acțiune ireversibilă.
+              Cumpărătorul primește rambursarea completă, iar produsul revine la vânzare. Comisionul se returnează
+              vânzătorului doar dacă anularea are loc în primele {COMMISSION_REFUND_WINDOW_HOURS} de ore de la comandă.
+              Acțiune ireversibilă.
             </DialogDescription>
           </DialogHeader>
           <Textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2} placeholder="Motiv (opțional)" className="resize-none" />

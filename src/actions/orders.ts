@@ -7,7 +7,7 @@ import { createServiceClient, isServiceConfigured } from '@/lib/supabase/admin';
 import { stripe, isStripeConfigured } from '@/lib/stripe';
 import { sendEmail, escapeHtml, isEmailConfigured } from '@/lib/email';
 import { isAdminUser } from '@/actions/admin';
-import { COMPANY, SELLER_CANCEL_REASONS, SELLER_CANCEL_WINDOW_HOURS } from '@/config/app';
+import { COMPANY, SELLER_CANCEL_REASONS, COMMISSION_REFUND_WINDOW_HOURS, commissionRefundable } from '@/config/app';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://craftology-peach.vercel.app';
 const money = (bani: number) => (bani / 100).toLocaleString('ro-RO', { minimumFractionDigits: 2 }) + ' lei';
@@ -52,6 +52,7 @@ interface FullOrder {
   payment_intent_id: string;
   stripe_account_id: string | null;
   amount_total: number;
+  application_fee_amount: number;
   status: string;
   stripe_refund_id: string | null;
   created_at: string;
@@ -60,11 +61,12 @@ interface FullOrder {
 type RefundResult = { success: true; claimed: boolean } | { error: string };
 
 /**
- * Refund an order in full + reverse the platform fee, then put the item back
- * in stock. Shared by the seller, buyer and admin cancel paths. Money-safe:
+ * Refund the buyer in full, then put the item back in stock. Shared by the
+ * seller, buyer and admin cancel paths. The platform fee goes back to the
+ * seller only inside COMMISSION_REFUND_WINDOW_HOURS of the order. Money-safe:
  *  - idempotency key on the Stripe refund (concurrent calls → one refund)
  *  - conditional UPDATE (paid→refunded) so only one writer restocks
- *  - direct-charge shape: refund on the connected account + refund_application_fee
+ *  - direct-charge shape: refund on the connected account (+ refund_application_fee)
  * `claimed` is true for exactly one caller per order — the one that recorded
  * who cancelled and why — and only that caller sends the notification emails.
  */
@@ -85,11 +87,16 @@ async function refundOrder(order: FullOrder, cancelledBy: Canceller, reason?: st
           // wrongly return the whole basket. Stripe refunds the application fee
           // proportionally when an amount is given.
           amount: order.amount_total,
-          // Marketplace (connected account): return the platform's fee too.
-          ...(order.stripe_account_id ? { refund_application_fee: true } : {}),
+          // Marketplace (connected account): the buyer's refund comes out of the
+          // seller's balance; the platform's fee is returned to them only when
+          // the order is cancelled early enough. Otherwise Craft'zaar keeps it.
+          ...(order.stripe_account_id && commissionRefundable(order.created_at)
+            ? { refund_application_fee: true }
+            : {}),
           // Only order_id in the refund body — cancelled_by is recorded in our
           // DB, not here, so concurrent seller+buyer cancels share an identical
           // idempotent request body (differing metadata would 400 the replay).
+          // The fee flag depends only on the order's age, so it matches too.
           metadata: { order_id: order.id },
         },
         {
@@ -257,6 +264,14 @@ async function notifyCancellation(orders: FullOrder[], cancelledBy: Canceller, r
         const shipLine =
           'Nu mai expedia produsul. Dacă l-ai expediat deja, clientul îl returnează conform politicii de retur. ' +
           'Produsul a revenit în stoc.';
+        // Same rule refundOrder just applied: early cancellations return the fee.
+        const fee = orders.reduce((s, o) => s + (o.stripe_account_id ? Number(o.application_fee_amount ?? 0) : 0), 0);
+        const feeLine =
+          fee <= 0
+            ? ''
+            : commissionRefundable(orders[0].created_at)
+              ? `Comisionul Craft'zaar de ${money(fee)} ți-a fost returnat.`
+              : `Comisionul Craft'zaar de ${money(fee)} nu se returnează, pentru că anularea a avut loc la mai mult de ${COMMISSION_REFUND_WINDOW_HOURS} de ore de la comandă.`;
         await sendEmail({
           to,
           subject: `Comandă anulată · ${items[0].title}${items.length > 1 ? ` + încă ${items.length - 1}` : ''} · Craft'zaar`,
@@ -267,6 +282,7 @@ async function notifyCancellation(orders: FullOrder[], cancelledBy: Canceller, r
             ...(reason ? ['', `Motiv: ${reason}`] : []),
             '',
             shipLine,
+            ...(feeLine ? [feeLine] : []),
             '',
             `Comenzile tale: ${SITE_URL}/seller/dashboard?tab=comenzi`,
           ].join('\n'),
@@ -276,6 +292,7 @@ async function notifyCancellation(orders: FullOrder[], cancelledBy: Canceller, r
             ${itemsTable}
             ${reasonHtml}
             <p style="margin:18px 0 0"><strong>${escapeHtml(shipLine)}</strong></p>
+            ${feeLine ? `<p style="margin:10px 0 0;color:#6b5c4c">${escapeHtml(feeLine)}</p>` : ''}
             <p style="margin-top:22px">
               <a href="${SITE_URL}/seller/dashboard?tab=comenzi" style="display:inline-block;background:#b8562f;color:#fff;padding:10px 20px;border-radius:999px;text-decoration:none">
                 Vezi comenzile
@@ -290,9 +307,8 @@ async function notifyCancellation(orders: FullOrder[], cancelledBy: Canceller, r
 }
 
 /**
- * Seller refuses/cancels an order for their own listing, picking a reason the
- * buyer will see. Allowed only within SELLER_CANCEL_WINDOW_HOURS of the order;
- * later cancellations go through the Craft'zaar team.
+ * Seller refuses/cancels an order for their own listing — at any time —
+ * picking a reason the buyer will see. The buyer is refunded automatically.
  */
 export async function cancelOrderAsSeller(orderId: string, reason: { code: string; details?: string }) {
   const picked = SELLER_CANCEL_REASONS.find((r) => r.code === reason?.code);
@@ -313,11 +329,6 @@ export async function cancelOrderAsSeller(orderId: string, reason: { code: strin
   const order = data as FullOrder | null;
   if (!order) return { error: 'Comanda nu a fost găsită.' };
   if (order.seller_id !== user.id) return { error: 'Nu ai permisiunea pentru această comandă.' };
-  if (Date.now() - new Date(order.created_at).getTime() > SELLER_CANCEL_WINDOW_HOURS * 3_600_000) {
-    return {
-      error: `Au trecut ${SELLER_CANCEL_WINDOW_HOURS} de ore de la plasarea comenzii, așa că nu o mai poți anula din panou. Scrie-ne la ${COMPANY.email} și te ajutăm.`,
-    };
-  }
 
   const res = await refundOrder(order, 'seller', reasonText);
   if ('success' in res && res.claimed) after(() => notifyCancellation([order], 'seller', reasonText));
