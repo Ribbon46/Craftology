@@ -75,6 +75,12 @@ export function BuyerOrders() {
                 {' · '}
                 {new Date(o.created_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', year: 'numeric' })}
               </p>
+              {o.status !== 'paid' && (o.cancelled_by === 'seller' || o.cancelled_by === 'admin') && (
+                <p className="text-xs text-ink-soft mt-1.5 leading-relaxed">
+                  {o.cancelled_by === 'seller' ? 'Anulată de atelier' : "Anulată de echipa Craft'zaar"}
+                  {o.cancel_reason ? `: ${o.cancel_reason}` : ''}. Banii au fost returnați pe card.
+                </p>
+              )}
               {o.status === 'paid' && (
                 <Button
                   variant="outline"

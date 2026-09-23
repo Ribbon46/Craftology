@@ -20,6 +20,25 @@ export const COMPANY = {
   legalUpdated: "2 iulie 2026",
 } as const;
 
+/** A seller can refuse/cancel an order from their panel — with an automatic
+ *  full refund to the buyer — only within this many hours of it being placed.
+ *  After that the parcel is presumed on its way, so cancelling goes through
+ *  the Craft'zaar team (admin → Comenzi). */
+export const SELLER_CANCEL_WINDOW_HOURS = 24;
+
+/** Why a seller refuses an order. The label is what the buyer reads in the
+ *  cancellation email; "other" requires the seller to write the reason. */
+export const SELLER_CANCEL_REASONS = [
+  { code: "out_of_stock", label: "Produsul nu mai este disponibil în stoc" },
+  { code: "damaged", label: "Produsul s-a deteriorat și nu mai poate fi livrat" },
+  { code: "cannot_ship", label: "Nu putem livra la adresa sau în termenul cerut" },
+  { code: "listing_error", label: "Eroare de preț sau în descrierea produsului" },
+  { code: "buyer_request", label: "La cererea clientului" },
+  { code: "other", label: "Alt motiv" },
+] as const;
+
+export type SellerCancelReasonCode = (typeof SELLER_CANCEL_REASONS)[number]["code"];
+
 // Top-level categories (the home/search chips). Kept deliberately small —
 // this is a curated artisan marketplace, not Temu. Each has subcategories
 // below for the sell form + secondary filtering. No food/cosmetics category

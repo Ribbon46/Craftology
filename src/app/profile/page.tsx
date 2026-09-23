@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Star, PackageOpen, UserRound, ShieldCheck } from 'lucide-react';
+import { Star, PackageOpen, UserRound, ShieldCheck, Heart, BadgeCheck } from 'lucide-react';
 import { useSession } from '@/lib/hooks';
 import { useAuthModal } from '@/lib/auth-modal';
 import { avatarFor, SellerProfile, Listing } from '@/lib/mock';
@@ -16,6 +17,7 @@ import { getSellerReviews, type PublicReview } from '@/actions/reviews';
 import { isAdminUser } from '@/actions/admin';
 import { deleteListing } from '@/actions/listings';
 import { getMyWishlist, toggleWishlist, type WishlistItem } from '@/actions/wishlist';
+import { getMyFollows, toggleFollow, type FollowedArtisan } from '@/actions/follow';
 import { BuyerOrders } from '@/components/BuyerOrders';
 
 export default function ProfilePage() {
@@ -30,6 +32,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
+  const [follows, setFollows] = useState<FollowedArtisan[]>([]);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -88,6 +91,11 @@ export default function ProfilePage() {
     getMyWishlist()
       .then((w) => {
         if (active) setWishlist(w);
+      })
+      .catch(() => {});
+    getMyFollows()
+      .then((f) => {
+        if (active) setFollows(f);
       })
       .catch(() => {});
     return () => {
@@ -196,12 +204,80 @@ export default function ProfilePage() {
       {/* Tabs */}
       <div className="px-4">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4 bg-surface">
-            <TabsTrigger value="listings">Produse</TabsTrigger>
-            <TabsTrigger value="wishlist">Favorite</TabsTrigger>
-            <TabsTrigger value="reviews">Recenzii</TabsTrigger>
-            <TabsTrigger value="transactions">Tranzacții</TabsTrigger>
+          {/* Five tabs don't fit a phone's width as a grid — scroll sideways there instead. */}
+          <TabsList className="flex w-full justify-start overflow-x-auto no-scrollbar bg-surface">
+            <TabsTrigger value="listings" className="text-[13px] sm:text-sm sm:px-2.5">Produse</TabsTrigger>
+            <TabsTrigger value="wishlist" className="text-[13px] sm:text-sm sm:px-2.5">Favorite</TabsTrigger>
+            <TabsTrigger value="following" className="text-[13px] sm:text-sm sm:px-2.5">Urmăriți</TabsTrigger>
+            <TabsTrigger value="reviews" className="text-[13px] sm:text-sm sm:px-2.5">Recenzii</TabsTrigger>
+            <TabsTrigger value="transactions" className="text-[13px] sm:text-sm sm:px-2.5">Tranzacții</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="following" className="space-y-3 pt-4">
+            {follows.length === 0 ? (
+              <div className="flex flex-col items-center text-center py-10">
+                <Heart className="w-10 h-10 text-ink-faint mb-3" />
+                <p className="text-ink-soft">Nu urmărești niciun artizan încă.</p>
+                <p className="text-xs text-ink-faint mt-1 max-w-xs">
+                  Apasă „Urmărește” pe pagina unui produs sau a unui atelier și îl găsești mereu aici.
+                </p>
+              </div>
+            ) : (
+              follows.map((a) => (
+                <Card key={a.id} className="overflow-hidden border-line">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <Link href={`/atelier/${a.id}`} className="shrink-0">
+                        <Avatar className="w-12 h-12 ring-1 ring-line">
+                          <AvatarImage src={a.avatar_url || avatarFor(a.name)} alt={a.name} />
+                          <AvatarFallback className="bg-clay-soft text-clay font-display">
+                            {a.name.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                      </Link>
+                      <Link href={`/atelier/${a.id}`} className="min-w-0 flex-1">
+                        <span className="flex items-center gap-1 font-display text-ink leading-tight">
+                          <span className="truncate">{a.name}</span>
+                          {a.verified && <BadgeCheck className="w-4 h-4 text-sage shrink-0" aria-label="Vânzător verificat" />}
+                        </span>
+                        <span className="block text-xs text-ink-soft mt-0.5">
+                          {a.active_count === 0
+                            ? 'Niciun produs disponibil acum'
+                            : a.active_count === 1
+                              ? '1 produs disponibil'
+                              : `${a.active_count} produse disponibile`}
+                        </span>
+                      </Link>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs rounded-full text-ink-soft shrink-0"
+                        onClick={async () => {
+                          setFollows((prev) => prev.filter((x) => x.id !== a.id));
+                          try {
+                            await toggleFollow(a.id);
+                          } catch {
+                            /* refetch on next visit */
+                          }
+                        }}
+                      >
+                        Nu mai urmări
+                      </Button>
+                    </div>
+                    {a.thumbs.length > 0 && (
+                      <Link href={`/atelier/${a.id}`} className="grid grid-cols-3 gap-2 mt-3">
+                        {a.thumbs.map((src) => (
+                          <span key={src} className="relative aspect-square rounded-lg overflow-hidden bg-cream">
+                            <Image src={src} alt="" fill sizes="(min-width: 640px) 200px, 30vw" className="object-cover" />
+                          </span>
+                        ))}
+                      </Link>
+                    )}
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </TabsContent>
 
           <TabsContent value="wishlist" className="space-y-3 pt-4">
             {wishlist.length === 0 ? (

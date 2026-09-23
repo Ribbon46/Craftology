@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Store, CreditCard, PackageOpen, Plus, ClipboardList, LayoutGrid } from 'lucide-react';
+import { ArrowLeft, Store, CreditCard, PackageOpen, Plus, ClipboardList, LayoutGrid, ShoppingBag, ChevronRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useSession } from '@/lib/hooks';
@@ -12,7 +12,8 @@ import { useAuthModal } from '@/lib/auth-modal';
 import { getMySeller, type SellerRow } from '@/actions/seller';
 import { createStripeLoginLink } from '@/actions/connect';
 import { fetchSellerListings } from '@/lib/data/listings';
-import { SellerOrders } from '@/components/SellerOrders';
+import { getSellerOrders, type SellerOrderRow } from '@/actions/orders';
+import { SellerOrders, countNewOrders } from '@/components/SellerOrders';
 import { CloseShopButton } from '@/components/CloseShopButton';
 import { VacationCard } from '@/components/VacationCard';
 import { ImportCatalogCard } from '@/components/ImportCatalogCard';
@@ -28,7 +29,33 @@ export default function SellerDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [opening, setOpening] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<'panou' | 'inventar'>('panou');
+  // ?tab=comenzi (the new-order email links here) opens straight on that tab,
+  // and switching tabs keeps the URL in step so a refresh stays put. Reading the
+  // URL during the first render is hydration-safe: the tabs only render after
+  // the seller has loaded, so server and client both start on the spinner.
+  const [tab, setTabState] = useState<Tab>(() => {
+    if (typeof window === 'undefined') return 'panou';
+    const t = new URLSearchParams(window.location.search).get('tab');
+    return TABS.find((x) => x.id === t)?.id ?? 'panou';
+  });
+  const [orders, setOrders] = useState<SellerOrderRow[]>([]);
+  const [ordersLoaded, setOrdersLoaded] = useState(false);
+  const setTab = (t: Tab) => {
+    setTabState(t);
+    const url = new URL(window.location.href);
+    if (t === 'panou') url.searchParams.delete('tab');
+    else url.searchParams.set('tab', t);
+    window.history.replaceState(null, '', url);
+  };
+
+  const loadOrders = useCallback(
+    () =>
+      getSellerOrders()
+        .then(setOrders)
+        .catch(() => {})
+        .finally(() => setOrdersLoaded(true)),
+    [],
+  );
 
   useEffect(() => {
     if (sessionLoading) return;
@@ -38,7 +65,8 @@ export default function SellerDashboardPage() {
       setListings(mine);
       setLoading(false);
     });
-  }, [user, sessionLoading]);
+    loadOrders();
+  }, [user, sessionLoading, loadOrders]);
 
   const openStripe = async () => {
     setError(null);
@@ -86,6 +114,7 @@ export default function SellerDashboardPage() {
   const active = listings.filter((l) => l.status === 'active');
   const sold = listings.filter((l) => l.status === 'sold');
   const formatPrice = (n: number) => new Intl.NumberFormat('ro-RO', { maximumFractionDigits: 0 }).format(n);
+  const newOrders = countNewOrders(orders);
 
   return (
     <div className="min-h-screen px-4 py-6 pb-24 mx-auto w-full max-w-3xl">
@@ -99,18 +128,13 @@ export default function SellerDashboardPage() {
       </div>
       <p className="text-ink-soft mb-5">Panoul tău de vânzător</p>
 
-      {/* Tabs: the day-to-day panel vs the printable stock report */}
-      <div className="flex gap-1.5 mb-5 no-print">
-        {(
-          [
-            { id: 'panou', label: 'Panou', icon: LayoutGrid },
-            { id: 'inventar', label: 'Inventar', icon: ClipboardList },
-          ] as const
-        ).map(({ id, label, icon: Icon }) => (
+      {/* Tabs: the day-to-day panel, the printable stock report, the orders */}
+      <div className="flex gap-1.5 mb-5 no-print overflow-x-auto no-scrollbar">
+        {TABS.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             onClick={() => setTab(id)}
-            className={`inline-flex items-center gap-1.5 rounded-full border-[1.5px] px-4 py-2 text-sm font-medium transition-colors ${
+            className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border-[1.5px] px-4 py-2 text-sm font-medium transition-colors ${
               tab === id
                 ? 'border-clay bg-clay text-paper shadow-[2px_2px_0_0_var(--press)]'
                 : 'border-line-strong text-ink-soft hover:border-clay/50 hover:text-clay'
@@ -118,6 +142,15 @@ export default function SellerDashboardPage() {
           >
             <Icon className="w-4 h-4" />
             {label}
+            {id === 'comenzi' && newOrders > 0 && (
+              <span
+                className={`min-w-5 h-5 px-1.5 grid place-items-center rounded-full text-[11px] font-semibold ${
+                  tab === id ? 'bg-paper text-clay' : 'bg-clay text-paper'
+                }`}
+              >
+                {newOrders}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -130,6 +163,8 @@ export default function SellerDashboardPage() {
 
       {tab === 'inventar' ? (
         <InventoryReport listings={listings} shopName={seller.company_name} />
+      ) : tab === 'comenzi' ? (
+        <SellerOrders orders={orders} loaded={ordersLoaded} onChanged={loadOrders} />
       ) : (
       <>
       {/* Stats + payouts */}
@@ -152,7 +187,19 @@ export default function SellerDashboardPage() {
         </div>
       </div>
 
-      <SellerOrders />
+      {newOrders > 0 && (
+        <button
+          onClick={() => setTab('comenzi')}
+          className="w-full mb-6 flex items-center gap-3 rounded-2xl border-[1.5px] border-clay/40 bg-clay/8 px-4 py-3 text-left hover:bg-clay/12 transition-colors"
+        >
+          <ShoppingBag className="w-5 h-5 text-clay shrink-0" />
+          <span className="flex-1 text-sm text-ink">
+            <strong>{newOrders === 1 ? 'Ai o comandă nouă' : `Ai ${newOrders} comenzi noi`}</strong>
+            <span className="block text-xs text-ink-soft">Verifică detaliile și expediază coletul.</span>
+          </span>
+          <ChevronRight className="w-4 h-4 text-clay" />
+        </button>
+      )}
 
       <VacationCard initialUntil={seller.vacation_until ?? null} />
 
@@ -203,6 +250,13 @@ export default function SellerDashboardPage() {
     </div>
   );
 }
+
+type Tab = 'panou' | 'inventar' | 'comenzi';
+const TABS = [
+  { id: 'panou', label: 'Panou', icon: LayoutGrid },
+  { id: 'inventar', label: 'Inventar', icon: ClipboardList },
+  { id: 'comenzi', label: 'Comenzi', icon: ShoppingBag },
+] as const satisfies ReadonlyArray<{ id: Tab; label: string; icon: unknown }>;
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (

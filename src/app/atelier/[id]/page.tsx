@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, BadgeCheck, Mail, Phone, Globe, CalendarDays } from 'lucide-react';
 import { ListingCard } from '@/components/ListingCard';
+import { FollowButton } from '@/components/FollowButton';
 import { fetchSellerPublicById, fetchSellerListingsServer } from '@/lib/data/listings.server';
 import { avatarFor } from '@/lib/mock';
 
@@ -80,6 +81,8 @@ export default async function AtelierPage({ params }: { params: Promise<{ id: st
                 </span>
               )}
             </div>
+            {/* Client island — follow state is per-visitor, the page stays ISR. */}
+            <FollowButton sellerId={id} className="mt-3" />
           </div>
         </div>
 

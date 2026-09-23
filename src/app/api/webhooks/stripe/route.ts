@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache';
 import type Stripe from 'stripe';
 import { stripe, isStripeConfigured } from '@/lib/stripe';
 import { sendEmail, escapeHtml, isEmailConfigured } from '@/lib/email';
+import { SELLER_CANCEL_WINDOW_HOURS } from '@/config/app';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://craftology-peach.vercel.app';
@@ -99,7 +100,7 @@ async function notifySellerOfOrder(db: SupabaseClient, sessionId: string) {
         'FACTURARE: ' + billing.join(' · '),
         'LIVRARE: ' + (b.shipping_address ?? '—'),
         '',
-        `Comenzile tale: ${SITE_URL}/seller/dashboard`,
+        `Comenzile tale: ${SITE_URL}/seller/dashboard?tab=comenzi`,
       ].join('\n'),
       html: `
         <div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:560px;margin:0 auto;color:#2a211a">
@@ -132,12 +133,12 @@ async function notifySellerOfOrder(db: SupabaseClient, sessionId: string) {
           </table>
 
           <p style="margin-top:22px">
-            <a href="${SITE_URL}/seller/dashboard" style="display:inline-block;background:#b8562f;color:#fff;padding:10px 20px;border-radius:999px;text-decoration:none">
+            <a href="${SITE_URL}/seller/dashboard?tab=comenzi" style="display:inline-block;background:#b8562f;color:#fff;padding:10px 20px;border-radius:999px;text-decoration:none">
               Vezi comenzile
             </a>
           </p>
           <p style="font-size:13px;color:#6b5c4c">
-            Poți răspunde direct la acest email ca să iei legătura cu clientul. Clientul are drept de retur 14 zile.
+            Poți răspunde direct la acest email ca să iei legătura cu clientul. Dacă nu poți onora comanda, o poți anula din panou în primele ${SELLER_CANCEL_WINDOW_HOURS} de ore — clientul primește automat banii înapoi. Clientul are drept de retur 14 zile.
           </p>
         </div>`,
     });
@@ -276,6 +277,8 @@ export async function POST(req: NextRequest) {
 
       // We charge a 10% application fee on marketplace (connected-account) sales
       // (must match COMMISSION_RATE in checkout.ts); platform-owned listings take none.
+      // Like checkout, the fee is on the goods only — the item's own price, not
+      // its share of the delivery fee.
       const rows = listingIds.map((id) => ({
         listing_id: id,
         seller_id: sellerId,
@@ -292,7 +295,7 @@ export async function POST(req: NextRequest) {
         payment_intent_id: String(session.payment_intent ?? ''),
         stripe_account_id: stripeAccountId,
         amount_total: amounts.get(id) ?? 0,
-        application_fee_amount: stripeAccountId ? Math.round((amounts.get(id) ?? 0) * 0.1) : 0,
+        application_fee_amount: stripeAccountId ? Math.round((priceById.get(id) ?? 0) * 0.1) : 0,
         currency: session.currency ?? 'ron',
         status: 'paid',
       }));
@@ -348,19 +351,25 @@ export async function POST(req: NextRequest) {
       if (rows.length > 0) {
         const chargeFullyRefunded = (charge.amount_refunded ?? 0) >= (charge.amount ?? 0);
         if (chargeFullyRefunded) {
-          const ids = rows.map((o) => o.id);
-          const listingIds = rows.map((o) => o.listing_id);
-          await db
+          // Restock only the rows THIS event flips. Rows the app already
+          // refunded (seller/buyer/admin cancel) were restocked there, and
+          // Stripe retries this event — restocking every row would double-count.
+          const { data: flippedRaw } = await db
             .from('orders')
             .update({ status: 'refunded', refunded_at: new Date().toISOString() })
-            .in('id', ids)
-            .eq('status', 'paid');
-          for (const o of rows) {
+            .in('id', rows.map((o) => o.id))
+            .eq('status', 'paid')
+            .select('id, listing_id, amount_total');
+          const flipped = (flippedRaw ?? []) as Array<{ id: string; listing_id: string; amount_total: number }>;
+          for (const o of flipped) {
             await db.from('orders').update({ amount_refunded: o.amount_total }).eq('id', o.id);
           }
-          await db.rpc('restore_listing_stock', { p_listing_ids: listingIds });
-          revalidatePath('/');
-          listingIds.forEach((id) => revalidatePath(`/listings/${id}`));
+          if (flipped.length > 0) {
+            const listingIds = flipped.map((o) => o.listing_id);
+            await db.rpc('restore_listing_stock', { p_listing_ids: listingIds });
+            revalidatePath('/');
+            listingIds.forEach((id) => revalidatePath(`/listings/${id}`));
+          }
         }
       }
     }
